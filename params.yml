@@ -1,0 +1,41 @@
+# Minimum population of a functional urban area (FUA)
+MIN_FUA_POPU: 200000
+# Reference/baseline date that defines `day_id` in table `gtfs-datesets`
+BASE_START_DATE: 2020-01-01
+# Start and end dates of public transport services in GTFS data
+SERVICE_START: 2023-01-01
+SERVICE_END: 2026-12-31
+# Rail route types
+RAIL_ROUTE_TYPES: [2, 100, 101, 102, 103, 105, 106, 107, 108, 
+    109, 111, 113, 114, 117, 900, 901, 902, 903, 904, 905, 906]
+BUS_ROUTE_TYPES: [3, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+                  700, 701, 702, 703, 704, 705, 706, 707, 708,
+                  709, 710, 711, 712, 713, 714, 715, 716]
+# Radius/bandwidth (metres) used in clustering of nearby stops
+STOP_CLUSTER_RADIUS: 400
+# Buffer radius (metres) of stops around stations for intracity trips
+STATION_BUFFER_RADIUS: 400
+# Maximum distance (metres) of a station to its nearest OSM junction
+MAX_STN_OSM_OFFSET: 5000
+# Catchment radius (km) of an airport for FUA centroid mapping
+AIRPORT_CATCH_RADIUS: 150
+# Minimum network length (km) of a path
+MIN_PATH_LENGTH: 50
+# Maximum mean route speed by mode (km/h)
+MAX_ROUTE_SPEED_BUS: 120 # for bus
+MAX_ROUTE_SPEED_RAIL: 360 # for rail
+# No. of shortest paths for each combination of OD pair, mode & departure time
+N_SHORTEST_PATHS: 20
+# Departure time hourly bins
+# DEP_HR_BINS: [0, 6, 12, 18, 24]
+DEP_HR_BINS: [0, 6, 9, 12, 15, 18, 21, 24]
+# Min & max transfer time (minutes) at a station
+MIN_TRANS_TIME: 5
+MAX_TRANS_TIME: 120
+# Constant waiting time (minutes) at each origin station
+BASE_WAIT: 10
+# Ratio of transfer time to IVTT
+TRANSFER_TIME_FACTOR: 1.7
+# Time (minutes) equivalent to each transfer
+TRANSFER_PENALTY: 10
+# Trip departure time windows, given by range of hours

@@ -1,0 +1,6 @@
+__pycache__
+_old
+.DS_Store
+fig
+notebooks
+*.ipynb
