@@ -1,6 +1,9 @@
 """Prepare intercity schedule data from the GTFS database."""
 
 #%% Imports
+from collections import Counter, defaultdict
+from itertools import combinations
+
 import geopandas as gpd
 from datetime import datetime
 import numpy as np
@@ -255,10 +258,56 @@ lines["intercity"] = (
 ) > 1
 lines#.view();
 
+#%% Major stations [6s]
+C.log("Filtering major stations based on the city pairs they contribute to")
+# No. of city OD pairs which are connected by lines that pass through `stn`
+## Station pairs supporting each mode-specific city OD pair
+adj = defaultdict(set)
+stn_od = defaultdict(set)
+all_od = set()
+for line, r in lines[["rail", "stn"]].iterrows():
+    rail = bool(r["rail"])
+    stn_seq = tuple(dict.fromkeys(map(int, r["stn"])))
+    stn_fua = {stn: int(stns.at[stn, "fua"]) for stn in stn_seq}
+    fua_seq = tuple(dict.fromkeys(stn_fua.values()))
+    line_od = {(rail, *sorted(x)) for x in combinations(fua_seq, 2)}
+    all_od.update(line_od)
+    for stn in stn_seq:
+        stn_od[stn].update(line_od)
+    for src, trg in combinations(stn_seq, 2):
+        if stn_fua[src] != stn_fua[trg]:
+            od = (rail, *sorted((stn_fua[src], stn_fua[trg])))
+            adj[src].add((trg, od))
+            adj[trg].add((src, od))
+## Remove a station only when every OD retains another station-pair witness
+selected_stns = set(stns.index)
+od_support = Counter(od for src in selected_stns for 
+                     trg, od in adj[src] if src < trg)
+stn_order = sorted(selected_stns, key=lambda x: (len(stn_od[x]), x))
+for stn in stn_order:
+    removed = Counter(od for trg, od in adj[stn] if trg in selected_stns)
+    if all(od_support[od] > n for od, n in removed.items()):
+        selected_stns.remove(stn)
+        od_support.subtract(removed)
+stns2 = stns.loc[sorted(selected_stns)].view()
+
+#%% Update lines
+lines2 = (
+    lines.set_index("line")
+    ["stn"].explode().astype(int).reset_index()
+    .merge(stns2["fua"], on="stn")
+    .groupby("line")["stn"].agg(tuple)
+    .pipe(lambda x: x[x.apply(len) > 1])
+    .reset_index()
+    .merge(lines.drop(columns="stn"), on="line")
+)#.view()
+
 #%% Segments (without geometry)
 C.log("Identifying consecutive interstation segments")
-seg = (lines.reset_index().astype({"line": I32})
-       .groupby("stn")["line"].agg(set).reset_index())
+seg = (
+    lines2.reset_index().astype({"line": I32})
+    .groupby("stn")["line"].agg(set).reset_index()
+)
 seg["od"] = seg.pop("stn").apply(lambda x: list(zip(x[:-1], x[1:])))
 seg = seg.explode("od", ignore_index=True)
 seg = seg.groupby("od")["line"].agg(lambda x: set().union(*x))
@@ -267,7 +316,7 @@ seg["src"], seg["trg"] = list(zip(*seg.pop("od")))
 seg = seg.astype({"src": I32, "trg": I32})
 seg["mode"] = (
     seg["line"].explode().reset_index()
-    .merge(lines[["line", "rail"]], on="line")
+    .merge(lines2[["line", "rail"]], on="line")
     .astype({"rail": int})
     .groupby("seg")["rail"]
     .agg(lambda x: tuple(sorted(set(x)))).reset_index()
@@ -275,36 +324,37 @@ seg["mode"] = (
     .map({(0,): "Bus", (1,): "Rail", (0, 1): "Both"})
 )
 seg["intercity"] = seg["src"].map(stns["fua"]) != seg["trg"].map(stns["fua"])
-seg = seg[["src", "trg", "mode", "intercity", "line"]]#.view()
+seg = seg[["src", "trg", "mode", "intercity", "line"]].view()
 
 #%% Update other tables [3s]
 C.log("Updating other tables")
 jrn2 = (
-    lines[["line", "jrn"]]
+    lines2[["line", "jrn"]]
     .explode("jrn").astype({"jrn": I32})
     .merge(jrn, on="jrn")
     .astype({"line": I32})
     .merge(tt.groupby("jrn")[["jrn", "dep"]].head(1), on="jrn")
     [["jrn", "line", "dateset", "dep", "feed", "trip", "stopseq", "timeseq"]]
     .astype({"jrn": I32})
-)#.view()
-
+).view()
+tt2 = (
+    tt[(tt["stn"].isin(stns2.index)) &
+       (tt["jrn"].isin(jrn2["jrn"]))]
+).view()
 datesets2 = datesets.loc[jrn2["dateset"].unique()].sort_index()
 datesets2.columns = list(map(str, datesets2.columns))
-datesets2 = datesets2.reset_index().astype({"dateset": I32})#.view()
-
-stns2 = (stns.loc[tt["stn"].unique()].sort_index()
-         .reset_index().astype({"stn": UI16}))#.view()
+datesets2 = datesets2.reset_index().astype({"dateset": I32}).view()
 
 #%% Export [3s]
 C.log("Saving intercity data tables")
 for df, table in [
-    (stns2, "ic-stations"),
-    (lines.drop(columns="jrn"), "ic-lines"),
+    (stns2.reset_index().astype({"stn": UI16}), "ic-stations"),
+    (lines2.drop(columns="jrn"), "ic-lines"),
     (jrn2, "ic-journeys"),
     (datesets2, "ic-datesets"),
-    (tt, "ic-timetable"),
+    (tt2, "ic-timetable"),
     (seg, "ic-segments"),
 ]:
     C.log(f"Table `{table}`: {len(df):,} rows")
+    # print("Previously", table, len(C.load(table)))
     C.save(df, table)

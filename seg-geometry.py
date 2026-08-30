@@ -294,8 +294,8 @@ def get_shortest_paths(
     od = od.merge(seg, "right", on=["u", "v"]).assign(mode=mode)
     return od[["src", "trg", "mode", "len_km", "line", "geometry"]]
 
-seg_b = get_shortest_paths("Bus", g_b, stns_b)#.view() # 1m25s
-seg_r = get_shortest_paths("Rail", g_r, stns_r)#.view() # 12s
+seg_b = get_shortest_paths("Bus", g_b, stns_b)#.view() # 41s
+seg_r = get_shortest_paths("Rail", g_r, stns_r)#.view() # 9s
 
 #%% Combine segments and export
 seg = (pd.concat([seg_b, seg_r], ignore_index=True)

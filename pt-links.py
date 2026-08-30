@@ -26,7 +26,7 @@ df = df.drop_duplicates(["line", "src", "trg"], ignore_index=True)
 # mode-specific segment lengths
 seg_dist = (seg.groupby(["src", "trg", "mode"])
             ["len_km"].median().rename("dist").reset_index())
-line_seg = df.merge(seg_dist, "left", on=["src", "trg", "mode"]).view()
+line_seg = df.merge(seg_dist, "left", on=["src", "trg", "mode"])#.view()
 
 #%% Links from line segments
 links = (
@@ -38,12 +38,12 @@ links = (
     .merge(stns[["stn", "fua"]].set_axis(["trg", "trg_fua"], axis=1))
     .assign(intercity=lambda df: df.pop("src_fua") != df.pop("trg_fua"))
     .rename_axis("link")
-).view()
+)#.view()
 link2line = (
     links.reset_index()
     .merge(line_seg, on=["src", "trg", "rail", "operator"])
     [["link", "line", "src", "trg"]]
-).view()
+)#.view()
 
 #%% Link travel time [3s]
 tt2 = tt.sort_values(["jrn", "arr"], ignore_index=True)
@@ -60,7 +60,7 @@ links2 = (
     .groupby("link")
     ["time"].agg(time="median", sd_time=lambda x: x.std(ddof=0))
     .merge(links, on="link")
-).view()
+)#.view()
 
 #%% Link frequency
 # median daily frequency over the link's active service dates
@@ -105,7 +105,7 @@ links2 = (
       "dist", "time", "sd_time", "freq"]]
     .astype({"n_lines": UI16, "dist": F32, "time": F32,
              "sd_time": F32, "freq": F32})
-).view()
+)#.view()
 C.save(links2, "pt-links")
 
 #%%

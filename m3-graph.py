@@ -70,7 +70,7 @@ car_links = (
     car.assign(
         src=car["src_fua"].map(lambda x: f"FUA_{x:03}"),
         trg=car["trg_fua"].map(lambda x: f"FUA_{x:03}"),
-        kind="intercity",
+        kind="Intercity",
         mode="Car",
         operator=pd.NA,
         freq=np.nan,
@@ -84,7 +84,7 @@ air_links = (
     air.assign(
         src="AIR_" + air["src"].astype(str),
         trg="AIR_" + air["trg"].astype(str),
-        kind="intercity",
+        kind="Intercity",
         mode="Air",
         operator=air["carrier"].astype(str),
     )
@@ -97,8 +97,7 @@ pt_links = (
     pt.assign(
         src=pt["src"].map(lambda x: f"STN_{x:04}"),
         trg=pt["trg"].map(lambda x: f"STN_{x:04}"),
-        kind=pt["intercity"].map(
-            {False: "intraurban", True: "intercity"}),
+        kind=pt["intercity"].map({False: "Intraurban", True: "Intercity"}),
         mode=pt["rail"].map({False: "Bus", True: "Rail"}),
     )
     [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
@@ -115,7 +114,7 @@ connector_links = (
     connectors.assign(
         src=connectors["fua"].map(lambda x: f"FUA_{x:03}"),
         trg=connectors["hub_id"],
-        kind="connector",
+        kind="Connector",
         mode="Car",
         operator=pd.NA,
         freq=np.nan,
