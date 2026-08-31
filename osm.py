@@ -24,7 +24,7 @@ logging.getLogger("pyogrio").setLevel(logging.WARNING)
 
 #%% Country-level rai/highway OSM geodatabase [53m19s]
 snapshot_date = params.OSM_SNAPSHOT_DATE
-snapshot_uri = snapshot_date.strftime("%y%m%d")
+snapshot_str = snapshot_date.strftime("%y%m%d")
 C.log(f"Downloading country-wise OSM snapshots on {snapshot_date}")
 osm_uris = dict(
     AT = "austria",
@@ -56,7 +56,7 @@ osm_uris = dict(
     SK = "slovakia",
     UK = "united-kingdom",
 )
-outdir = C.mkdir(C.DATA / f"osm/country-{snapshot_uri}")
+outdir = C.mkdir(C.DATA / f"osm/country-{snapshot_str}")
 for icc, uri in osm_uris.items():
     if (outfile := outdir / f"{icc}.osm.pbf").exists():
         continue
@@ -64,7 +64,7 @@ for icc, uri in osm_uris.items():
         C.log(f"Downloading OSM extract for {icc}")
         full_pbf = outdir / f"full-{icc}.osm.pbf"
         url = "https://download.geofabrik.de/europe/"
-        url += f"{uri}-{snapshot_uri}.osm.pbf"
+        url += f"{uri}-{snapshot_str[2:]}.osm.pbf"
         resp = requests.get(url, stream=True)
         resp.raise_for_status()
         with open(full_pbf, "wb") as f:
@@ -87,7 +87,7 @@ C.log("Generating railway network")
 rail = C.load(filename := "osm/railways")
 if rail is None:
     rail = []
-    indir = C.DATA / f"osm/country-{snapshot_uri}"
+    indir = C.DATA / f"osm/country-{snapshot_str}"
     outdir = C.mkdir(C.DATA / "osm/railways")
     for icc in osm_uris:
         try:
@@ -151,7 +151,7 @@ if hway is None:
         tmpfile = tmpdir / f"{icc}.osm.pbf"
         subprocess.run(shlex.split(
             f"osmium tags-filter --overwrite -f pbf -o {tmpfile} " + 
-            f"{C.DATA}/osm/country-{snapshot_uri}/{icc}.osm.pbf " + 
+            f"{C.DATA}/osm/country-{snapshot_str}/{icc}.osm.pbf " + 
             " ".join([f"w/highway=" + x for x in [
                 "motorway", "motorway_link",
                 "trunk", "trunk_link",
@@ -230,7 +230,7 @@ def clip_osmium(in_osm, in_json, out_osm, overwrite=False):
         
 for icc, df in (pbar := tqdm(fuas.groupby("icc"))):
     pbar.set_description(icc)
-    cntr_osm = C.DATA / f"osm/country-{snapshot_uri}/{icc}.osm.pbf"
+    cntr_osm = C.DATA / f"osm/country-{snapshot_str}/{icc}.osm.pbf"
     grp_osm = C.mkdir(C.DATA / "osm/citygroup") / f"{icc}.osm.pbf"
     grp_json = C.DATA / f"osm/citygroup/{icc}.geojson"
     if not grp_json.exists():
