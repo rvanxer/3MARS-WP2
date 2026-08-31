@@ -256,7 +256,6 @@ lines["intercity"] = (
     .reset_index().drop_duplicates()
     ["line"].value_counts().sort_index()
 ) > 1
-lines#.view();
 
 #%% Major stations [6s]
 C.log("Filtering major stations based on the city pairs they contribute to")
@@ -266,17 +265,17 @@ adj = defaultdict(set)
 stn_od = defaultdict(set)
 all_od = set()
 for line, r in lines[["rail", "stn"]].iterrows():
-    rail = bool(r["rail"])
+    is_rail = bool(r["rail"])
     stn_seq = tuple(dict.fromkeys(map(int, r["stn"])))
     stn_fua = {stn: int(stns.at[stn, "fua"]) for stn in stn_seq}
     fua_seq = tuple(dict.fromkeys(stn_fua.values()))
-    line_od = {(rail, *sorted(x)) for x in combinations(fua_seq, 2)}
+    line_od = {(is_rail, *sorted(x)) for x in combinations(fua_seq, 2)}
     all_od.update(line_od)
     for stn in stn_seq:
         stn_od[stn].update(line_od)
     for src, trg in combinations(stn_seq, 2):
         if stn_fua[src] != stn_fua[trg]:
-            od = (rail, *sorted((stn_fua[src], stn_fua[trg])))
+            od = (is_rail, *sorted((stn_fua[src], stn_fua[trg])))
             adj[src].add((trg, od))
             adj[trg].add((src, od))
 ## Remove a station only when every OD retains another station-pair witness
@@ -290,6 +289,25 @@ for stn in stn_order:
         selected_stns.remove(stn)
         od_support.subtract(removed)
 stns2 = stns.loc[sorted(selected_stns)].view()
+
+#%% Manually fix station names
+# Export all candidate names with city & coordinates
+candidate_names = (
+    stns2.assign(first_name=stns2["name"].str.split(" | ").str[0])
+    .reset_index().rename(columns={"stn": "stn_id", "name": "full_name"})
+    .merge(fuas[["fua", "name"]].rename(columns={"name": "city"}), on="fua")
+    .set_index(["stn_id", "first_name", "full_name", "city"])
+    .get_coordinates().set_axis(["lon", "lat"], axis=1)
+)
+candidate_names.to_csv(C.DATA / "gtfs/stn-names-default.csv")
+# Update station names with manually corrected ones
+stns2 = (
+    stns2.drop(columns="name", errors="ignore")
+    .merge(pd.read_csv(C.DATA / "gtfs/stn-names-revised.csv")
+           .rename(columns={"stn_id": "stn"})
+           [["stn", "name"]], on="stn")
+    .set_index("stn")
+)#.view()
 
 #%% Update lines
 lines2 = (
@@ -324,7 +342,7 @@ seg["mode"] = (
     .map({(0,): "Bus", (1,): "Rail", (0, 1): "Both"})
 )
 seg["intercity"] = seg["src"].map(stns["fua"]) != seg["trg"].map(stns["fua"])
-seg = seg[["src", "trg", "mode", "intercity", "line"]].view()
+seg = seg[["src", "trg", "mode", "intercity", "line"]]#.view()
 
 #%% Update other tables [3s]
 C.log("Updating other tables")
@@ -336,14 +354,14 @@ jrn2 = (
     .merge(tt.groupby("jrn")[["jrn", "dep"]].head(1), on="jrn")
     [["jrn", "line", "dateset", "dep", "feed", "trip", "stopseq", "timeseq"]]
     .astype({"jrn": I32})
-).view()
+)#.view()
 tt2 = (
     tt[(tt["stn"].isin(stns2.index)) &
        (tt["jrn"].isin(jrn2["jrn"]))]
-).view()
+)#.view()
 datesets2 = datesets.loc[jrn2["dateset"].unique()].sort_index()
 datesets2.columns = list(map(str, datesets2.columns))
-datesets2 = datesets2.reset_index().astype({"dateset": I32}).view()
+datesets2 = datesets2.reset_index().astype({"dateset": I32})#.view()
 
 #%% Export [3s]
 C.log("Saving intercity data tables")

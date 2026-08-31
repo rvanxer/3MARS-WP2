@@ -70,7 +70,7 @@ for fua, fua_name in zip(fuas.index, fuas["name"]):
     try:
         fpath = C.mkdir(C.DATA / "connectors") / f"{fua}.parquet"
         if not fpath.exists():
-            C.log(f"Processing #{fua}: {fua_name}")
+            C.log(f"Computing access times for #{fua}: {fua_name}")
             ttm = get_access_times(fua)
             ttm.to_parquet(fpath)
     except Exception as e:
