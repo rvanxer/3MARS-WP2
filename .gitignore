@@ -4,3 +4,4 @@ _old
 fig
 notebooks
 *.ipynb
+env.yml

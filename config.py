@@ -21,21 +21,26 @@ CRS_DEG = "EPSG:4326"
 # Spatial CRS best suited for Europe (unit: metres)
 CRS_EU = "EPSG:3035"
 
-#%% Important paths
-def mkdir(path):
-    """Shorthand for making a folder if it does not exist."""
-    assert isinstance(path, str) or isinstance(path, Path)
-    Path(path).mkdir(exist_ok=True, parents=True)
-    return Path(path)
+#%% User-specific environment variables
+with open("env.yml", "r") as f:
+    env_data = yaml.safe_load(f)
 
-#%% Important paths
-# Path of data directory containing exported files
-DATA = mkdir("/Users/rajatverma/Documents/research-data/3mars")
+# Main data directory for the project
+DATA = Path(env_data.get("DATA_DIR", "../data")).resolve()
+DATA.mkdir(parents=True, exist_ok=True)
+
+# Folder for output figures [optional]
+FIG = Path(env_data.get("FIG_DIR", "fig")).resolve()
+FIG.mkdir(parents=True, exist_ok=True)
+
 # MobilityDatabase API key
-MDB_API_KEY = "AMf-vBw1LcS2B7T4F1U4auIddWQ351bQG9SC0ZM3feHRn-L9FLwHMlTFiHEjD_s8C_NYiwu7TsmF7ngSorr9Ly53df3lPpBDGDa1SZc4ChZGnSNSlvX2_LXa01SpGwZxhvragSOHrYYYa_05927hdkuBetSdgAx-jpZYLF7mtgExwwbKlRZDTPzGQE4hbQGwU927Nd8N8rAAxAyDg9hi-2WS6c3UijCqMl5U6dHTrvaRJ_7MGerqXXqQ68QejUroxMPrCtUAlTcg7-mi7phy0Dgo0uTJwyGUA9_1nWFWVMI0_JbfUhGp4XVaTnUYX0ujiRtQCypz6RMaPYkUJwsGChCgOx6Wx1HyoRbooyQAfSdm3PaypMx5Cyba82rhH4NSOEhDQh2TQ5EHdRk5LJ2JqxEg31Hro7cXI9ENAcE8QoKQZye9N2UlYC7e9JteAMK6fQK4IsJuv7qm"
+MDB_API_KEY = env_data.get("MDB_API_KEY")
+
+# CartoDB access token for plotting basemaps
+CARTO_TOKEN = env_data.get("CARTO_TOKEN")
 
 
-#%% Set up the logger
+#%% Logging
 def setup_logger(
     name: str = "",
     level: int = logging.INFO,
@@ -72,7 +77,14 @@ def error(msg: str, logger=logger):
     logger.error(msg)
 
 
-#%% Shorthands for reading & writing dataframes/tables
+#%% File handling
+def mkdir(path):
+    """Shorthand for making a folder if it does not exist."""
+    assert isinstance(path, str) or isinstance(path, Path)
+    Path(path).mkdir(exist_ok=True, parents=True)
+    return Path(path)
+
+
 def load(name: str, root=DATA, quiet=False, **kwargs):
     """Load a processed parquet file from a given folder into a dataframe."""
     path = Path(root) / f"{name}.parquet"
@@ -105,58 +117,7 @@ def load_params(yml_file: str | Path = Path("params.yml")):
     return SimpleNamespace(**params)
 
 
-#%% Plotting
-pyplot_params = {
-    "axes.edgecolor": "k",
-    "axes.edgecolor": "k",
-    "axes.formatter.use_mathtext": True,
-    "axes.grid": True,
-    "axes.labelcolor": "k",
-    "axes.labelsize": 13,
-    "axes.linewidth": 0.5,
-    "axes.titlesize": 15,
-    "figure.dpi": 150,
-    "figure.titlesize": 15,
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Noto Sans", "DejaVu Serif"],
-    "grid.alpha": 0.15,
-    "grid.color": "k",
-    "grid.linewidth": 0.5,
-    "legend.edgecolor": "none",
-    "legend.facecolor": ".9",
-    "legend.fontsize": 11,
-    "legend.framealpha": 0.5,
-    "legend.labelcolor": "k",
-    "legend.title_fontsize": 13,
-    "mathtext.fontset": "cm",
-    "text.color": "k",
-    "text.color": "k",
-    "xtick.bottom": True,
-    "xtick.color": "k",
-    "xtick.labelsize": 10,
-    "xtick.minor.visible": True,
-    "ytick.color": "k",
-    "ytick.labelsize": 10,
-    "ytick.left": True,
-    "ytick.minor.visible": True,
-}
-
-def imsave(title=None, fig=None, ax=None, dpi=300,
-           root="../fig", ext="png", opaque=True):
-    """Save the current matplotlib figure to disk."""
-    fig = fig or plt.gcf()
-    ax = ax or fig.axes[0]
-    time = datetime.now().strftime("%Y-%m-%d_%H-%m-%S")
-    title = title or fig._suptitle or ax.get_title() or f"Untitled {time}"
-    fig.savefig(
-        f"{mkdir(root)}/{title}.{ext}",
-        dpi=dpi,
-        bbox_inches="tight",
-        transparent=not opaque,
-        facecolor="white" if opaque else "auto",
-    )
-
-#%% Convenience functions
+#%% Data handling
 def pdf2gdf(df: pd.DataFrame, x: str = "lon", y: str = "lat",
             crs=None, drop_cols=True) -> gpd.GeoDataFrame:
     """Convert a pandas DataFrame to a geopandas GeoDataFrame by creating
@@ -200,3 +161,55 @@ def _map(df: gpd.GeoDataFrame, *args, tiles="CartoDB.Voyager", **kwargs):
     return df.explore(*args, tiles=tiles, **kwargs)
     
 gpd.GeoDataFrame.map = _map
+
+
+#%% Plotting
+pyplot_params = {
+    "axes.edgecolor": "k",
+    "axes.edgecolor": "k",
+    "axes.formatter.use_mathtext": True,
+    "axes.grid": True,
+    "axes.labelcolor": "k",
+    "axes.labelsize": 13,
+    "axes.linewidth": 0.5,
+    "axes.titlesize": 15,
+    "figure.dpi": 150,
+    "figure.titlesize": 15,
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "Noto Sans", "DejaVu Serif"],
+    "grid.alpha": 0.15,
+    "grid.color": "k",
+    "grid.linewidth": 0.5,
+    "legend.edgecolor": "none",
+    "legend.facecolor": ".9",
+    "legend.fontsize": 11,
+    "legend.framealpha": 0.5,
+    "legend.labelcolor": "k",
+    "legend.title_fontsize": 13,
+    "mathtext.fontset": "cm",
+    "text.color": "k",
+    "text.color": "k",
+    "xtick.bottom": True,
+    "xtick.color": "k",
+    "xtick.labelsize": 10,
+    "xtick.minor.visible": True,
+    "ytick.color": "k",
+    "ytick.labelsize": 10,
+    "ytick.left": True,
+    "ytick.minor.visible": True,
+}
+
+def imsave(title=None, fig=None, ax=None, dpi=300,
+           root=FIG, ext="png", opaque=True):
+    """Save the current matplotlib figure to disk."""
+    fig = fig or plt.gcf()
+    ax = ax or fig.axes[0]
+    time = datetime.now().strftime("%Y-%m-%d_%H-%m-%S")
+    title = title or fig._suptitle or ax.get_title() or f"Untitled {time}"
+    fig.savefig(
+        f"{mkdir(root)}/{title}.{ext}",
+        dpi=dpi,
+        bbox_inches="tight",
+        transparent=not opaque,
+        facecolor="white" if opaque else "auto",
+    )
