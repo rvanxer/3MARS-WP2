@@ -26,7 +26,7 @@ if sched is None:
         ("EFFTO", "end_date", "category"),
     )
     sched = (
-        pd.read_csv(C.DATA / "air/oag-schedules.zip",
+        pd.read_csv(C.DATA / "oag-schedules.zip",
                     usecols=[c[0] for c in cols])
         .rename(columns={c[0]: c[1] for c in cols})
         .astype({c[1]: c[2] for c in cols})
