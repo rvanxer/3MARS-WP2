@@ -1,4 +1,5 @@
 #%% Imports
+import logging
 from pathlib import Path
 import shlex
 from shutil import rmtree
@@ -15,11 +16,16 @@ from tqdm import tqdm
 
 import config as C
 
+params = C.load_params()
+
 warnings.filterwarnings("ignore", category=pd.errors.ChainedAssignmentError)
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas._config")
+logging.getLogger("pyogrio").setLevel(logging.WARNING)
 
-#%% Country-level rai/highway OSM geodatabase [25:41]
-C.log("Downloading country-wise OSM geodatabase extracts")
+#%% Country-level rai/highway OSM geodatabase [53m19s]
+snapshot_date = params.OSM_SNAPSHOT_DATE
+snapshot_uri = snapshot_date.strftime("%y%m%d")
+C.log(f"Downloading country-wise OSM snapshots on {snapshot_date}")
 osm_uris = dict(
     AT = "austria",
     BE = "belgium",
@@ -50,35 +56,41 @@ osm_uris = dict(
     SK = "slovakia",
     UK = "united-kingdom",
 )
-outdir = C.mkdir(C.DATA / "osm/country")
-for icc, uri in (pbar := tqdm(osm_uris.items())):
+outdir = C.mkdir(C.DATA / f"osm/country-{snapshot_uri}")
+for icc, uri in osm_uris.items():
     if (outfile := outdir / f"{icc}.osm.pbf").exists():
         continue
-    pbar.set_description(icc)
-    full_pbf = outdir / f"full-{icc}.osm.pbf"
-    url = f"https://download.geofabrik.de/europe/{uri}-latest.osm.pbf"
-    resp = requests.get(url, stream=True)
-    resp.raise_for_status()
-    with open(full_pbf, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=8192):
-            if chunk:
-                f.write(chunk)
-    cmd = (f"osmium tags-filter --overwrite -f pbf -o {outfile} {full_pbf} "
-           "w/highway w/railway w/bridge w/tunnel "
-           "r/route=train r/route=light_rail r/route=subway")
-    subprocess.run(shlex.split(cmd))
-    full_pbf.unlink()
+    try:
+        C.log(f"Downloading OSM extract for {icc}")
+        full_pbf = outdir / f"full-{icc}.osm.pbf"
+        url = "https://download.geofabrik.de/europe/"
+        url += f"{uri}-{snapshot_uri}.osm.pbf"
+        resp = requests.get(url, stream=True)
+        resp.raise_for_status()
+        with open(full_pbf, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        C.log(f"Extracting OSM extract for {icc}")
+        subprocess.run(shlex.split(
+            "osmium tags-filter --overwrite -f pbf "
+            f"-o {outfile} {full_pbf} "
+            "w/highway w/railway w/bridge w/tunnel "
+            "r/route=train r/route=light_rail r/route=subway"
+        ), check=True)
+        full_pbf.unlink()
+    except Exception as e:
+        C.error(f"{icc}: {e}")
 
-#%% Railway network [1:53]
+#%% Railway network [1m53s]
 C.log("Generating railway network")
 rail = C.load(filename := "osm/railways")
 if rail is None:
     rail = []
-    indir = C.DATA / "osm/country"
+    indir = C.DATA / f"osm/country-{snapshot_uri}"
     outdir = C.mkdir(C.DATA / "osm/railways")
-    for icc in (pbar := tqdm(osm_uris)):
+    for icc in osm_uris:
         try:
-            pbar.set_description(icc)
             cmd = (f"osmium tags-filter {indir}/{icc}.osm.pbf "
                    "r/route=train r/route=light_rail r/route=subway "
                    "w/railway=rail w/railway=light_rail "
@@ -127,7 +139,7 @@ if rail is None:
         rail = pd.concat([rail, df.assign(icc=icc)], ignore_index=True)
     C.save(rail, filename, compression="zstd")
 
-#%% Highway network [1:37]
+#%% Highway network [1m37s]
 C.log("Generating highway network")
 hway = C.load(filename := "osm/highways")
 if hway is None:
@@ -137,14 +149,14 @@ if hway is None:
     for icc in (pbar := tqdm(osm_uris)):
         pbar.set_description(icc)
         tmpfile = tmpdir / f"{icc}.osm.pbf"
-        cmd = (f"osmium tags-filter --overwrite -f pbf -o {tmpfile} " + 
-               f"{C.DATA}/osm/country/{icc}.osm.pbf " + 
-               " ".join([f"w/highway=" + x for x in [
-                    "motorway", "motorway_link",
-                    "trunk", "trunk_link",
-                    "primary", "primary_link"
-                ]]))
-        subprocess.run(shlex.split(cmd), check=True)
+        subprocess.run(shlex.split(
+            f"osmium tags-filter --overwrite -f pbf -o {tmpfile} " + 
+            f"{C.DATA}/osm/country-{snapshot_uri}/{icc}.osm.pbf " + 
+            " ".join([f"w/highway=" + x for x in [
+                "motorway", "motorway_link",
+                "trunk", "trunk_link",
+                "primary", "primary_link"
+        ]])), check=True)
         outfile = outdir / tmpfile.name
         cmd = f"osmium cat -c version -o {outfile} --overwrite {tmpfile}"
         subprocess.run(shlex.split(cmd), check=True)
@@ -202,8 +214,8 @@ if hway is None:
     gpkg_path.unlink()
     C.save(hway, filename, compression="zstd")
 
-#%% Urban area group extracts by country [1:48]
-fuas = C.load("fuas").to_crs(C.CRS_DEG).view()
+#%% Urban area extracts [8m3s]
+fuas = C.load("fuas").to_crs(C.CRS_DEG)#.view()
 
 def clip_osmium(in_osm, in_json, out_osm, overwrite=False):
     if out_osm.exists() and not overwrite:
@@ -216,25 +228,23 @@ def clip_osmium(in_osm, in_json, out_osm, overwrite=False):
     except Exception as e:
         print(f"ERROR in {str(in_json).split("/")[-1]}: {e}")
         
-# runtime 1:48
 for icc, df in (pbar := tqdm(fuas.groupby("icc"))):
     pbar.set_description(icc)
-    in_osm = C.DATA / f"osm/country/{icc}.osm.pbf"
-    out_osm = C.mkdir(C.DATA / "osm/citygroup") / f"{icc}.osm.pbf"
-    in_json = C.DATA / f"osm/citygroup/{icc}.geojson"
-    if not in_json.exists():
-        df[["geometry"]].dissolve().to_file(in_json, driver="GeoJSON")
-    clip_osmium(in_osm, in_json, out_osm, overwrite=False)
-    in_json.unlink()
-
-#%% Urban area extracts [6:15]
-for fua_id, r in (pbar := tqdm(fuas.iterrows(), total=len(fuas))):
-    pbar.set_description(r["name"])
-    in_osm = C.DATA / f"osm/citygroup/{r.icc}.osm.pbf"
-    in_json = C.mkdir(C.DATA / "osm/city") / f"{fua_id}.geojson"
-    if not in_json.exists():
-        boundary = gpd.GeoDataFrame(r.to_frame().T, crs=C.CRS_DEG)
-        boundary.to_file(in_json, driver="GeoJSON")
-    out_osm = C.DATA / "osm/city" / f"{fua_id}.osm.pbf"
-    clip_osmium(in_osm, in_json, out_osm, overwrite=0)
-    in_json.unlink()
+    cntr_osm = C.DATA / f"osm/country-{snapshot_uri}/{icc}.osm.pbf"
+    grp_osm = C.mkdir(C.DATA / "osm/citygroup") / f"{icc}.osm.pbf"
+    grp_json = C.DATA / f"osm/citygroup/{icc}.geojson"
+    if not grp_json.exists():
+        df[["geometry"]].dissolve().to_file(grp_json, driver="GeoJSON")
+    clip_osmium(cntr_osm, grp_json, grp_osm, overwrite=False)
+    for fua_id, r in df.iterrows():
+        city_osm = C.DATA / "osm/city" / f"{fua_id}.osm.pbf"
+        if not city_osm.exists():
+            city_json = C.mkdir(C.DATA / "osm/city") / f"{fua_id}.geojson"
+            if not city_json.exists():
+                boundary = gpd.GeoDataFrame(r.to_frame().T, crs=C.CRS_DEG)
+                boundary.to_file(city_json, driver="GeoJSON")
+            clip_osmium(grp_osm, city_json, city_osm, overwrite=False)
+            city_json.unlink()
+    grp_json.unlink()
+    grp_osm.unlink()
+grp_osm.parent.unlink()

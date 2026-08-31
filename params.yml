@@ -1,3 +1,5 @@
+# Snapshot date of OSM extracts for study countries
+OSM_SNAPSHOT_DATE: 2026-08-30
 # Minimum population of a functional urban area (FUA)
 MIN_FUA_POPU: 200000
 # Reference/baseline date that defines `day_id` in table `gtfs-datesets`
