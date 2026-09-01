@@ -20,7 +20,7 @@ countries = C.load("countries")#.view()
 snapshot_date = params.MDB_SNAPSHOT_DATE
 snapshot_end = datetime.combine(snapshot_date, time.max, timezone.utc)
 snapshot_str = snapshot_date.strftime("%y%m%d")
-outdir = C.mkdir(C.DATA / f"gtfs/mdb-feeds-{snapshot_str}")
+outdir = C.mkdir(C.DATA / f"gtfs/feeds")
 
 #%% MobilityDatabase API [4s]
 if not C.MDB_API_KEY:
@@ -97,43 +97,39 @@ def download_dataset(feed: str, url: str, expected_hash: str,
     if actual_hash != expected_hash:
         tempfile.unlink()
         return download_dataset(feed, url, expected_hash=actual_hash)
-        # raise ValueError("SHA-256 mismatch: expected "
-        #                  f"{expected_hash}, got {actual_hash}")
     tempfile.replace(outfile)
     return actual_hash
 
-#%% MDB dataset catalog [3m56s]
-catalog_file = C.DATA / f"gtfs/mdb-feeds-{snapshot_str}/catalog.csv"
+#%% MDB dataset catalog [4m41s]
+catalog_file = C.DATA / f"gtfs/mdb-feeds-{snapshot_str}.csv"
 if not catalog_file.exists():
     C.log(f"Identifying MDB datasets closest to {snapshot_date}")
     feeds = []
-    pbar = tqdm(countries.index)
-    for batch in np.array_split(countries.index, 4):
-        for icc in countries["icc"].iloc[batch]:
-            pbar.set_description(icc)
-            for f in mdb_api.get_providers_by_country(icc): # for each feed
-                try:
-                    if (
-                        f["data_type"] == "gtfs" and
-                        f["status"] != "deprecated" and
-                        (ds := get_snapshot_dataset(f))
-                    ):
-                        date = pd.to_datetime(ds["downloaded_at"], utc=True)
-                        feeds.append(dict(
-                            name = f["id"],
-                            provider = f["provider"],
-                            status = f["status"].title(),
-                            download_date = str(date.date()),
-                            delta_days = (date.date() - snapshot_date).days,
-                            url = ds["hosted_url"],
-                            hash = ds["hash"],
-                            start_date = ds.get("service_date_range_start"),
-                            end_date = ds.get("service_date_range_end"),
-                        ))
-                except Exception as e:
-                    C.error(f"{f['id']}: {e}")
-            sleep(2)
-            pbar.update()
+    for icc in (pbar := tqdm(countries.index)):
+        pbar.set_description(icc)
+        for feed in mdb_api.get_providers_by_country(icc):
+            try:
+                if (
+                    feed["data_type"] == "gtfs" and
+                    feed["status"] != "deprecated" and
+                    (ds := get_snapshot_dataset(feed))
+                ):
+                    date = pd.to_datetime(ds["downloaded_at"], utc=True)
+                    feeds.append(dict(
+                        name = feed["id"],
+                        provider = feed["provider"],
+                        status = feed["status"].title(),
+                        download_date = str(date.date()),
+                        delta_days = (date.date() - snapshot_date).days,
+                        url = ds["hosted_url"],
+                        hash = ds["hash"],
+                        start_date = ds.get("service_date_range_start"),
+                        end_date = ds.get("service_date_range_end"),
+                    ))
+            except Exception as e:
+                C.error(f"{feed['id']}: {e}")
+        sleep(2)
+        pbar.update()
     feeds = (
         pd.DataFrame(feeds)
         .drop_duplicates("name")
@@ -146,6 +142,7 @@ feeds = pd.read_csv(catalog_file)#.view()
 # Remove existing feeds not in the current MDB catalog
 for file in sorted(outdir.glob("*.zip")):
     feed = file.stem
+    # skip the manual feeds (that start with "man-")
     if feed not in list(feeds["name"]) and not feed.startswith("man-"):
         file.unlink()
         C.warn(f"Deleted stale feed '{feed}'")

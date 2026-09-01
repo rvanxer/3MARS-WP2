@@ -9,18 +9,17 @@ import pandas as pd
 from tqdm import tqdm
 from zipfile import ZipFile
 
+I16, I32 = np.int16, np.int32
+
 import config as C
 
 params = C.load_params()
-
-#%% Constants
-ROOT = C.DATA / "gtfs/feeds"
 
 #%% Compile feed info and assign feed_id
 feeds = []
 imp_tables = ("agency", "routes", "stops", "trips", "stop_times",
               "calendar", "calendar_dates")
-for file in sorted(ROOT.glob("*.zip")):
+for file in sorted(C.DATA.glob("gtfs/feeds/*.zip")):
     with ZipFile(file, "r") as zf:
         size_zip = sum([f.compress_size for f in zf.infolist()]) / 1024 ** 2
         size_unzip = sum([f.file_size for f in zf.infolist()]) / 1024 ** 2
@@ -43,23 +42,23 @@ feeds = (
     .reset_index()
     .rename_axis("id")
     .reset_index()
-    .astype({"id": np.int16})
-).view()
-C.save(feeds, "gtfs/feed-info")
+    .astype({"id": I16})
+)#.view()
+C.save(feeds, "feed-info")
 
 #%% Read generic GTFS table
 def read_gtfs_table(
     feed: str,
     table: str,
-    root: str | Path = ROOT,
+    root: str | Path = C.DATA / "gtfs/feeds",
     feeds: pd.DataFrame = feeds,
     cols: list[str] = [],
     dtypes: dict[str] = None,
     warn: bool = False
 ):
     """Load a table from a zipped GTFS feed file."""
-    feed_id = np.int16(feeds[feeds["name"] == feed]["id"].iloc[0])
     try:
+        feed_id = I16(feeds[feeds["name"] == feed]["id"].iloc[0])
         with ZipFile(Path(root) / f"{feed}.zip", "r") as zf:
             files = [f for f in zf.namelist() if Path(f).stem == table]
             if len(files) == 0:
@@ -73,17 +72,18 @@ def read_gtfs_table(
                 if len(cols) > 0:
                     file_cols = [c for c in file_cols if c.strip() in cols]
             with zf.open(files[0]) as f:
-                df = pd.read_csv(f, usecols=file_cols, dtype=dtypes, low_memory=False)
+                df = pd.read_csv(f, usecols=file_cols,
+                                 dtype=dtypes, low_memory=False)
                 df.rename(columns=str.strip, inplace=True)
                 for c in cols:
                     if c not in df.columns:
                         df[c] = None
         df = df if len(cols) == 0 else df[cols]
+        df.insert(0, "fid", I16(feed_id))
     except Exception as e:
         if warn:
             C.error(f"{feed}: {e}")
-        df = pd.DataFrame([], columns=cols)
-    df.insert(0, "fid", np.int16(feed_id))
+        df = pd.DataFrame([], columns=["fid"] + list(cols))
     return df
 
 # df = read_gtfs_table("man-Estonia", "stops"); df
@@ -122,7 +122,7 @@ def get_routes(feed):
         df[df["mode_id"].str.isdigit()]
         .astype({"agency_id": str})
         .merge(agency[["agency_id", "agency", "tz"]], "left", on="agency_id")
-        .astype({"route_id": str, "mode_id": np.int16, "agency_id": str})
+        .astype({"route_id": str, "mode_id": I16, "agency_id": str})
         [["fid", "route_id", "name", "agency", "tz", "mode_id"]]
         .rename_axis("id")
     )
@@ -131,7 +131,8 @@ def get_routes(feed):
 
 #%% Service dates
 def get_service_dates(feed: str,
-                      start_date: datetime.date = params.BASE_START_DATE):
+                      start_date: datetime.date = params.BASE_START_DATE,
+                      end_date: datetime.date = params.BASE_END_DATE):
     cal, removed = [pd.DataFrame([], columns=["service_id", "date"])] * 2
     start_int = int(str(start_date).replace("-", ""))
     ## Calendar table
@@ -147,6 +148,7 @@ def get_service_dates(feed: str,
         def get_imp_dates(r):
             dates = pd.date_range(r["start_date"], r["end_date"])
             d = dates[dates >= pd.to_datetime(start_date)]
+            d = dates[dates <= pd.to_datetime(end_date)]
             d = d[d.day_of_week.map(dict(enumerate(r["days"]))).astype(bool)]
             return d.year * 10_000 + d.month * 100 + d.day
         df["date"] = df.apply(get_imp_dates, axis=1)
@@ -164,7 +166,7 @@ def get_service_dates(feed: str,
         removed = pd.concat([removed, exclude])
     ## Combine the two tables
     df = pd.concat([cal, removed])
-    df["day_id"] = np.int32(df["date"] - start_int)
+    df["day_id"] = I32(df["date"] - start_int)
     df.sort_values("day_id", inplace=True)
     df.drop_duplicates(keep=False, inplace=True)
     df = df.astype({"service_id": str})
@@ -192,7 +194,7 @@ def process_feed(feed, overwrite=False):
         .rename(columns={"id": "route_id"})
         .merge(dates["service_id"].explode().reset_index(), on="service_id")
         .rename(columns={"id": "dateset_id"})
-        .astype({"route_id": np.int32, "dateset_id": np.int32})
+        .astype({"route_id": I32, "dateset_id": I32})
         [["fid", "trip_id", "route_id", "dateset_id"]]
         .rename_axis("id")
     )
@@ -203,37 +205,38 @@ def process_feed(feed, overwrite=False):
     tt = read_gtfs_table(
         feed, "stop_times",
         cols=["trip_id", "stop_sequence", "stop_id",
-              "arrival_time", "departure_time"],
-        dtypes={"stop_id": str, "trip_id": str}
-    )
+              "arrival_time", "departure_time"]
+    ).astype({"stop_id": str, "trip_id": str})
     tt = tt.merge(stops[["stop_id"]].reset_index(), on="stop_id")
     tt = tt.drop(columns="stop_id").rename(columns={"id": "stop_id"})
     tt = tt.merge(trips[["trip_id"]].reset_index(), on="trip_id")
     tt = tt.drop(columns="trip_id").rename(columns={"id": "trip_id"})
-    tt = tt.astype({"stop_id": np.int32, "trip_id": np.int32})
+    tt = tt.astype({"stop_id": I32, "trip_id": I32})
     tt.rename(columns={"stop_sequence": "snum", "arrival_time": "arr_time",
                        "departure_time": "dep_time"}, inplace=True)
     tt = tt[['trip_id', 'stop_id', 'snum', 'arr_time', 'dep_time']]
     tt = tt[tt["snum"] <= np.iinfo(np.uint16).max]
     if len(tt) == 0:
-        C.warn(f"{feed}: Empty stop times table")
+        # C.warn(f"{feed}: Empty stop times table")
         return
     for col in ["arr_time", "dep_time"]:
         vals = tt[col].astype("category")
-        h, m, s = list(zip(*vals.cat.categories.str.split(":")))
-        time = np.int32(h) * 3600 + np.int32(m) * 60 + np.int32(s)
-        tt[col] = np.float32(vals.map(dict(zip(vals.cat.categories, time))))
+        cats = vals.cat.categories.astype(str)
+        cats = cats[cats.str.strip() != ""]
+        h, m, s = list(zip(*cats.str.split(":")))
+        time = I32(h) * 3600 + I32(m) * 60 + I32(s)
+        tt[col] = vals.map(dict(zip(cats, time)))
     tt = tt.dropna(subset=["arr_time", "dep_time"])
-    tt = tt.astype({"arr_time": np.int32})
-    tt["wait"] = np.int16(tt.pop("dep_time") - tt["arr_time"])
+    tt = tt.astype({"arr_time": I32})
+    tt["wait"] = I16(tt.pop("dep_time") - tt["arr_time"])
     ## Trips as stop & time sequences
     trips2 = (
         tt.sort_values("snum", ignore_index=True)
         .groupby("trip_id", sort=False)
         .agg({"stop_id": tuple, "arr_time": list, "wait": list})
     )
-    trips2["start"] = np.int32(trips2["arr_time"].str[0])
-    trips2["end"] = np.int32(trips2["arr_time"].str[-1])
+    trips2["start"] = I32(trips2["arr_time"].str[0])
+    trips2["end"] = I32(trips2["arr_time"].str[-1])
     relative_diff = lambda r: tuple(np.array(r["arr_time"]) - r["start"])
     trips2["arr_time"] = trips2.apply(relative_diff, axis=1)
     ## Stop sequences
@@ -253,13 +256,13 @@ def process_feed(feed, overwrite=False):
     trips2 = (
         trips2.merge(stop_seq["trip_id"].explode().reset_index(), on="trip_id")
         .drop(columns="stop_id")
-        .astype({"id": np.int32})
+        .astype({"id": I32})
         .rename(columns={"id": "stopseq_id"})
     )
     trips2 = (
         trips2.merge(time_seq["arr_time"].reset_index(), on="arr_time")
         .drop(columns=["arr_time", "wait"])
-        .astype({"id": np.int32})
+        .astype({"id": I32})
         .rename(columns={"id": "timeseq_id", "trip_id": "id"})
         .merge(trips, on="id")
         .set_index("id")
@@ -271,19 +274,19 @@ def process_feed(feed, overwrite=False):
     ## Update other tables: routes, stops, dates, stop & time sequences
     routes = (
         routes.reset_index()
-        .astype({"id": np.int32})
+        .astype({"id": I32, "agency": str})
         .rename(columns={"route_id": "orig_id"})
         .merge(trips2["route_id"].rename("id").drop_duplicates(), on="id")
     )
     stops = (
         stops.reset_index()
-        .astype({"id": np.int32})
+        .astype({"id": I32})
         .rename(columns={"stop_id": "orig_id"})
         [["id", "orig_id", "name", "lon", "lat"]]
     )
-    stop_seq = stop_seq[["stop_id"]].reset_index().astype({"id": np.int32})
-    time_seq = time_seq[["arr_time", "wait"]].reset_index().astype({"id": np.int32})
-    dates = dates[["day_id"]].reset_index().astype({"id": np.int32})
+    stop_seq = stop_seq[["stop_id"]].reset_index().astype({"id": I32})
+    time_seq = time_seq[["arr_time", "wait"]].reset_index().astype({"id": I32})
+    dates = dates[["day_id"]].reset_index().astype({"id": I32})
     ## Export tables
     for table, df in {
         "stops": stops,
@@ -298,18 +301,18 @@ def process_feed(feed, overwrite=False):
 # x = process_feed("man-Trenitalia", overwrite=True); x
 # x = process_feed("man-Finland"); x # 33s
 
-#%% Process all feeds [≈40:00]
+#%% Process all feeds [≈33:00]
 C.log("Cleaning original feeds")
 for feed in (pbar := tqdm(feeds.name)):
     pbar.set_description(feed)
     try:
         process_feed(feed, overwrite=False)
     except Exception as e:
-        # C.error(f"{feed}: {str(e).split('\n')[0]}")
+        C.error(f"{feed}: {str(e).split('\n')[0]}")
         pass
 
-#%% Combine all tables [0:21]
-feed2id = feeds.set_index("name")["id"].astype(np.int16)
+#%% Combine all tables [0:19]
+feed2id = feeds.set_index("name")["id"].astype(I16)
 for table in [
     "datesets",
     "routes",

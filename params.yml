@@ -6,6 +6,7 @@ MDB_SNAPSHOT_DATE: 2026-08-30
 MIN_FUA_POPU: 200000
 # Reference/baseline date that defines `day_id` in table `gtfs-datesets`
 BASE_START_DATE: 2020-01-01
+BASE_END_DATE: 2030-01-01
 # Start and end dates of public transport services in GTFS data
 SERVICE_START: 2023-01-01
 SERVICE_END: 2026-12-31

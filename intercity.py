@@ -288,7 +288,7 @@ for stn in stn_order:
     if all(od_support[od] > n for od, n in removed.items()):
         selected_stns.remove(stn)
         od_support.subtract(removed)
-stns2 = stns.loc[sorted(selected_stns)].view()
+stns2 = stns.loc[sorted(selected_stns)]#.view()
 
 #%% Manually fix station names
 # Export all candidate names with city & coordinates
