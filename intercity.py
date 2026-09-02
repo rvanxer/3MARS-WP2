@@ -291,23 +291,23 @@ for stn in stn_order:
 stns2 = stns.loc[sorted(selected_stns)]#.view()
 
 #%% Manually fix station names
-# Export all candidate names with city & coordinates
-candidate_names = (
-    stns2.assign(first_name=stns2["name"].str.split(" | ").str[0])
-    .reset_index().rename(columns={"stn": "stn_id", "name": "full_name"})
-    .merge(fuas[["fua", "name"]].rename(columns={"name": "city"}), on="fua")
-    .set_index(["stn_id", "first_name", "full_name", "city"])
-    .get_coordinates().set_axis(["lon", "lat"], axis=1)
-)
-candidate_names.to_csv(C.DATA / "gtfs/stn-names-default.csv")
-# Update station names with manually corrected ones
-stns2 = (
-    stns2.drop(columns="name", errors="ignore")
-    .merge(pd.read_csv(C.DATA / "gtfs/stn-names-revised.csv")
-           .rename(columns={"stn_id": "stn"})
-           [["stn", "name"]], on="stn")
-    .set_index("stn")
-)#.view()
+# # Export all candidate names with city & coordinates
+# candidate_names = (
+#     stns2.assign(first_name=stns2["name"].str.split(" | ").str[0])
+#     .reset_index().rename(columns={"stn": "stn_id", "name": "full_name"})
+#     .merge(fuas[["fua", "name"]].rename(columns={"name": "city"}), on="fua")
+#     .set_index(["stn_id", "first_name", "full_name", "city"])
+#     .get_coordinates().set_axis(["lon", "lat"], axis=1)
+# )
+# candidate_names.to_csv(C.DATA / "gtfs/stn-names-default.csv")
+# # Update station names with manually corrected ones
+# stns2 = (
+#     stns2.drop(columns="name", errors="ignore")
+#     .merge(pd.read_csv(C.DATA / "gtfs/stn-names-revised.csv")
+#            .rename(columns={"stn_id": "stn"})
+#            [["stn", "name"]], on="stn")
+#     .set_index("stn")
+# )#.view()
 
 #%% Update lines
 lines2 = (

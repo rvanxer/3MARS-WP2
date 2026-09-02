@@ -41,7 +41,7 @@ for stn_seq, mode in zip(line_od["stn"], line_od["mode"]):
 line_od = lines.assign(od=stn_pairs).explode("od", ignore_index=True)
 line_od[["src", "trg", "dist"]] = pd.DataFrame(line_od.pop("od").tolist())
 line_od = line_od.drop_duplicates(["line", "src", "trg"], ignore_index=True)
-line_od.view(1);
+# line_od.view(1);
 
 #%% Links from line station pairs
 links = (

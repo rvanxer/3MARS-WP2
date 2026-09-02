@@ -1,6 +1,7 @@
 __pycache__
 _old
 .DS_Store
+data
 fig
 notebooks
 *.ipynb
