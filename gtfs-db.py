@@ -227,7 +227,7 @@ def process_feed(feed, overwrite=False):
         time = I32(h) * 3600 + I32(m) * 60 + I32(s)
         tt[col] = vals.map(dict(zip(cats, time)))
     tt = tt.dropna(subset=["arr_time", "dep_time"])
-    tt = tt.astype({"arr_time": I32})
+    tt = tt.astype({"dep_time": I32, "arr_time": I32})
     tt["wait"] = I16(tt.pop("dep_time") - tt["arr_time"])
     ## Trips as stop & time sequences
     trips2 = (
@@ -301,7 +301,7 @@ def process_feed(feed, overwrite=False):
 # x = process_feed("man-Trenitalia", overwrite=True); x
 # x = process_feed("man-Finland"); x # 33s
 
-#%% Process all feeds [≈33:00]
+#%% Process all feeds [42m45s]
 C.log("Cleaning original feeds")
 for feed in (pbar := tqdm(feeds.name)):
     pbar.set_description(feed)
@@ -311,7 +311,7 @@ for feed in (pbar := tqdm(feeds.name)):
         C.error(f"{feed}: {str(e).split('\n')[0]}")
         pass
 
-#%% Combine all tables [0:19]
+#%% Combine all tables [24s]
 feed2id = feeds.set_index("name")["id"].astype(I16)
 for table in [
     "datesets",
