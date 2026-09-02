@@ -1,108 +1,63 @@
-# 3MARS European intercity multimodal network
+# 3MG: European intercity multimodal network
 
 ## Introduction
 
-This repository builds a harmonised, multimodal and multilayer representation of long-distance passenger transport in Europe. It combines Functional Urban Areas (FUAs), population, airports, intercity bus and rail services, scheduled flights, the road network and local access links into a common node-link model.
-The immediate output is a static supply graph for network analysis; the longer-term purpose is to support path construction, demand loading and multimodal network assignment.
+This repository provides the pipeline to generate a harmonised schedule-based multimodal intercity network of Europe, hereby called "**3MG**".
+This is the first major outcome of Work Package 2 **(WP2)** of the "**3MARS**" research project.
+The details are provided below.
 
-The work forms part of **3MARS** (*Behavior, Network, Market and Policy Dynamics in Multi-Modal, Multi-Layer and Multi-Class Air and Rail Transport Systems*), an ERC project coordinated by TU Delft from May 2025 to April 2030. The [CORDIS project fact sheet](https://cordis.europa.eu/project/id/101171152) describes 3MARS as developing theories and models for long-distance transport markets in which behaviour, network development, service-provider strategies, pricing and policy interact. The project DOI is [`10.3030/101171152`](https://doi.org/10.3030/101171152).
+### About the project: 3MARS
+The 3MARS project aims to develop theories and models for long-distance transport markets of Europe in which behaviour, network development, service-provider strategies, pricing and policy interact.
 
-This pipeline is principally a data foundation for **Objective 2 / WP2** in the [3MARS Part B1 proposal](<../docs/Proposal - ERC-CoG-2024-B1_3MARS.pdf>). WP2 proposes a multi-class,  multilayer and multimodal assignment model based on a
-temporal graph with time-dependent flows. It must represent intermodal trips, infrastructure-service interdependencies, capacity limits, transfers and spatially and temporally varying prices. The present repository does **not** yet solve that assignment problem. It constructs and validates the European-scale network layers on which that later model can operate.
+- **Title**: Behavior, Network, Market and Policy Dynamics in Multi-Modal, Multi-Layer and Multi-Class Air and Rail Transport Systems (**3MARS**)
+- **Webpage**: [doi.org/10.3030/101171152](https://doi.org/10.3030/101171152)
+- **Principal investigator**: Dr. Oded Cats ([o.cats@tudelft.nl](mailto:o.cats@tudelft.nl)), Delft University of Technology
+- **Dates**: May 2025 – April 2030
+- **Funder**: European Research Council (grant #101171152)
+<!-- - **WP2 contributors**: Dr. Rajat Verma ([r.verma@tudelft.nl](mailto:r.verma@tudelft.nl)), Hanyu Cheng ([H.Cheng-7@student.tudelft.nl](mailto:H.Cheng-7@student.tudelft.nl)) -->
+
+### About the module: WP2
+Work package 2 (**WP2**) of the 3MARS project that focuses on developing a multi-mode, multi-agency and multi-class traffic flow assignment model for a given intercity demand distribution matrix.
+It is led by Dr. Rajat Verma ([r.verma@tudelft.nl](mailto:r.verma@tudelft.nl)) and supported by Hanyu Cheng ([H.Cheng-7@student.tudelft.nl](mailto:H.Cheng-7@student.tudelft.nl)).
+It has the following core submodules:
+1. Base 3MG generation
+2. Pathset construction
+3. Demand loading and distribution
+4. Mode-route choice modelling
+5. Network assignment (congestion-agnostic)
 
 ## Network description
+**3MG** refers to the "Multi-modal, multi-agency, multi-label (3M) graph" developed as part of the first major task of 3MARS WP2.
+It combines Functional Urban Areas (FUAs), population, airports, intercity bus and rail services, scheduled flights, the road network and local access links into a common node-link model.
+It is a directed multigraph connecting major cities (via FUAs) and their transport hubs with intracity and intercity links by multiple modes and agencies/operators/service providers.
+It consists of two types of nodes:
+- **Cities**: These serve as the demand producers and attractors. They are located by their population-weighted centroids over their boundary.
+- **Transport hubs**: These nodes serve as the supply providers for demand distribution. These consist of airports and public transport (PT) stations, i.e., bus and rail stations.
 
-The audited local snapshot contains two main deliverables:
+3MG has three types of links:
+- **Intercity**: They connect a transport hub of a city to a hub of another city by a unique travel mode and agency/operator (directed). Four modes are considered:
+  - **Car** (driving between city centroids)
+  - **Bus** & **rail** (by different operators)
+  - **Air** (by different airlines)
+- **Local**: They represent the connections among the transport hubs of a city (FUA), used mainly for network connectivity (directed). They are assumed to be used by agency-agnostic local public transportation.
+- **Connector**: These virtual access/egress links serve as the topological connection between the demand generators/attractors (i.e., population distribution of an FUA) and the supply nodes (i.e., the transport hubs of that FUA). They are assumed to be used by car and do not contain any service information.
 
+3MG is a static supply graph in P-space representation, meaning all nodes that have a direct connection by a single service/route are connected by a direct link.
+Its multiple link metrics – travel time, path distance, service frequency, travel cost [currently excluded] and capacity [currently excluded] – provide the basis for multi-class estimation of generalised travel cost (GTC), such as different perceived  GTC for travellers of different income segments or trip purposes.
+
+
+<!-- The audited local snapshot contains two main deliverables: -->
+<!-- 
 | Table | Rows | Meaning |
 |---|---:|---|
-| `m3-nodes.parquet` | 3,986 | Cities, airports and public-transport stations in WGS 84 |
-| `m3-links.parquet` | 195,624 | Directed car, air, bus, rail and urban-access links |
+| `3m-nodes.parquet` | 3,986 | Cities, airports and public-transport stations in WGS 84 |
+| `3m-links.parquet` | 195,624 | Directed car, air, bus, rail and urban-access links | -->
 
-The graph is a **directed multigraph**. Direction matters for scheduled services and road times, while the same ordered node pair may have several links for different modes or operators. It is currently a static, service-aggregated representation: `time` and `freq` summarise timetables or routing results rather than describing a complete time-dependent event graph.
-
-### Nodes: `m3-nodes.parquet`
-
-Node identifiers are globally unique strings. City locations are
-population-weighted FUA centres, airport locations are published airport coordinates and station locations are the mean coordinates of clustered GTFS terminal stops. Station type is inferred from the bus and rail lines serving the station.
-
-| Node kind | ID pattern | Rows | Interpretation |
-|---|---|---:|---|
-| City | `FUA_###` | 384 | FUA with population of at least 200,000 |
-| Airport | `AP_IATA` | 297 | Airport with at least one retained scheduled air service |
-| Bus station | `STN_####` | 1,258 | Cluster served only by bus lines |
-| Rail station | `STN_####` | 95 | Cluster served only by rail lines |
-| Multimodal station | `STN_####` | 1,952 | Cluster served by both bus and rail lines |
-
-| Field | Logical type | Description |
-|---|---|---|
-| `node_id` | string | Primary key; globally unique prefixed node ID |
-| `kind` | category | `City`, `Airport`, `Bus station`, `Rail station` or `Multimodal station` |
-| `local_id` | string | FUA ID, IATA code or intercity station ID before prefixing |
-| `name` | string | FUA, airport or cleaned first station-name candidate |
-| `lon` | float32 | Longitude in WGS 84 (`EPSG:4326`) |
-| `lat` | float32 | Latitude in WGS 84 (`EPSG:4326`) |
-
-### Links: `m3-links.parquet`
-
-The current `m3-links` snapshot contains 145,888 car-coded links (including
-6,982 city-hub connectors), 14,754 air links, 19,803 bus links and 15,179 rail
-links. Self-links are removed. All times are stored in minutes, but their
-construction differs by link family:
-
-| Link family | Endpoints | Construction and interpretation |
-|---|---|---|
-| Intercity car | City → city | Fastest OSRM route between FUA population centres on the retained OSM highway network; includes three manually specified cross-water connections |
-| Air | Airport → airport | Carrier-specific mean scheduled duration and mean flights per day from OAG schedules |
-| Bus and rail | Station → station | Operator-specific adjacent-station links; median timetable time, dispersion, median active-day frequency and median routed distance are first calculated in `pt-links` |
-| Urban connector | City ↔ station or airport | Population-weighted mean OSRM access time from grid cells inside the FUA; the aggregated link is copied in both directions |
-
-| Field | Logical type | Description |
-|---|---|---|
-| `src` | string | Origin `node_id` (foreign key to `m3-nodes.node_id`) |
-| `trg` | string | Destination `node_id` (foreign key to `m3-nodes.node_id`) |
-| `mode` | category | `Car`, `Air`, `Bus` or `Rail`; connectors are presently encoded as `Car` |
-| `operator` | string, nullable | Airline carrier or mapped public-transport operator; null for car and connector links |
-| `time` | float32 | Directional travel time in minutes |
-| `freq` | float32, nullable | Flights per day or median public-transport journeys per active day; null for car and connector links |
-
-The development script `m3-graph.py` currently writes the enriched form as
-`m3-edges.parquet`, adding `kind = intercity | intraurban | connector`. The
-published interface should be standardised on one filename and one schema
-before release. The current audited `m3-links.parquet` is referentially valid;
-the development `m3-edges.parquet` still uses `AIR_` rather than `AP_` for air
-link endpoints and therefore needs correction before it replaces `m3-links`.
-
-### Spatial, temporal and modelling assumptions
-
-- Metric operations use ETRS89-LAEA Europe (`EPSG:3035`); stored geographic
-  geometries and final node coordinates use WGS 84 (`EPSG:4326`).
-- The study area covers 28 countries: 25 EU member states other than Cyprus
-  and Malta, plus Norway, Switzerland and the United Kingdom.
-- Only FUAs with an estimated 2018 population of at least 200,000 are retained.
-- A GTFS stop sequence is intercity when it serves at least two retained FUAs.
-  Candidate terminal stops are clustered with DBSCAN within 400 m. This is a
-  proximity rule, not proof of a walkable or operational interchange.
-- GTFS service dates are retained from 1 January 2023 to 31 December 2026.
-  Public-transport times are converted to UTC with an agency timezone offset
-  evaluated on 15 January 2025, so daylight-saving changes are not modelled.
-- The bus-routing network retains motorway, trunk and primary roads and their
-  link classes. The rail-routing network retains `railway=rail` only.
-- Stations are snapped to a modal OSM graph within 5 km. Unsnapped or
-  unreachable station pairs retain no routed segment distance or geometry.
-- OSM graphs are undirected and distance-weighted. Road direction, turn
-  restrictions, railway operating rights, gauge and track capacity are not
-  represented in the inferred public-transport geometry.
-- Air and public-transport links are timetable aggregates. Capacities, fares,
-  reliability, service-day states and passenger flows are not yet fields in
-  the final graph.
+<!-- The graph is a **directed multigraph**. Direction matters for scheduled services and road times, while the same ordered node pair may have several links for different modes or operators. It is currently a static, service-aggregated representation: `time` and `freq` summarise timetables or routing results rather than describing a complete time-dependent event graph. -->
 
 ## Data sources
 
-The following sources are used by the active pipeline or shown as planned
-inputs in the [WP2 workflow diagram](https://www.figma.com/design/q9qf1ZdNg67NRmT2d4mUEP/3MARS?node-id=864-700&t=8PiWYVmlKl2Zz9uX-1).
-Executable code and archived source files remain authoritative where the
-diagram and pipeline differ.
+The following sources are used by the active pipeline or shown as planned inputs in the [WP2 workflow diagram](https://www.figma.com/design/q9qf1ZdNg67NRmT2d4mUEP/3MARS?node-id=864-700&t=8PiWYVmlKl2Zz9uX-1). Executable code and archived source files remain authoritative where the diagram and pipeline differ.
 
 | Source | Contribution | Status and access |
 |---|---|---|
@@ -122,6 +77,19 @@ diagram and pipeline differ.
 | `gtfs/agency2toc.xlsx` | Manual mapping from GTFS agency names to operators and domiciles | Active project-curated input; no external URL |
 | Google Maps observations | Directional distance and time assumptions for three cross-water car connections | Active manual input; values are embedded in `car-times.py` |
 | [Eurostat air-transport data](https://ec.europa.eu/eurostat/web/transport/data/database) and fare sources | Airport-to-airport flows, fares and car costs shown in the workflow | Planned or incomplete; not included in the present final graph |
+
+### Spatial, temporal and modelling assumptions
+
+- Metric operations use ETRS89-LAEA Europe (`EPSG:3035`); stored geographic geometries and final node coordinates use WGS 84 (`EPSG:4326`).
+- The study area covers 28 countries: 25 EU member states other than Cyprus and Malta, plus Norway, Switzerland and the United Kingdom.
+- Only FUAs with an estimated 2018 population of at least 200,000 are retained.
+- A GTFS stop sequence is intercity when it serves at least two retained FUAs.
+- Candidate terminal stops are clustered with DBSCAN within 400 m. This is a proximity rule, not proof of a walkable or operational interchange.
+- GTFS service dates are retained from 1 January 2023 to 31 December 2026. Public-transport times are converted to UTC with an agency timezone offset evaluated on 15 January 2025, so daylight-saving changes are not modelled.
+- The bus-routing network retains motorway, trunk and primary roads and their link classes. The rail-routing network retains `railway=rail` only.
+- Stations are snapped to a modal OSM graph within 5 km. Unsnapped or unreachable station pairs retain no routed segment distance or geometry.
+- OSM graphs are undirected and distance-weighted. Road direction, turn restrictions, railway operating rights, gauge and track capacity are not represented in the inferred public-transport geometry.
+- Air and public-transport links are timetable aggregates. Capacities, fares, reliability, service-day states and passenger flows are not yet fields in the final graph.
 
 ## How to use
 
@@ -202,10 +170,7 @@ flowchart LR
 
 ### Runtime dependencies
 
-Run the scripts from this `code/` directory. The source uses Python 3.10+
-syntax, GeoParquet and Shapely 2 operations. No supported lockfile is currently
-included, so the following list is a reproducibility specification rather than
-a tested one-command environment:
+Run the scripts from this `code/` directory. The source uses Python 3.10+ syntax, GeoParquet and Shapely 2 operations. No supported lockfile is currently included, so the following list is a reproducibility specification rather than a tested one-command environment:
 
 ```bash
 python -m pip install \
@@ -216,28 +181,19 @@ python -m pip install \
 
 System dependencies are:
 
-- [Docker](https://www.docker.com/) for
-  `ghcr.io/project-osrm/osrm-backend:v5.27.1`;
-- [Osmium Tool](https://osmcode.org/osmium-tool/) for filtering, merging and
-  clipping OSM PBF files;
+- [Docker](https://www.docker.com/) for `ghcr.io/project-osrm/osrm-backend:v5.27.1`;
+- [Osmium Tool](https://osmcode.org/osmium-tool/) for filtering, merging and clipping OSM PBF files;
 - [GDAL](https://gdal.org/) with `ogr2ogr` for OSM-to-GeoPackage conversion;
-- R with `remotes`, `zip` and
-  [UK2GTFS](https://github.com/ITSLeeds/UK2GTFS) only when rebuilding the UK
+- R with `remotes`, `zip` and [UK2GTFS](https://github.com/ITSLeeds/UK2GTFS) only when rebuilding the UK
   rail feed;
-- sufficient local storage for raw GTFS archives, country PBF files, OSRM
-  working files and the multi-million-row Parquet tables.
+- sufficient local storage for raw GTFS archives, country PBF files, OSRM working files and the multi-million-row Parquet tables.
 
-The notebooks additionally use `contextily`, `matplotlib-scalebar`, `plotly`,
-`seaborn` and Jupyter/IPython. `kagglehub` is only needed for the experimental
-RENFE fare stage, which does not feed the current final graph.
+The notebooks additionally use `contextily`, `matplotlib-scalebar`, `plotly`, `seaborn` and Jupyter/IPython. `kagglehub` is only needed for the experimental RENFE fare stage, which does not feed the current final graph.
 
 ### Configuration and required local inputs
 
-1. Set `DATA` in `config.py` to a writable data root. The current checkout uses
-   an absolute local path and is therefore not portable without editing.
-2. Supply a Mobility Database refresh token locally through `C.MDB_API_KEY`.
-   Do not commit credentials. The present checkout should be refactored to an
-   environment variable or untracked secrets file before public release.
+1. Set `DATA` in `config.py` to a writable data root. The current checkout uses an absolute local path and is therefore not portable without editing.
+2. Supply a Mobility Database refresh token locally through `C.MDB_API_KEY`. Do not commit credentials. The present checkout should be refactored to an environment variable or untracked secrets file before public release.
 3. Review `params.yml`. Its current study-defining values include:
 
    | Parameter | Value | Effect |
@@ -253,7 +209,6 @@ RENFE fare stage, which does not feed the current final graph.
 
 4. Place non-downloadable or manually acquired inputs where the scripts expect
    them:
-
    - OAG schedules at `DATA/air/oag-schedules-20220801-20251231.zip`;
    - UK ATOC input at `DATA/gtfs/uk-atoc.zip` if the UK feed is rebuilt;
    - operator mapping at `DATA/gtfs/agency2toc.xlsx`;
@@ -262,8 +217,7 @@ RENFE fare stage, which does not feed the current final graph.
 
 ### Rebuild order
 
-The scripts are notebook-style modules with top-level execution rather than a
-single orchestrated command. Run them in this dependency order:
+The scripts are notebook-style modules with top-level execution rather than a single orchestrated command. Run them in this dependency order:
 
 | Stage | Module(s) | Principal outputs |
 |---:|---|---|
@@ -279,31 +233,18 @@ single orchestrated command. Run them in this dependency order:
 | 10 | `m3-graph.py` | `m3-nodes.parquet` and the enriched combined edge table |
 | Optional | `ic-gtfs-feed.py` | `gtfs/eu-intercity.gtfs.zip` for external GTFS validation and reuse |
 
-`osm.py` can run after stage 2 while GTFS processing continues. `air-times.py`
-and `car-times.py` can also run independently once their geographic, OSM and
-licensed inputs are available.
+`osm.py` can run after stage 2 while GTFS processing continues. `air-times.py` and `car-times.py` can also run independently once their geographic, OSM and licensed inputs are available.
 
 ### Current reproducibility boundaries
 
-The source is not yet a turnkey clean-room rebuild. Resolve or record the
-following before treating a run as publication-reproducible:
+The source is not yet a turnkey clean-room rebuild. Resolve or record the following before treating a run as publication-reproducible:
 
-- The project folder is not currently a Git repository and has no dependency
-  lockfile. Record a code revision, environment lock and checksums of every raw
-  source for a citable release.
-- Mobility Database and Geofabrik URLs request the latest available data.
-  Archive every downloaded ZIP/PBF, retrieval date, original URL, licence and
-  SHA-256 checksum rather than relying on a future rerun of `latest` endpoints.
-- `gtfs-db.py` reuses existing per-feed clean caches unless they are explicitly
-  overwritten. A source-feed update is not a clean rebuild unless the matching
-  cache is regenerated.
-- UK rail, operator mapping and cross-water road assumptions contain manual
-  steps.
-- OAG data are licensed and cannot be reconstructed without authorised
-  access.
-- The current connector cache has files for 381 of 384 FUAs; Granada, Patra and
-  Reggio nell'Emilia are absent and should be investigated or explicitly
-  excluded.
+- The project folder is not currently a Git repository and has no dependency lockfile. Record a code revision, environment lock and checksums of every raw source for a citable release.
+- Mobility Database and Geofabrik URLs request the latest available data. Archive every downloaded ZIP/PBF, retrieval date, original URL, licence and SHA-256 checksum rather than relying on a future rerun of `latest` endpoints.
+- `gtfs-db.py` reuses existing per-feed clean caches unless they are explicitly overwritten. A source-feed update is not a clean rebuild unless the matching cache is regenerated.
+- UK rail, operator mapping and cross-water road assumptions contain manual steps.
+- OAG data are licensed and cannot be reconstructed without authorised access.
+- The current connector cache has files for 381 of 384 FUAs; Granada, Patra and Reggio nell'Emilia are absent and should be investigated or explicitly excluded.
 
 For a reproducible release, retain immutable raw inputs, the processed Parquet snapshot, a machine-readable provenance manifest, exact software versions and a validation report. Rebuilding from live feeds should be treated as producing a new version of the network rather than reproducing the old one.
 
@@ -338,6 +279,51 @@ At minimum, a release check should also verify Parquet schemas, GeoParquet CRS m
 - GTFS condensed times are seconds, intercity timetable values are UTC minutes and final link times are minutes.
 - OSM and public-transport distances are kilometres. Per-FUA connector-cache distance and aggregated connector distance are metres.
 - `list<T>` columns preserve ordered sequences unless their description says they are provenance lists or unordered membership collections.
+
+## 3M graph
+
+### Nodes: `m3-nodes.parquet`
+
+Node identifiers are globally unique strings. City locations are population-weighted FUA centres, airport locations are published airport coordinates and station locations are the mean coordinates of clustered GTFS terminal stops. Station type is inferred from the bus and rail lines serving the station.
+
+| Node kind | ID pattern | Rows | Interpretation |
+|---|---|---:|---|
+| City | `FUA_###` | 384 | FUA with population of at least 200,000 |
+| Airport | `AP_IATA` | 297 | Airport with at least one retained scheduled air service |
+| Bus station | `STN_####` | 1,258 | Cluster served only by bus lines |
+| Rail station | `STN_####` | 95 | Cluster served only by rail lines |
+| Multimodal station | `STN_####` | 1,952 | Cluster served by both bus and rail lines |
+
+| Field | Logical type | Description |
+|---|---|---|
+| `node_id` | string | Primary key; globally unique prefixed node ID |
+| `kind` | category | `City`, `Airport`, `Bus station`, `Rail station` or `Multimodal station` |
+| `local_id` | string | FUA ID, IATA code or intercity station ID before prefixing |
+| `name` | string | FUA, airport or cleaned first station-name candidate |
+| `lon` | float32 | Longitude in WGS 84 (`EPSG:4326`) |
+| `lat` | float32 | Latitude in WGS 84 (`EPSG:4326`) |
+
+### Links: `m3-links.parquet`
+
+The current `m3-links` snapshot contains 145,888 car-coded links (including 6,982 city-hub connectors), 14,754 air links, 19,803 bus links and 15,179 rail links. Self-links are removed. All times are stored in minutes, but their construction differs by link family:
+
+| Link family | Endpoints | Construction and interpretation |
+|---|---|---|
+| Intercity car | City → city | Fastest OSRM route between FUA population centres on the retained OSM highway network; includes three manually specified cross-water connections |
+| Air | Airport → airport | Carrier-specific mean scheduled duration and mean flights per day from OAG schedules |
+| Bus and rail | Station → station | Operator-specific adjacent-station links; median timetable time, dispersion, median active-day frequency and median routed distance are first calculated in `pt-links` |
+| Urban connector | City ↔ station or airport | Population-weighted mean OSRM access time from grid cells inside the FUA; the aggregated link is copied in both directions |
+
+| Field | Logical type | Description |
+|---|---|---|
+| `src` | string | Origin `node_id` (foreign key to `m3-nodes.node_id`) |
+| `trg` | string | Destination `node_id` (foreign key to `m3-nodes.node_id`) |
+| `mode` | category | `Car`, `Air`, `Bus` or `Rail`; connectors are presently encoded as `Car` |
+| `operator` | string, nullable | Airline carrier or mapped public-transport operator; null for car and connector links |
+| `time` | float32 | Directional travel time in minutes |
+| `freq` | float32, nullable | Flights per day or median public-transport journeys per active day; null for car and connector links |
+
+The development script `m3-graph.py` currently writes the enriched form as `m3-edges.parquet`, adding `kind = intercity | intraurban | connector`. The published interface should be standardised on one filename and one schema before release. The current audited `m3-links.parquet` is referentially valid; the development `m3-edges.parquet` still uses `AIR_` rather than `AP_` for air link endpoints and therefore needs correction before it replaces `m3-links`.
 
 ### Compact data dictionary
 
