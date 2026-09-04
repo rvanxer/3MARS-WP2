@@ -1,5 +1,15 @@
 # 3MG: European intercity multimodal network
 
+## Table of contents
+- [Introduction](#introduction)
+- [Network description](#network-description)
+- [How to use](#how-to-use)
+- [Data sources](#data-sources)
+- [Parameters](#parameters)
+- [Methods](#methods)
+- [Limitations and next steps](#limitations-and-next-steps)
+- [Licensing and attribution](#licensing-and-attribution)
+
 ## Introduction
 
 This repository provides the pipeline used to generate a harmonised, schedule-based multimodal intercity network of Europe, referred to as **3MG**. It is the first major output of Work Package 2 (WP2) of the **3MARS** research project.
@@ -92,7 +102,7 @@ osmium --version | head -2
 ogr2ogr --version
 docker --version
 ```
-5. Create an environment file (`env.yml`) and add the following to it:
+5. Create an environment file (`env.yml`) in the project root and add the following to it:
 ```yml
 # Main data directory for the project (must have read & write permissions)
 DATA_DIR: absolute/path/to/your/target/data/directory
@@ -101,13 +111,14 @@ MDB_API_KEY: personal_MDB_API_key
 # CartoDB API token (optional; mainly used for plotting basemap)
 CARTO_TOKEN: personal_CartoDB_token
 ```
-6. Copy manually acquired/proprietary datasets to `{DATA_DIR}`. This directory should have sufficient local storage for raw GTFS archives, country PBF files, OSRM working files and the multi-million-row Parquet tables.
+In most scripts, the utility import `import config as C` loads these environment variables as global constants, notably converting `DATA_DIR` of env.yml to `C.DATA`.
+6. Copy manually acquired/proprietary datasets to `{C.DATA}`. This directory should have sufficient local storage for raw GTFS archives, country PBF files, OSRM working files and the multi-million-row Parquet tables.
    - manually acquired GTFS ZIPs alongside downloaded feeds in `gtfs/feeds/`.
    - UK ATOC input at `gtfs/uk-atoc.zip` if the UK feed is rebuilt;
    - operator mapping at `gtfs/agency2toc.xlsx`;
    - [Proprietary] OAG schedules to `oag-schedules.zip`;
 
-7. Run the scripts from this directory in this order:
+7. Run the scripts from this directory in the following order:
 
 | Order | Script | Objective |
 |--|--|--|
@@ -128,7 +139,81 @@ CARTO_TOKEN: personal_CartoDB_token
 | 12 | [connectors.py](connectors.py) | Compute population-weighted connector car travel times using OSRM routing. |
 | 13 | [m3-graph.py](m3-graph.py) | Prepare the 3MG using air, car and PT links. |
 
-8. Verify the final graph stored in `{DATA_DIR}/3m-{table}.parquet` for table ∈ {`nodes`, `edges`}.
+A more appropriate workflow diagram is shown below:
+```mermaid
+---
+config:
+  layout: elk
+  elk:
+    nodePlacementStrategy: LINEAR_SEGMENTS
+    mergeEdges: false
+  flowchart:
+    curve: linear
+    nodeSpacing: 35
+    rankSpacing: 70
+  themeCSS: |
+    .arrowMarkerPath {
+      transform: scale(0.65);
+      transform-origin: center;
+    }
+---
+flowchart LR
+    countries["countries.py"]
+    cities["cities.py"]
+    gtfsSources["mdb.py<br/>trenitalia.py<br/>uk-rail.r"]
+    gtfsDb["gtfs-db.py"]
+    intercity["intercity.py"]
+    tocs["tocs.py"]
+    osm["osm.py"]
+    osrm["osrm.py"]
+    segGeometry["seg-geometry.py"]
+    icGtfsFeed["ic-gtfs-feed.py"]
+    carTimes["car-times.py"]
+    airTimes["air-times.py"]
+    ptLinks["pt-links.py"]
+    connectors["connectors.py"]
+    m3graph["m3-graph.py"]
+
+    countries --> cities
+    countries --> gtfsSources
+
+    gtfsSources --> gtfsDb
+    gtfsDb --> intercity
+
+    cities --> intercity
+    cities --> osm
+    cities --> carTimes
+    cities --> airTimes
+    cities --> connectors
+
+    osm --> segGeometry
+    osm --> carTimes
+
+    intercity --> tocs
+    intercity --> segGeometry
+    intercity --> icGtfsFeed
+    intercity --> ptLinks
+    intercity --> connectors
+
+    tocs --> segGeometry
+    tocs --> icGtfsFeed
+    segGeometry --> icGtfsFeed
+
+    osrm --> carTimes
+    osrm --> connectors
+
+    airTimes --> connectors
+    airTimes --> m3graph
+    carTimes --> m3graph
+    ptLinks --> m3graph
+    connectors --> m3graph
+
+    classDef module fill:#eee,stroke:#888,stroke-width:2px,color:#555;
+    class countries,cities,gtfsSources,gtfsDb,intercity,tocs,osm,osrm,segGeometry,icGtfsFeed,carTimes,airTimes,ptLinks,connectors,m3graph module;
+    linkStyle default stroke:#222,stroke-width:1.5px;
+```
+
+8. Verify the final graph stored in `{C.DATA}/3m-{table}.parquet` for table ∈ {`nodes`, `edges`}.
 ```python
 import config as C
 
@@ -164,38 +249,41 @@ Public transport schedules use [GTFS Schedule](https://gtfs.org/documentation/sc
 
 #### MobilityDatabase processing
 
-For every study country, the MobilityDatabase API is queried for GTFS Schedule feeds. The pipeline selects the most recent dataset downloaded on or before the configured snapshot date, rather than requesting the latest dataset at execution time. The feed identifier, provider, dataset download date, service-date range, hosted URL and expected SHA-256 hash are retained in the dated catalogue. Downloads are streamed to temporary files and moved into the feed collection only after hash verification. Archives whose names begin with `man-` are preserved when stale catalogue downloads are removed.
+For every study country, the MobilityDatabase API is queried for GTFS Schedule feeds. The pipeline selects the most recent dataset downloaded on or before the configured snapshot date `MDB_SNAPSHOT_DATE`, rather than requesting the latest dataset at execution time. The feed identifier, provider, dataset download date, service-date range, hosted URL and expected SHA-256 hash are retained in the dated catalogue. Downloads are streamed to temporary files and moved into the feed collection only after hash verification. Archives whose names begin with `man-` are preserved when stale catalogue downloads are removed.
 
 This process fixes the catalogue cut-off but does not create a single European timetable date. Each selected archive has its own production date, validity period, completeness and licence. Reproducing the snapshot therefore requires preservation of the downloaded ZIP files and the dated catalogue, not merely re-running the API request.
 
 #### Manually acquired and converted feeds
+Several feeds are obtained manually outside of MobilityDatabase.
+They are listed in the table below along with download links (wherever possible) and additional notes.
+Note that unlike MDB feeds, these feeds are downloaded once and not anchored to a fixed snapshot date, meaning their versions may be different on user-side data reproduction.
+These zip files are renamed to `man-{feed_name}.zip` ("man" for "manual") to distinguish from the MDB feeds and stored in `{DATA}/gtfs/feeds`.
+<!-- The following supplemental archives were present in the audited local snapshot. Publisher names and links come from embedded `feed_info.txt` or `agency.txt` metadata where available; they describe provenance, not verified redistribution permission. -->
 
-The following supplemental archives were present in the audited local snapshot. Publisher names and links come from embedded `feed_info.txt` or `agency.txt` metadata where available; they describe provenance, not verified redistribution permission.
-
-| Local feed | Geographic or operator coverage | Recorded publisher or source | Preparation note |
+| Feed name | Region/Operator | Data URL (⬇︎ indicates direct download) | Preparation note |
 |---|---|---|---|
 | ATC | Romania and Moldova, rail | [CFR Călători](https://www.cfrcalatori.ro/), Astra Trans Carpatic and CFM | Multi-agency GTFS archive |
-| BDZ | Bulgaria, rail | [Bulgarian State Railways](https://www.bdz.bg/) | GTFS API export |
-| Elron | Estonia, rail | [Elron](https://elron.ee/) | Operator GTFS archive |
-| Estonia | Estonia, multimodal | [Busmaps](https://busmaps.com/) | Aggregated national archive |
-| EuroStar | International high-speed rail | [Eurostar](https://www.eurostar.com/) | Multi-agency GTFS archive |
-| Finland | Finland, multimodal | [Fintraffic](https://www.fintraffic.fi/en) | National GTFS archive |
-| Latvia | Latvia, rail | [Vivi](https://www.vivi.lv/) | Operator GTFS archive |
-| Lithuania | Lithuania, multimodal | [Lithuanian Transport Safety Administration](https://ltsa.lrv.lt/en/) | National GTFS archive |
-| MAV | Hungary, rail and bus | [MÁV](https://www.mavcsoport.hu/en) | National operator archive |
-| Norway | Norway, multimodal | [Entur](https://developer.entur.org/pages-real-time-intro) | National aggregated GTFS archive |
+| BDZ | Bulgaria, rail | https://sipbg.gov.bg/bgnap/portal/en/catalog/710c84db-9f73-46b2-9731-d0df793a6133 | GTFS API export |
+| Elron | Estonia, rail | ⬇︎ https://eu-gtfs.remix.com/elron.zip | Operator GTFS archive |
+| Estonia | Estonia, multimodal | ⬇︎ https://s3.transitpdf.com/files/uran/improved-gtfs-maanteeamet.zip | Aggregated national archive |
+| EuroStar | International high-speed rail | https://transport.data.gouv.fr/datasets/eurostar-gtfs-plan-de-transport-et-temps-reel | Multi-agency GTFS archive |
+| Finland | Finland, multimodal | ⬇︎ https://mobility.mobility-database.fintraffic.fi/en | National GTFS archive |
+| Latvia | Latvia, rail | ⬇︎ https://vivi.lv/uploads/GTFS.zip | Operator GTFS archive |
+| Lithuania | Lithuania, multimodal | ⬇︎ https://data.public-transport.earth/gtfs/lt | National GTFS archive |
+| MAV | Hungary, rail and bus | https://www.mavcsoport.hu/en/gtfs-request | National operator archive (needs sign up) |
+| Norway | Norway, multimodal | ⬇︎ https://data.public-transport.earth/gtfs/no | National aggregated GTFS archive |
 | OBB | Austria, rail and bus | [ÖBB](https://www.oebb.at/en/) via Busmaps metadata | Aggregated GTFS archive |
-| PKPIntercity | Poland, intercity rail | [PKP Intercity](https://www.intercity.pl/en/) | Operator GTFS archive |
-| PolRegio | Poland, regional rail | [POLREGIO](https://polregio.pl/en/) | Operator GTFS archive |
+| PKPIntercity | Poland, intercity rail | ⬇︎ https://mkuran.pl/gtfs/pkpic.zip | Operator GTFS archive |
+| PolRegio | Poland, regional rail | ⬇︎ https://mkuran.pl/gtfs/polregio.zip | Operator GTFS archive |
 | Poland-rail | Intended Polish rail supplement | [Mikołaj Kuranowski GTFS archive](https://mkuran.pl/gtfs/) | **Requires replacement or exclusion:** the local file contains Japanese operators and is mislabelled |
 | SBB | Switzerland, multimodal | [SBB](https://www.sbb.ch/en/) | National timetable archive |
 | SNCB | Belgium, rail | [NMBS/SNCB](https://www.belgiantrain.be/en) | Operator GTFS archive |
 | SNCF | France, rail | [SNCF](https://www.sncf.com/en) | Operator GTFS archive |
-| Slovakia | Slovakia, rail | [ŽSR](https://www.zsr.sk/) | National rail GTFS archive |
-| Slovenia | Slovenia, bus | [IJPP](https://www.jpp.si/) | National bus GTFS archive |
-| TrainOSE | Greece, rail | [Hellenic Train](https://www.hellenictrain.gr/) | Archive has 2019 service dates and requires currency review |
-| Trenitalia | Italy, rail | [Italian National Access Point](https://www.cciss.it/nap/mmtis/public/) and Trenitalia | NeTEx converted to GTFS; station names and coordinates matched to the [Trainline station database](https://github.com/trainline-eu/stations) |
-| UK_rail | Great Britain, rail | [National Rail timetable data](https://raildata.org.uk/) | ATOC timetable converted with [UK2GTFS](https://github.com/ITSLeeds/UK2GTFS) |
+| Slovakia | Slovakia, rail | https://data.europa.eu/data/datasets/ca4cb74c-7192-4198-b074-34acd9d295e7 | National rail GTFS archive |
+| Slovenia | Slovenia, bus | https://podatki.gov.si/dataset/register-linijskih-odsekov/resource/cc6c38a8-2424-41ae-9b43-f760c09d13b7 | National bus GTFS archive |
+| TrainOSE | Greece, rail | ⬇︎ https://s3.transitpdf.com/files/uran/improved-gtfs-trainose.zip | Archive has 2019 service dates and requires currency review |
+| Trenitalia | Italy, rail | https://www.cciss.it/nap/mmtis/public/en/catalog/Dataset/1077621 | NeTEx converted to GTFS; station names and coordinates matched to the [Trainline station database](https://github.com/trainline-eu/stations) |
+| UK_rail | Great Britain, rail | https://raildata.org.uk/dataProduct/P-04b05b6e-c14d-4a53-ba34-76ee7c48cc72/overview | ATOC timetable converted with [UK2GTFS](https://github.com/ITSLeeds/UK2GTFS) |
 
 The operator mapping in `gtfs/agency2toc.xlsx` is a project-curated input. It translates heterogeneous GTFS agency names into the operator and domicile labels used in 3MG and, because the merge retains only mapped agencies, also determines which candidate intercity services enter the final public transport network.
 
@@ -280,7 +368,7 @@ Air services are filtered to airports within the study countries. Operating-week
 
 Connector links are estimated from every populated grid cell in an FUA to each airport or public transport station within the same FUA. OSRM supplies road distance and time, after which cell results are aggregated to a population-weighted mean for each city–hub pair. The final graph duplicates these connector links in both directions and combines them with intercity road, air and public transport links. Node identifiers use the prefixes `FUA_`, `AP_` and `STN_`; edge records retain link class, mode, operator, travel time and frequency.
 
-The complete field-level catalogue is stored as `{DATA_DIR}/schema.json`. It records each active Parquet table, physical data type, field meaning, units, row count for the audited snapshot and CRS metadata for spatial fields. Rebuilds should regenerate or revalidate this file because both schemas and row counts can change.
+The complete field-level catalogue is stored in `schema.json`. It records each active Parquet table, physical data type, field meaning, units, row count for the audited snapshot and CRS metadata for spatial fields. Rebuilds should regenerate or revalidate this file because both schemas and row counts can change.
 
 ## Limitations and next steps
 
