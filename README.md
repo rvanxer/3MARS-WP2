@@ -75,48 +75,72 @@ cd 3MARS-WP2
 ```
 2. Create a [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) environment and install the dependencies:
 ```bash
-conda create -n 3mars -c conda-forge \
+conda create -n 3mars -c conda-forge --strict-channel-priority \
   python=3.14 pip \
   pyrosm=0.13.1 osmium-tool gdal \
-  r-base r-remotes r-zip
+  r-base=4.5 r-remotes r-zip r-sf
 
 conda activate 3mars
-
-Rscript -e 'remotes::install_github("ITSLeeds/UK2GTFS", upgrade = "never")'
-
 python -m pip install -r requirements.txt
-```
-3. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and run it for [OSRM](https://project-osrm.org)-based shortest path routing for car travel times.
-<!-- 2. If you have [Homebrew](https://brew.sh) installed, use:
-```bash
-brew install docker
- -->
-4. Verify the dependencies setup:
-```bash
+
+# Verify the dependencies
 python -m pip check
 python -c "from pyrosm import OSM; print('Pyrosm OK')"
-
-Rscript -e 'library(remotes); library(zip); library(UK2GTFS); cat("R packages OK\n")'
-
 osmium --version | head -2
 ogr2ogr --version
-docker --version
 ```
-5. Create an environment file (`env.yml`) in the project root and add the following to it:
-```yml
+3. The UK rail timetable needs processing differently. [Optional] Install R dependecies using base R (currently tested on macOS):
+```bash
+BASE_R="/Library/Frameworks/R.framework/Resources/bin/Rscript"
+R_LIB="$HOME/Library/R/arm64/4.5-3mars"
+mkdir -p $R_LIB
+
+env R_LIBS_USER=$R_LIB \
+"$BASE_R" --vanilla -e '
+  lib <- .libPaths()[1]
+
+  install.packages(
+    c("pak", "yaml"),
+    repos = "https://cloud.r-project.org",
+    lib = lib,
+    quiet = TRUE
+  )
+
+  pak::pkg_install(
+    "ITSLeeds/UK2GTFS@87d0545a38f040be7ada5d7088f3169dd3da7e9b",
+    lib = lib,
+    dependencies = NA,
+    ask = FALSE
+  )
+
+  library(UK2GTFS, lib.loc = lib)
+
+  cat(
+    "UK2GTFS", as.character(packageVersion("UK2GTFS")),
+    "loaded from", find.package("UK2GTFS"), "\n"
+  )
+'
+```
+4. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and run it for [OSRM](https://project-osrm.org)-based shortest path routing for car travel times. Verify installation with `docker --version`.
+
+5. Create an environment file (`env.yml`) and add your paths/credentials:
+```bash
+echo "
 # Main data directory for the project (must have read & write permissions)
+# (if left blank, it defaults to '{PWD}/data')
 DATA_DIR: absolute/path/to/your/target/data/directory
 # MobilityDatabase API key (needed for GTFS catalogue and data download)
 MDB_API_KEY: personal_MDB_API_key
 # CartoDB API token (optional; mainly used for plotting basemap)
 CARTO_TOKEN: personal_CartoDB_token
+" > env.yml
 ```
-In most scripts, the utility import `import config as C` loads these environment variables as global constants, notably converting `DATA_DIR` of env.yml to `C.DATA`.
-6. Copy manually acquired/proprietary datasets to `{C.DATA}`. This directory should have sufficient local storage for raw GTFS archives, country PBF files, OSRM working files and the multi-million-row Parquet tables.
-   - manually acquired GTFS ZIPs alongside downloaded feeds in `gtfs/feeds/`.
-   - UK ATOC input at `gtfs/uk-atoc.zip` if the UK feed is rebuilt;
-   - operator mapping at `gtfs/agency2toc.xlsx`;
-   - [Proprietary] OAG schedules to `oag-schedules.zip`;
+
+6. Place manually acquired datasets in your target data directory: `{DATA}`. It should have sufficient local storage for raw GTFS archives, country PBF files, OSRM working files and the multi-million-row Parquet tables. In most scripts, the utility import `import config as C` loads it from [env.yml](env.yml) as the global constant `C.DATA`. Put the following datasets as follows:
+   - Manually acquired GTFS feed zip files in `{DATA}/gtfs/feeds/`, renamed with prefix `man-` (see the [Manual GTFS feeds](#manually-acquired-and-converted-feeds) section).
+   - UK ATOC input at `{DATA}/gtfs/uk-atoc.zip` if the UK feed is rebuilt;
+   - Mapping of agencies to operators in `{DATA}/gtfs/agency2toc.xlsx`;
+   - [Proprietary] Flight schedules as `{DATA}/oag-schedules.zip` (see [Aviation data](#aviation-data-proprietary));
 
 7. Run the scripts from this directory in the following order:
 
@@ -217,6 +241,7 @@ flowchart LR
 ```python
 import config as C
 
+# C.load(table) is equivalent to `pandas.read_parquet(C.DATA / f"{table}.parquet")`
 nodes = C.load("3m-nodes")
 edges = C.load("3m-edges")
 

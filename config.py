@@ -22,11 +22,14 @@ CRS_DEG = "EPSG:4326"
 CRS_EU = "EPSG:3035"
 
 #%% User-specific environment variables
-with open("env.yml", "r") as f:
-    env_data = yaml.safe_load(f)
+try:
+    with open("env.yml", "r") as f:
+        env_data = yaml.safe_load(f)
+except FileNotFoundError:
+    raise FileNotFoundError("Environment file `./env.yml` not found.")
 
 # Main data directory for the project
-DATA = Path(env_data.get("DATA_DIR", "../data")).resolve()
+DATA = Path(env_data.get("DATA_DIR", "./data")).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
 
 # Folder for output figures [optional]
