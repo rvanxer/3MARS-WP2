@@ -60,7 +60,7 @@ It consists of two types of nodes:
 - **Connector**: These virtual access/egress links serve as the topological connection between the demand generators/attractors (i.e., population distribution of an FUA) and the supply nodes (i.e., the transport hubs of that FUA). They are assumed to be used by car and do not contain any service information.
 
 3MG is a static supply graph in P-space representation, meaning all nodes that have a direct connection by a single service or route are connected by a direct link. The modal tables provide travel time, routed distance and service frequency, while the final graph currently retains travel time and frequency. These metrics provide the basis for later multi-class estimates of generalised travel cost (GTC), such as different perceived costs for travellers with different income levels or trip purposes. Fares and capacities are not yet included.
-It is currently a static, service-aggregated representation: travel time and frequency summarise timetables or routing results rather than describing a complete time-dependent event graph.
+<!-- It is currently a static, service-aggregated representation: travel time and frequency summarise timetables or routing results rather than describing a complete time-dependent event graph. -->
 
 The current development snapshot contains 1,370 nodes and 191,476 links; the release-blocking endpoint issue described under [Limitations](#limitations) still applies.
 
@@ -98,23 +98,19 @@ mkdir -p $R_LIB
 env R_LIBS_USER=$R_LIB \
 "$BASE_R" --vanilla -e '
   lib <- .libPaths()[1]
-
   install.packages(
     c("pak", "yaml"),
     repos = "https://cloud.r-project.org",
     lib = lib,
     quiet = TRUE
   )
-
   pak::pkg_install(
     "ITSLeeds/UK2GTFS@87d0545a38f040be7ada5d7088f3169dd3da7e9b",
     lib = lib,
     dependencies = NA,
     ask = FALSE
   )
-
   library(UK2GTFS, lib.loc = lib)
-
   cat(
     "UK2GTFS", as.character(packageVersion("UK2GTFS")),
     "loaded from", find.package("UK2GTFS"), "\n"
@@ -340,7 +336,7 @@ Study-defining parameters are stored in [params.yml](params.yml). Values in the 
 | `CRS_EU` | EPSG:3035 | ETRS89-LAEA Europe | Metric spatial processing, including buffers, lengths and population centres |
 | `CRS_DEG` | EPSG:4326 | WGS 84 | Stored GeoParquet geometries and longitude/latitude coordinates |
 
-Parameters reserved for pathset construction and subsequent assignment work are listed below to distinguish planned modelling choices from the present network-generation assumptions.
+<!-- Parameters reserved for pathset construction and subsequent assignment work are listed below to distinguish planned modelling choices from the present network-generation assumptions.
 
 | Parameter | Current value | Unit | Intended downstream use |
 |---|---:|---|---|
@@ -353,7 +349,7 @@ Parameters reserved for pathset construction and subsequent assignment work are 
 | `MAX_TRANS_TIME` | 120 | minutes | Maximum admitted transfer time |
 | `BASE_WAIT` | 10 | minutes | Assumed waiting time at the origin |
 | `TRANSFER_TIME_FACTOR` | 1.7 | multiplier | Weight applied to transfer time in generalised travel time |
-| `TRANSFER_PENALTY` | 10 | minutes per transfer | Fixed transfer penalty |
+| `TRANSFER_PENALTY` | 10 | minutes per transfer | Fixed transfer penalty | -->
 
 ## Methods
 

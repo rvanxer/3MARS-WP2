@@ -6,3 +6,4 @@ fig
 notebooks
 *.ipynb
 env.yml
+gtc-params.yml

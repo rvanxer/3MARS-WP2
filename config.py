@@ -33,7 +33,7 @@ DATA = Path(env_data.get("DATA_DIR", "./data")).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
 
 # Folder for output figures [optional]
-FIG = Path(env_data.get("FIG_DIR", "fig")).resolve()
+FIG = Path(env_data.get("FIG_DIR", "./fig")).resolve()
 FIG.mkdir(parents=True, exist_ok=True)
 
 # MobilityDatabase API key

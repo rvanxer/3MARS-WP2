@@ -24,23 +24,3 @@ STATION_BUFFER_RADIUS: 400
 MAX_STN_OSM_OFFSET: 5000
 # Catchment radius (km) of an airport for FUA centroid mapping
 AIRPORT_CATCH_RADIUS: 150
-# Minimum network length (km) of a path
-MIN_PATH_LENGTH: 50
-# Maximum mean route speed by mode (km/h)
-MAX_ROUTE_SPEED_BUS: 120 # for bus
-MAX_ROUTE_SPEED_RAIL: 360 # for rail
-# No. of shortest paths for each combination of OD pair, mode & departure time
-N_SHORTEST_PATHS: 20
-# Departure time hourly bins
-# DEP_HR_BINS: [0, 6, 12, 18, 24]
-DEP_HR_BINS: [0, 6, 9, 12, 15, 18, 21, 24]
-# Min & max transfer time (minutes) at a station
-MIN_TRANS_TIME: 5
-MAX_TRANS_TIME: 120
-# Constant waiting time (minutes) at each origin station
-BASE_WAIT: 10
-# Ratio of transfer time to IVTT
-TRANSFER_TIME_FACTOR: 1.7
-# Time (minutes) equivalent to each transfer
-TRANSFER_PENALTY: 10
-# Trip departure time windows, given by range of hours
