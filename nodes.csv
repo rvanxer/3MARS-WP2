@@ -1,0 +1,1372 @@
+node_id,kind,local_id,name,lon,lat
+FUA_000,City,0,Aachen,6.1574874,50.78992
+FUA_001,City,1,Aalborg,9.820849,57.083813
+FUA_002,City,2,Aberdeen,-2.219997,57.233814
+FUA_003,City,3,Alicante/Alacant,-0.4796498,38.372044
+FUA_004,City,4,Alkmaar,4.7701697,52.655365
+FUA_005,City,5,Almería,-2.4379902,36.85112
+FUA_006,City,6,Amiens,2.2976136,49.90252
+FUA_007,City,7,Amsterdam,4.91838,52.405396
+FUA_008,City,8,Angers,-0.5451169,47.470222
+FUA_009,City,9,Angoulème,0.16839898,45.66638
+FUA_010,City,10,Annecy,6.1073008,45.898304
+FUA_011,City,11,Antwerpen,4.4429646,51.22556
+FUA_012,City,12,Apeldoorn,5.9993606,52.214985
+FUA_013,City,13,Arnhem,5.9290175,51.961872
+FUA_014,City,14,Aschaffenburg,9.172389,49.92922
+FUA_015,City,15,Athina,23.734951,37.993095
+FUA_016,City,16,Augsburg,10.88558,48.363327
+FUA_017,City,17,Avignon,4.85383,43.955914
+FUA_018,City,18,Bamberg,10.891753,49.89567
+FUA_019,City,19,Barcelona,2.1304276,41.4429
+FUA_020,City,20,Bari,16.840961,41.08209
+FUA_021,City,21,Barnsley,-1.4567741,53.547497
+FUA_022,City,22,Basel,7.6456003,47.518993
+FUA_023,City,23,Bayonne,-1.4748241,43.46932
+FUA_024,City,24,Bayreuth,11.546607,49.969307
+FUA_025,City,25,Belfast,-5.922194,54.604427
+FUA_026,City,26,Bergamo,9.674012,45.69781
+FUA_027,City,27,Bergen,5.3007736,60.383537
+FUA_028,City,28,Berlin,13.4049425,52.49121
+FUA_029,City,29,Bern,7.4768567,46.91217
+FUA_030,City,30,Besançon,6.0063868,47.24324
+FUA_031,City,31,Białystok,23.169216,53.1572
+FUA_032,City,32,Bielefeld,8.545572,52.018604
+FUA_033,City,33,Bielsko-Biała,19.052958,49.822803
+FUA_034,City,34,Bilbao,-2.96462,43.284645
+FUA_035,City,35,Blackburn with Darwen,-2.4457905,53.763393
+FUA_036,City,36,Blackpool,-2.9915242,53.82926
+FUA_037,City,37,Bologna,11.357196,44.502857
+FUA_038,City,38,Bonn,7.1523857,50.74533
+FUA_039,City,39,Bordeaux,-0.601102,44.836403
+FUA_040,City,40,Bournemouth,-1.909935,50.74908
+FUA_041,City,41,Bradford,-1.7973775,53.817207
+FUA_042,City,42,Braga,-8.427005,41.573982
+FUA_043,City,43,Brasov,25.600227,45.647873
+FUA_044,City,44,Bratislava,17.151697,48.198376
+FUA_045,City,45,Braunschweig-Salzgitter-Wolfsburg,10.551714,52.302315
+FUA_046,City,46,Breda,4.8048058,51.60257
+FUA_047,City,47,Bremen,8.878133,53.0638
+FUA_048,City,48,Bremerhaven,8.703077,53.62224
+FUA_049,City,49,Brescia,10.199053,45.5337
+FUA_050,City,50,Brest,-4.4712048,48.433983
+FUA_051,City,51,Brighton and Hove,-0.12518552,50.836662
+FUA_052,City,52,Bristol,-2.6188116,51.45997
+FUA_053,City,53,Brno,16.629637,49.23362
+FUA_054,City,54,Brugge,3.2155662,51.198555
+FUA_055,City,55,Bruxelles / Brussel,4.3325253,50.816105
+FUA_056,City,56,Bucureşti,26.099445,44.43072
+FUA_057,City,57,Budapest,19.115406,47.48961
+FUA_058,City,58,Burgas,27.404873,42.527603
+FUA_059,City,59,Bydgoszcz,18.011965,53.138393
+FUA_060,City,60,Caen,-0.37195408,49.17175
+FUA_061,City,61,Cagliari,9.116326,39.266724
+FUA_062,City,62,Cambridge,0.100763425,52.19701
+FUA_063,City,63,Cardiff,-3.2668118,51.551224
+FUA_064,City,64,Cartagena,-0.9734611,37.62939
+FUA_065,City,65,Castellón de la Plana/Castelló de la Plana,-0.030029263,39.991776
+FUA_066,City,66,Catania,15.06763,37.541927
+FUA_067,City,67,Chambery,5.927505,45.592274
+FUA_068,City,68,Charleroi,4.4505816,50.408516
+FUA_069,City,69,Cheltenham,-2.1041005,51.912758
+FUA_070,City,70,Chemnitz,12.910507,50.824814
+FUA_071,City,71,Cheshire West and Chester,-2.8721104,53.220444
+FUA_072,City,72,Clermont-Ferrand,3.1360323,45.790836
+FUA_073,City,73,Cluj-Napoca,23.584002,46.76769
+FUA_074,City,74,Coimbra,-8.444254,40.200905
+FUA_075,City,75,Constanta,28.611443,44.189426
+FUA_076,City,76,Cork,-8.453314,51.90427
+FUA_077,City,77,Coruña (A),-8.395845,43.33427
+FUA_078,City,78,Cosenza,16.248413,39.31307
+FUA_079,City,79,Cottbus,14.39869,51.747868
+FUA_080,City,80,Coventry,-1.4612617,52.4267
+FUA_081,City,81,Craiova,23.795744,44.321682
+FUA_082,City,82,Częstochowa,19.128468,50.82182
+FUA_083,City,83,Cádiz,-6.2309585,36.495472
+FUA_084,City,84,Córdoba,-4.7805905,37.879868
+FUA_085,City,85,Darmstadt,8.712966,49.862312
+FUA_086,City,86,Debrecen,21.653591,47.537918
+FUA_087,City,87,Derby,-1.4973836,52.881203
+FUA_088,City,88,Dijon,5.0767436,47.307564
+FUA_089,City,89,Doncaster,-1.1184949,53.53102
+FUA_090,City,90,Donostia-San Sebastián,-1.966264,43.29905
+FUA_091,City,91,Douai,3.117309,50.359043
+FUA_092,City,92,Dresden,13.828124,51.10188
+FUA_093,City,93,Dublin,-6.361472,53.342842
+FUA_094,City,94,Dunkerque,2.3409057,50.99189
+FUA_095,City,95,Düsseldorf,6.81309,51.209652
+FUA_096,City,96,Edinburgh,-3.2403011,55.928448
+FUA_097,City,97,Eindhoven,5.536711,51.44076
+FUA_098,City,98,Elche/Elx,-0.67376715,38.258266
+FUA_099,City,99,Enschede,6.8435216,52.25127
+FUA_100,City,100,Erfurt,10.939304,50.93956
+FUA_101,City,101,Exeter,-3.414153,50.75519
+FUA_102,City,102,Ferrara,11.644762,44.839237
+FUA_103,City,103,Firenze,11.249426,43.7746
+FUA_104,City,104,Flensburg,9.502408,54.68258
+FUA_105,City,105,Frankfurt am Main,8.718776,50.13438
+FUA_106,City,106,Freiburg im Breisgau,7.8256607,48.00815
+FUA_107,City,107,Friedrichshafen,9.415474,47.702976
+FUA_108,City,108,Fulda,9.7124,50.556778
+FUA_109,City,109,Galati,28.025667,45.439285
+FUA_110,City,110,Gdańsk,18.50961,54.423428
+FUA_111,City,111,Geneva,6.1518135,46.238373
+FUA_112,City,112,Genova,8.920967,44.43002
+FUA_113,City,113,Gent,3.714475,51.05853
+FUA_114,City,114,Gießen,8.739878,50.5765
+FUA_115,City,115,Gijón,-5.661149,43.53123
+FUA_116,City,116,Glasgow,-4.228162,55.846844
+FUA_117,City,117,Grad Zagreb,15.987636,45.810352
+FUA_118,City,118,Granada,-3.6237602,37.17362
+FUA_119,City,119,Graz,15.456168,47.030357
+FUA_120,City,120,Greifswald,13.734797,53.88983
+FUA_121,City,121,Grenoble,5.713607,45.202915
+FUA_122,City,122,Groningen,6.5717764,53.213932
+FUA_123,City,123,Gyõr,17.627506,47.649063
+FUA_124,City,124,Görlitz,14.782564,51.13616
+FUA_125,City,125,Göteborg,12.02511,57.731052
+FUA_126,City,126,Göttingen,9.920997,51.592
+FUA_127,City,127,Halle an der Saale,11.945251,51.447037
+FUA_128,City,128,Hamburg,10.013428,53.59068
+FUA_129,City,129,Hannover,9.664987,52.37589
+FUA_130,City,130,Heidelberg,8.687323,49.38599
+FUA_131,City,131,Heilbronn,9.187707,49.158264
+FUA_132,City,132,Helsingborg,12.772314,56.105015
+FUA_133,City,133,Helsinki,24.911865,60.272625
+FUA_134,City,134,Hildesheim,9.932862,52.125717
+FUA_135,City,135,Huelva,-6.9405766,37.2764
+FUA_136,City,136,Iasi,27.582293,47.15669
+FUA_137,City,137,Ingolstadt,11.39608,48.732105
+FUA_138,City,138,Innsbruck,11.361263,47.26116
+FUA_139,City,139,Ipswich,1.2553021,52.074146
+FUA_140,City,140,Irakleio,25.128073,35.316647
+FUA_141,City,141,Iserlohn,7.702342,51.2987
+FUA_142,City,142,Jerez de la Frontera,-6.1168065,36.693794
+FUA_143,City,143,Jyväskylä,25.70843,62.251392
+FUA_144,City,144,Kaiserslautern,7.637077,49.463833
+FUA_145,City,145,Kalisz,18.116793,51.766727
+FUA_146,City,146,Karlsruhe,8.482323,49.047104
+FUA_147,City,147,Kassel,9.454516,51.333103
+FUA_148,City,148,Katowice,18.954134,50.271137
+FUA_149,City,149,Kaunas,23.916178,54.91288
+FUA_150,City,150,Kempten (Allgäu),10.283147,47.649666
+FUA_151,City,151,Kiel,10.039468,54.30987
+FUA_152,City,152,Kielce,20.631203,50.86684
+FUA_153,City,153,Kingston upon Hull,-0.41235155,53.809772
+FUA_154,City,154,Kirklees,-1.7310728,53.66223
+FUA_155,City,155,Klagenfurt,14.333316,46.640125
+FUA_156,City,156,Koblenz,7.466942,50.362396
+FUA_157,City,157,Konstanz,8.974802,47.74672
+FUA_158,City,158,Košice,21.235949,48.70151
+FUA_159,City,159,Kraków,19.989836,50.05387
+FUA_160,City,160,Krefeld,6.5763383,51.337784
+FUA_161,City,161,Köln,6.952016,50.952225
+FUA_162,City,162,København,12.406623,55.72851
+FUA_163,City,163,La Rochelle,-1.075465,46.168476
+FUA_164,City,164,Landshut,12.176022,48.54954
+FUA_165,City,165,Lausanne,6.6771007,46.53139
+FUA_166,City,166,Le Havre,0.1854792,49.5304
+FUA_167,City,167,Le Mans,0.20113204,47.98774
+FUA_168,City,168,Lecce,18.167747,40.33955
+FUA_169,City,169,Leeds,-1.4828055,53.7688
+FUA_170,City,170,Leeuwarden,5.8001537,53.20437
+FUA_171,City,171,Leicester,-1.1600666,52.629204
+FUA_172,City,172,Leipzig,12.474391,51.33537
+FUA_173,City,173,Lens - Liévin,2.8121045,50.436695
+FUA_174,City,174,Leuven,4.7399745,50.88871
+FUA_175,City,175,León,-5.581319,42.609383
+FUA_176,City,176,Liberec,15.105215,50.75957
+FUA_177,City,177,Lille,3.0655916,50.643158
+FUA_178,City,178,Limoges,1.2577695,45.83629
+FUA_179,City,179,Lincoln,-0.5141522,53.1605
+FUA_180,City,180,Linköping,15.57924,58.367905
+FUA_181,City,181,Linz,14.3015375,48.320465
+FUA_182,City,182,Lisboa,-9.176186,38.755962
+FUA_183,City,183,Liverpool,-2.9172943,53.429302
+FUA_184,City,184,Liège,5.5598955,50.626385
+FUA_185,City,185,Ljubljana,14.538847,46.06091
+FUA_186,City,186,London,-0.081223875,51.523876
+FUA_187,City,187,Lorient,-3.3342035,47.78301
+FUA_188,City,188,Lublin,22.581276,51.238613
+FUA_189,City,189,Lucerne,8.29224,47.06064
+FUA_190,City,190,Luton,-0.434107,51.894493
+FUA_191,City,191,Luxembourg,6.0870543,49.643192
+FUA_192,City,192,Lyon,4.874039,45.74461
+FUA_193,City,193,Lübeck,10.740037,53.98693
+FUA_194,City,194,Madrid,-3.7046893,40.408787
+FUA_195,City,195,Magdeburg,11.592564,52.172905
+FUA_196,City,196,Mainz,8.181288,49.957355
+FUA_197,City,197,Malmö,13.091996,55.597576
+FUA_198,City,198,Manchester,-2.2714756,53.495316
+FUA_199,City,199,Mannheim-Ludwigshafen,8.4341545,49.497105
+FUA_200,City,200,Marbella,-4.781625,36.52633
+FUA_201,City,201,Marburg,8.749527,50.821613
+FUA_202,City,202,Maribor,15.722059,46.49673
+FUA_203,City,203,Marseille,5.425896,43.384697
+FUA_204,City,204,Medway,0.5397604,51.377792
+FUA_205,City,205,Messina,15.525336,38.189377
+FUA_206,City,206,Metz,6.1639066,49.122177
+FUA_207,City,207,Middlesbrough,-1.2184666,54.561768
+FUA_208,City,208,Milano,9.198143,45.504795
+FUA_209,City,209,Milton Keynes,-0.7522875,52.0386
+FUA_210,City,210,Miskolc,20.812613,48.105946
+FUA_211,City,211,Modena,10.943333,44.632957
+FUA_212,City,212,Mons,3.9040165,50.444836
+FUA_213,City,213,Montpellier,3.8669562,43.620647
+FUA_214,City,214,Mulhouse,7.2873535,47.778233
+FUA_215,City,215,Murcia,-1.1442763,37.995872
+FUA_216,City,216,Málaga,-4.467658,36.706127
+FUA_217,City,217,Mönchengladbach,6.4333243,51.175545
+FUA_218,City,218,München,11.546186,48.16173
+FUA_219,City,219,Münster,7.5144386,51.91625
+FUA_220,City,220,Namur,4.898316,50.460625
+FUA_221,City,221,Nancy,6.1707835,48.672215
+FUA_222,City,222,Nantes,-1.5601468,47.22711
+FUA_223,City,223,Napoli,14.321976,40.86273
+FUA_224,City,224,Neubrandenburg,13.059957,53.57453
+FUA_225,City,225,Newcastle upon Tyne,-1.6141616,55.03506
+FUA_226,City,226,Newport,-3.010184,51.62511
+FUA_227,City,227,Nice,7.168765,43.692543
+FUA_228,City,228,Nijmegen,5.828809,51.822083
+FUA_229,City,229,Nimes,4.3404627,43.821247
+FUA_230,City,230,Northampton,-0.886575,52.247032
+FUA_231,City,231,Norwich,1.2750765,52.61397
+FUA_232,City,232,Nottingham,-1.1916217,52.97385
+FUA_233,City,233,Nowy Sącz,20.70959,49.605717
+FUA_234,City,234,Nyíregyháza,21.750404,47.98045
+FUA_235,City,235,Nürnberg,11.069466,49.456436
+FUA_236,City,236,Odense,10.37703,55.32202
+FUA_237,City,237,Offenburg,7.9581285,48.443314
+FUA_238,City,238,Oldenburg (Oldenburg),8.219115,53.119267
+FUA_239,City,239,Olomouc,17.23387,49.635662
+FUA_240,City,240,Olsztyn,20.489635,53.785194
+FUA_241,City,241,Opole,17.883648,50.674625
+FUA_242,City,242,Oradea,21.928457,47.057034
+FUA_243,City,243,Orléans,1.91547,47.895477
+FUA_244,City,244,Oslo,10.765543,59.882317
+FUA_245,City,245,Osnabrück,8.071814,52.307068
+FUA_246,City,246,Ostrava,18.268444,49.77606
+FUA_247,City,247,Oulu,25.524628,65.00249
+FUA_248,City,248,Oviedo,-5.833421,43.37211
+FUA_249,City,249,Paderborn,8.708719,51.71022
+FUA_250,City,250,Padova,11.875426,45.396996
+FUA_251,City,251,Palermo,13.347219,38.11037
+FUA_252,City,252,Palma de Mallorca,2.6986084,39.588066
+FUA_253,City,253,Pamplona/Iruña,-1.6472621,42.820034
+FUA_254,City,254,Paris,2.335434,48.85512
+FUA_255,City,255,Parma,10.308404,44.78932
+FUA_256,City,256,Passau,13.375,48.56382
+FUA_257,City,257,Patra,21.750914,38.238533
+FUA_258,City,258,Pau,-0.36298946,43.310963
+FUA_259,City,259,Perpignan,2.8895524,42.67963
+FUA_260,City,260,Perugia,12.352827,43.086655
+FUA_261,City,261,Pescara,14.189602,42.46322
+FUA_262,City,262,Peterborough,-0.25976443,52.58298
+FUA_263,City,263,Pforzheim,8.718912,48.90392
+FUA_264,City,264,Plauen,12.246835,50.492634
+FUA_265,City,265,Ploiesti,26.014236,44.937923
+FUA_266,City,266,Plovdiv,24.750216,42.128647
+FUA_267,City,267,Plymouth,-4.1288366,50.390793
+FUA_268,City,268,Plzeň,13.405291,49.73815
+FUA_269,City,269,Poitiers,0.34619945,46.57493
+FUA_270,City,270,Porto,-8.567566,41.16005
+FUA_271,City,271,Portsmouth,-1.1014632,50.830524
+FUA_272,City,272,Poznań,16.91555,52.407722
+FUA_273,City,273,Praha,14.484441,50.06931
+FUA_274,City,274,Prato,11.073961,43.88788
+FUA_275,City,275,Preston,-2.6863499,53.722324
+FUA_276,City,276,Pécs,18.23075,46.071144
+FUA_277,City,277,Płock,19.732887,52.56186
+FUA_278,City,278,Radom,21.157019,51.392506
+FUA_279,City,279,Reading,-0.9297901,51.439266
+FUA_280,City,280,Regensburg,12.046249,48.967674
+FUA_281,City,281,Reggio di Calabria,15.663545,38.109432
+FUA_282,City,282,Reggio nell'Emilia,10.616914,44.679752
+FUA_283,City,283,Reims,4.0245543,49.270134
+FUA_284,City,284,Rennes,-1.7034736,48.09956
+FUA_285,City,285,Reutlingen,9.266138,48.48126
+FUA_286,City,286,Rimini,12.531799,44.05262
+FUA_287,City,287,Roma,12.528745,41.88019
+FUA_288,City,288,Rosenheim,12.135821,47.87116
+FUA_289,City,289,Rostock,12.122093,54.034565
+FUA_290,City,290,Rotterdam,4.458245,51.889797
+FUA_291,City,291,Rouen,1.060414,49.43471
+FUA_292,City,292,Ruhrgebiet,7.144247,51.510864
+FUA_293,City,293,Rzeszów,22.034409,50.026684
+FUA_294,City,294,Rīga,24.13246,56.956776
+FUA_295,City,295,Saarbrücken,6.9990883,49.29901
+FUA_296,City,296,Saint-Brieuc,-2.7466142,48.49695
+FUA_297,City,297,Saint-Etienne,4.3675685,45.454792
+FUA_298,City,298,Saint-Nazaire,-2.2433789,47.337593
+FUA_299,City,299,Salerno,14.814201,40.682487
+FUA_300,City,300,Salzburg,13.081111,47.82614
+FUA_301,City,301,Santander,-3.8785274,43.419525
+FUA_302,City,302,Santiago de Compostela,-8.554284,42.869507
+FUA_303,City,303,Sassari,8.5435915,40.73536
+FUA_304,City,304,Schweinfurt,10.146493,50.097412
+FUA_305,City,305,Schwerin,11.460376,53.50565
+FUA_306,City,306,Sevilla,-5.970035,37.38216
+FUA_307,City,307,Sheffield,-1.4180213,53.3787
+FUA_308,City,308,Siegen,7.9821153,50.853783
+FUA_309,City,309,Sofia,23.315035,42.68229
+FUA_310,City,310,Southampton,-1.3759842,50.928837
+FUA_311,City,311,Split,16.49696,43.544346
+FUA_312,City,312,St. Gallen,9.361247,47.443886
+FUA_313,City,313,Stavanger,5.7260733,58.902473
+FUA_314,City,314,Stockholm,18.013393,59.33936
+FUA_315,City,315,Stoke-on-Trent,-2.16411,53.029793
+FUA_316,City,316,Stralsund,13.045935,54.312485
+FUA_317,City,317,Strasbourg,7.672682,48.5796
+FUA_318,City,318,Stuttgart,9.256838,48.778618
+FUA_319,City,319,Sunderland,-1.443565,54.889854
+FUA_320,City,320,Swansea,-3.9058943,51.64772
+FUA_321,City,321,Swindon,-1.7817503,51.571743
+FUA_322,City,322,Szczecin,14.559358,53.411724
+FUA_323,City,323,Szeged,20.107714,46.273674
+FUA_324,City,324,Székesfehérvár,18.404226,47.136784
+FUA_325,City,325,Tallinn,24.756607,59.412025
+FUA_326,City,326,Tampere,23.769884,61.48965
+FUA_327,City,327,Taranto,17.295568,40.478073
+FUA_328,City,328,Tarnów,20.966055,50.011322
+FUA_329,City,329,Tarragona,1.2203262,41.122345
+FUA_330,City,330,Thessaloniki,22.956371,40.621983
+FUA_331,City,331,Tilburg,5.081157,51.56162
+FUA_332,City,332,Timişoara,21.228477,45.749622
+FUA_333,City,333,Torino,7.650774,45.071354
+FUA_334,City,334,Toruń,18.650705,53.042667
+FUA_335,City,335,Toulon,5.971163,43.142277
+FUA_336,City,336,Toulouse,1.4096096,43.585495
+FUA_337,City,337,Tours,0.6821246,47.371803
+FUA_338,City,338,Trento,11.150959,46.076466
+FUA_339,City,339,Trier,6.665217,49.729
+FUA_340,City,340,Trieste,13.782765,45.64994
+FUA_341,City,341,Trondheim,10.45257,63.392883
+FUA_342,City,342,Troyes,4.0696144,48.287506
+FUA_343,City,343,Turku,22.273972,60.468548
+FUA_344,City,344,Tübingen,9.016225,48.49057
+FUA_345,City,345,Udine,13.221898,46.07153
+FUA_346,City,346,Ulm,9.964371,48.36961
+FUA_347,City,347,Uppsala,17.660627,59.927914
+FUA_348,City,348,Utrecht,5.1196733,52.075317
+FUA_349,City,349,Valence,4.9074197,44.913494
+FUA_350,City,350,Valencia,-0.40440637,39.48162
+FUA_351,City,351,Valenciennes,3.5023758,50.363266
+FUA_352,City,352,Valladolid,-4.7327185,41.630554
+FUA_353,City,353,Varna,27.875595,43.201504
+FUA_354,City,354,Venezia,12.228978,45.46757
+FUA_355,City,355,Venlo,6.097928,51.370068
+FUA_356,City,356,Verona,10.968783,45.432304
+FUA_357,City,357,Vicenza,11.547033,45.549686
+FUA_358,City,358,Vigo,-8.692821,42.201904
+FUA_359,City,359,Villingen-Schwenningen,8.453005,48.03838
+FUA_360,City,360,Vilnius,25.236202,54.70137
+FUA_361,City,361,Vitoria/Gasteiz,-2.6757605,42.852276
+FUA_362,City,362,Västerås,16.503023,59.65866
+FUA_363,City,363,Warrington,-2.5770094,53.39804
+FUA_364,City,364,Warszawa,21.02881,52.239033
+FUA_365,City,365,West Midlands urban area,-1.9453434,52.514645
+FUA_366,City,366,Wetzlar,8.392657,50.629757
+FUA_367,City,367,Wien,16.364239,48.194252
+FUA_368,City,368,Wiesbaden,8.199932,50.093056
+FUA_369,City,369,Wrocław,17.016733,51.116486
+FUA_370,City,370,Wuppertal,7.1664963,51.258293
+FUA_371,City,371,Würzburg,9.919335,49.819286
+FUA_372,City,372,York,-1.082973,53.964115
+FUA_373,City,373,Zaragoza,-0.8915958,41.653732
+FUA_374,City,374,Zielona Góra,15.498876,51.95329
+FUA_375,City,375,Zurich,8.583999,47.403522
+FUA_376,City,376,Zwickau,12.531378,50.75573
+FUA_377,City,377,Zwolle,6.037114,52.52479
+FUA_378,City,378,s' Gravenhage,4.3486857,52.06739
+FUA_379,City,379,s-Hertogenbosch,5.299803,51.701756
+FUA_380,City,380,Århus,10.045144,56.16479
+FUA_381,City,381,Örebro,15.17946,59.251568
+FUA_382,City,382,Ústí nad Labem,13.923052,50.650074
+FUA_383,City,383,Łódź,19.468908,51.77311
+AP_KLU,Airport,KLU,Klagenfurt,14.3377,46.6425
+AP_VIE,Airport,VIE,Vienna International,16.5697,48.1103
+AP_LNZ,Airport,LNZ,Linz (Blue Danube),14.1875,48.2332
+AP_SZG,Airport,SZG,Salzburg,13.0043,47.7933
+AP_GRZ,Airport,GRZ,Graz,15.4396,46.9911
+AP_INN,Airport,INN,Innsbruck (Kranebitten),11.344,47.2602
+AP_ANR,Airport,ANR,Antwerp International,4.46028,51.1894
+AP_BRU,Airport,BRU,Brussels (Zaventem),4.48444,50.9014
+AP_CRL,Airport,CRL,Brussels South Charleroi,4.45382,50.4592
+AP_KJK,Airport,KJK,Kortrijk-Wevelgem International,3.20472,50.8172
+AP_OST,Airport,OST,Ostend-Bruges International,2.86222,51.1989
+AP_BOJ,Airport,BOJ,Burgas,27.5152,42.5696
+AP_PDV,Airport,PDV,Plovdiv,24.8508,42.0678
+AP_SOF,Airport,SOF,Sofia,23.4114,42.6967
+AP_VAR,Airport,VAR,Varna,27.8251,43.2321
+AP_BSL,Airport,BSL,EuroAirport Basel Mulhouse Freiburg,7.52916,47.59
+AP_BRN,Airport,BRN,Bern,7.49715,46.9141
+AP_GVA,Airport,GVA,Geneva,6.10895,46.2381
+AP_ZRH,Airport,ZRH,Zurich,8.54917,47.4647
+AP_JCL,Airport,JCL,Ceske Budejovice (Plana),14.4275,48.9464
+AP_BRQ,Airport,BRQ,Brno-Turany,16.6944,49.1513
+AP_KLV,Airport,KLV,Karlovy Vary,12.915,50.203
+AP_OSR,Airport,OSR,Leos Janacek,18.1111,49.6963
+AP_PED,Airport,PED,Pardubice,15.7386,50.0134
+AP_PRG,Airport,PRG,Vaclav Havel Prague,14.26,50.1008
+AP_FDH,Airport,FDH,Friedrichshafen (Bodensee),9.51149,47.6713
+AP_FKB,Airport,FKB,Karlsruhe/Baden-Baden,8.0805,48.7794
+AP_STR,Airport,STR,Stuttgart,9.22196,48.6899
+AP_FMM,Airport,FMM,Memmingen,10.2395,47.9888
+AP_MUC,Airport,MUC,Munich,11.7861,48.3538
+AP_NUE,Airport,NUE,Nuremberg,11.0781,49.4987
+AP_BER,Airport,BER,Berlin Brandenburg,13.4939,52.3514
+AP_BRE,Airport,BRE,Bremen,8.78667,53.0475
+AP_HAM,Airport,HAM,Hamburg,9.98823,53.6304
+AP_FRA,Airport,FRA,Frankfurt,8.57056,50.0333
+AP_KSF,Airport,KSF,Kassel,9.38497,51.4173
+AP_HDF,Airport,HDF,Heringsdorf,14.1523,53.8787
+AP_RLG,Airport,RLG,Rostock-Laage,12.2783,53.9182
+AP_BWE,Airport,BWE,Braunschweig-Wolfsburg,10.5561,52.3192
+AP_HAJ,Airport,HAJ,Hannover,9.68508,52.4611
+AP_CGN,Airport,CGN,Cologne Bonn,7.14274,50.8659
+AP_DTM,Airport,DTM,Dortmund,7.61224,51.5183
+AP_DUS,Airport,DUS,Dusseldorf,6.76678,51.2895
+AP_FMO,Airport,FMO,Munster Osnabruck International,7.68483,52.1346
+AP_GKE,Airport,GKE,NATO Air Base Geilenkirchen,6.04242,50.9608
+AP_NRN,Airport,NRN,Weeze (Niederrhein),6.14217,51.6024
+AP_PAD,Airport,PAD,Paderborn Lippstadt,8.61632,51.6141
+AP_HHN,Airport,HHN,Frankfurt-Hahn,7.26389,49.9487
+AP_SCN,Airport,SCN,Saarbrucken,7.10951,49.2146
+AP_DRS,Airport,DRS,Dresden,13.7672,51.1328
+AP_LEJ,Airport,LEJ,Leipzig/Halle,12.2364,51.4239
+AP_GWT,Airport,GWT,Sylt (Westerland),8.34047,54.9132
+AP_LBC,Airport,LBC,Lubeck,10.7192,53.8054
+AP_ERF,Airport,ERF,Erfurt-Weimar,10.9581,50.9798
+AP_CPH,Airport,CPH,Copenhagen,12.656,55.6179
+AP_RNN,Airport,RNN,Bornholm,14.7596,55.0633
+AP_AAR,Airport,AAR,Aarhus,10.619,56.3
+AP_KRP,Airport,KRP,Karup,9.12463,56.2975
+AP_AAL,Airport,AAL,Aalborg,9.84924,57.0928
+AP_BLL,Airport,BLL,Billund,9.15178,55.7403
+AP_SGD,Airport,SGD,Sonderborg,9.79173,54.9644
+AP_TLL,Airport,TLL,Tallinn (Lennart Meri Tallinn),24.8328,59.4133
+AP_EPU,Airport,EPU,Parnu,24.4728,58.419
+AP_AGP,Airport,AGP,Malaga,-4.49911,36.6749
+AP_GRX,Airport,GRX,Federico Garcia Lorca (Granada Jaen),-3.77736,37.1887
+AP_LEI,Airport,LEI,Almeria,-2.3701,36.8439
+AP_ODB,Airport,ODB,Cordoba,-4.84888,37.842
+AP_SVQ,Airport,SVQ,Seville,-5.89311,37.418
+AP_XRY,Airport,XRY,Jerez (La Parra),-6.06011,36.7446
+AP_ZAZ,Airport,ZAZ,Zaragoza,-1.04155,41.6662
+AP_OVD,Airport,OVD,Asturias (Oviedo),-6.03462,43.5636
+AP_SDR,Airport,SDR,Santander,-3.82001,43.4271
+AP_LEN,Airport,LEN,Leon,-5.65556,42.589
+AP_RGS,Airport,RGS,Burgos,-3.62076,42.3576
+AP_SLM,Airport,SLM,Salamanca,-5.50199,40.9521
+AP_VLL,Airport,VLL,Valladolid,-4.85194,41.7061
+AP_ABC,Airport,ABC,Albacete,-1.86352,38.9485
+AP_BCN,Airport,BCN,Barcelona El Prat,2.07846,41.2971
+AP_GRO,Airport,GRO,Girona-Costa Brava,2.76055,41.901
+AP_ILD,Airport,ILD,Lleida-Alguaire,0.535023,41.7282
+AP_LEU,Airport,LEU,Andorra–La Seu d'Urgell,1.40917,42.3386
+AP_REU,Airport,REU,Reus,1.16717,41.1474
+AP_LCG,Airport,LCG,A Coruna,-8.37726,43.3021
+AP_SCQ,Airport,SCQ,Santiago de Compostela,-8.41514,42.8963
+AP_VGO,Airport,VGO,Vigo-Peinador,-8.62677,42.2318
+AP_IBZ,Airport,IBZ,Ibiza,1.37312,38.8729
+AP_MAH,Airport,MAH,Menorca (Mahon),4.21865,39.8626
+AP_PMI,Airport,PMI,Palma de Mallorca,2.73881,39.5517
+AP_RJL,Airport,RJL,Logrono-Agoncilo,-2.32224,42.461
+AP_MAD,Airport,MAD,Adolfo Suarez Madrid-Barajas,-3.56264,40.4719
+AP_RMU,Airport,RMU,Region de Murcia International,-1.125,37.803
+AP_PNA,Airport,PNA,Pamplona,-1.64633,42.77
+AP_BIO,Airport,BIO,Bilbao,-2.91061,43.3011
+AP_VIT,Airport,VIT,Vitoria,-2.72447,42.8828
+AP_ALC,Airport,ALC,Alicante-Elche,-0.558156,38.2822
+AP_CDT,Airport,CDT,Castellon-Costa Azahar,0.073333,40.2139
+AP_VLC,Airport,VLC,Valencia,-0.481625,39.4893
+AP_KAJ,Airport,KAJ,Kajaani,27.6924,64.2855
+AP_JYV,Airport,JYV,Jyvaskyla,25.6783,62.3995
+AP_KEM,Airport,KEM,Kemi-Tornio,24.5821,65.7787
+AP_TMP,Airport,TMP,Tampere-Pirkkala,23.6044,61.4141
+AP_OUL,Airport,OUL,Oulu,25.3546,64.9301
+AP_KUO,Airport,KUO,Kuopio,27.7978,63.0071
+AP_HEL,Airport,HEL,Helsinki (Helsinki-Vantaa),24.9633,60.3172
+AP_MHQ,Airport,MHQ,Mariehamn,19.8982,60.1222
+AP_TKU,Airport,TKU,Turku,22.2628,60.5141
+AP_AUR,Airport,AUR,Aurillac - Tronquieres,2.42194,44.8914
+AP_CFE,Airport,CFE,Clermont-Ferrand Auvergne,3.16917,45.7867
+AP_CMF,Airport,CMF,Chambery-Savoie,5.88023,45.6381
+AP_GNB,Airport,GNB,Grenoble-Isere,5.32937,45.3629
+AP_LYS,Airport,LYS,Lyon-Saint-Exupery,5.08111,45.7256
+AP_DLE,Airport,DLE,Dole-Jura,5.43506,47.0427
+AP_BES,Airport,BES,Brest Bretagne,-4.41854,48.4479
+AP_RNS,Airport,RNS,Rennes-Saint-Jacques,-1.73479,48.0695
+AP_UIP,Airport,UIP,Quimper-Cornouaille,-4.16779,47.975
+AP_TUF,Airport,TUF,Tours Val de Loire,0.727606,47.4322
+AP_AJA,Airport,AJA,Ajaccio Napoleon Bonaparte,8.80292,41.9236
+AP_FSC,Airport,FSC,Figari-Sud Corse,9.09778,41.5006
+AP_ETZ,Airport,ETZ,Metz-Nancy-Lorraine,6.25132,48.9821
+AP_MLH,Airport,MLH,Europort Mulhouse (Basel),7.5291,47.5986
+AP_SXB,Airport,SXB,Strasbourg,7.62823,48.5383
+AP_XCR,Airport,XCR,Chalons Vatry,4.1883,48.7806
+AP_BVA,Airport,BVA,Beauvais–Tillé,2.11277,49.45444
+AP_LIL,Airport,LIL,Lille (Lille-Lesquin),3.08689,50.5633
+AP_CDG,Airport,CDG,Paris Charles de Gaulle,2.54778,49.0097
+AP_ORY,Airport,ORY,Aéroport de Paris-Orly,2.35944,48.7231
+AP_CFR,Airport,CFR,Caen - Carpiquet,-0.45,49.1733
+AP_DOL,Airport,DOL,Deauville - Saint-Gatien,0.154306,49.3653
+AP_LEH,Airport,LEH,Le Havre - Octeville,0.088056,49.5339
+AP_BIQ,Airport,BIQ,Biarritz Pays Basque,-1.53111,43.4683
+AP_BOD,Airport,BOD,Bordeaux-Merignac,-0.715556,44.8283
+AP_BVE,Airport,BVE,Brive-Souillac,1.48556,45.0397
+AP_EGC,Airport,EGC,Bergerac Dordogne Perigord,0.518611,44.8253
+AP_LIG,Airport,LIG,Limoges - Bellegarde,1.17944,45.8628
+AP_LRH,Airport,LRH,La Rochelle - Ile de Re,-1.19528,46.1792
+AP_PIS,Airport,PIS,Poitiers-Biard,0.306666,46.5877
+AP_PUF,Airport,PUF,Pau Pyrenees,-0.418611,43.38
+AP_BZR,Airport,BZR,Beziers Cap d'Agde,3.3539,43.3235
+AP_CCF,Airport,CCF,Carcassonne,2.30632,43.216
+AP_DCM,Airport,DCM,Castres-Mazamet,2.28918,43.5563
+AP_FNI,Airport,FNI,Nimes-Ales-Camargue-Cevennes (Garons),4.41635,43.7574
+AP_LDE,Airport,LDE,Tarbes-Lourdes-Pyrenees,-0.006439,43.1787
+AP_MPL,Airport,MPL,Montpellier-Mediterranee (Frejorgues),3.96301,43.5762
+AP_PGF,Airport,PGF,Perpignan-Rivesaltes,2.87067,42.7404
+AP_RDZ,Airport,RDZ,Rodez-Marcillac,2.48267,44.4079
+AP_TLS,Airport,TLS,Toulouse-Blagnac,1.36382,43.6291
+AP_NTE,Airport,NTE,Nantes Atlantique,-1.61073,47.1532
+AP_MRS,Airport,MRS,Marseille Provence,5.22142,43.4393
+AP_TLN,Airport,TLN,Toulon-Hyeres (Hyeres Le Palyvestre),6.14603,43.0973
+AP_BHX,Airport,BHX,Birmingham,-1.74803,52.4539
+AP_BOH,Airport,BOH,Bournemouth,-1.8425,50.78
+AP_BRS,Airport,BRS,Bristol,-2.71909,51.3827
+AP_CBG,Airport,CBG,Cambridge,0.175,52.205
+AP_DSA,Airport,DSA,Robin Hood Doncaster Sheffield,-1.01066,53.4805
+AP_EMA,Airport,EMA,East Midlands,-1.32806,52.8311
+AP_EXT,Airport,EXT,Exeter International,-3.41389,50.7344
+AP_HUY,Airport,HUY,Humberside,-0.350833,53.5744
+AP_LBA,Airport,LBA,Leeds Bradford,-1.66057,53.8659
+AP_LGW,Airport,LGW,Gatwick,-0.190278,51.1481
+AP_LHR,Airport,LHR,Heathrow,-0.461389,51.4775
+AP_LPL,Airport,LPL,Liverpool John Lennon,-2.84972,53.3336
+AP_LTN,Airport,LTN,London Luton,-0.368333,51.8747
+AP_MAN,Airport,MAN,Manchester,-2.27495,53.3537
+AP_MME,Airport,MME,Teesside International,-1.42941,54.5092
+AP_NCL,Airport,NCL,Newcastle,-1.69167,55.0375
+AP_NQY,Airport,NQY,Cornwall Newquay,-4.99541,50.4406
+AP_NWI,Airport,NWI,Norwich International,1.28278,52.6758
+AP_SEN,Airport,SEN,London Southend,0.693333,51.5703
+AP_SOU,Airport,SOU,Southampton,-1.3568,50.9503
+AP_STN,Airport,STN,London Stansted,0.235,51.885
+AP_BFS,Airport,BFS,Belfast International,-6.21583,54.6575
+AP_BHD,Airport,BHD,George Best Belfast City,-5.8725,54.6181
+AP_ABZ,Airport,ABZ,Aberdeen,-2.19778,57.2019
+AP_EDI,Airport,EDI,Edinburgh,-3.3725,55.95
+AP_PIK,Airport,PIK,Glasgow Prestwick,-4.58667,55.5094
+AP_CWL,Airport,CWL,Cardiff,-3.34333,51.3967
+AP_KVA,Airport,KVA,Kavala International (Alexander the Great),24.6192,40.9133
+AP_ATH,Airport,ATH,Athens International (Eleftherios Venizelos),23.9445,37.9364
+AP_GPA,Airport,GPA,Araxos,21.4256,38.1511
+AP_ZTH,Airport,ZTH,Zakynthos International (Dionysios SolomosAirport),20.8843,37.7509
+AP_SKG,Airport,SKG,Thessaloniki,22.9709,40.5197
+AP_CHQ,Airport,CHQ,Chania International,24.1497,35.5317
+AP_HER,Airport,HER,Heraklion International (Nikos Kazantzakis),25.1803,35.3397
+AP_JSY,Airport,JSY,Syros Island National,24.9509,37.4228
+AP_KLX,Airport,KLX,Kalamata International,22.0255,37.0683
+AP_SKU,Airport,SKU,Skyros Island National,24.4872,38.9676
+AP_JSI,Airport,JSI,Skiathos Island National,23.5037,39.1771
+AP_VOL,Airport,VOL,Nea Anchialos National,22.7943,39.2196
+AP_ZAG,Airport,ZAG,Zagreb,16.0688,45.7429
+AP_PUY,Airport,PUY,Pula,13.9222,44.8935
+AP_OSI,Airport,OSI,Osijek,18.8102,45.4627
+AP_RJK,Airport,RJK,Rijeka,14.5703,45.2169
+AP_BWK,Airport,BWK,Bol (Brac),16.6797,43.2857
+AP_SPU,Airport,SPU,Split,16.298,43.5389
+AP_ZAD,Airport,ZAD,Zadar,15.3467,44.1083
+AP_BUD,Airport,BUD,Budapest Ferenc Liszt International,19.2611,47.4298
+AP_DEB,Airport,DEB,Debrecen International,21.6153,47.4889
+AP_SOB,Airport,SOB,Heviz-Balaton,17.1591,46.6864
+AP_SNN,Airport,SNN,Shannon,-8.92482,52.702
+AP_ORK,Airport,ORK,Cork,-8.49111,51.8413
+AP_DUB,Airport,DUB,Dublin,-6.27007,53.4213
+AP_KIR,Airport,KIR,Kerry (Farranfore),-9.52378,52.1809
+AP_PSR,Airport,PSR,Abruzzo,14.1811,42.4317
+AP_CRV,Airport,CRV,Crotone (Sant'Anna),17.0802,38.9972
+AP_REG,Airport,REG,Reggio di Calabria,15.6516,38.0712
+AP_SUF,Airport,SUF,Lamezia Terme International,16.2423,38.9054
+AP_NAP,Airport,NAP,Naples International,14.2908,40.886
+AP_QSR,Airport,QSR,Salerno Costa d'Amalfi (Pontecagnano),14.9113,40.6204
+AP_BLQ,Airport,BLQ,Bologna Guglielmo Marconi,11.2887,44.5354
+AP_FRL,Airport,FRL,Forli International (Luigi Ridolfi),12.0701,44.1948
+AP_PMF,Airport,PMF,Giuseppe Verdi Parma International,10.2974,44.82122
+AP_RMI,Airport,RMI,Federico Fellini International,12.6117,44.0203
+AP_TRS,Airport,TRS,Trieste - Friuli Venezia Giulia,13.4722,45.8275
+AP_CIA,Airport,CIA,Rome-Ciampino International,12.5929,41.7991
+AP_FCO,Airport,FCO,Rome–Fiumicino International,12.2389,41.8003
+AP_BGY,Airport,BGY,Milan Bergamo,9.69948,45.66546
+AP_LIN,Airport,LIN,Milan-Linate,9.2783,45.4494
+AP_MXP,Airport,MXP,Milan-Malpensa,8.72811,45.6306
+AP_AOI,Airport,AOI,Ancona Falconara,13.3623,43.6163
+AP_CUF,Airport,CUF,Cuneo International,7.62322,44.547
+AP_TRN,Airport,TRN,Turin (Caselle),7.64963,45.2008
+AP_BDS,Airport,BDS,Brindisi - Salento,17.947,40.6576
+AP_BRI,Airport,BRI,Bari Karol Wojtyla,16.7606,41.1389
+AP_AHO,Airport,AHO,Alghero-Fertilia,8.29077,40.6321
+AP_CAG,Airport,CAG,Cagliari Elmas,9.05428,39.2515
+AP_OLB,Airport,OLB,Olbia Costa Smeralda,9.51763,40.8987
+AP_CIY,Airport,CIY,Comiso,14.6072,36.9946
+AP_CTA,Airport,CTA,Catania-Fontanarossa,15.0664,37.4668
+AP_TPS,Airport,TPS,Vincenzo Florio,12.488,37.9114
+AP_FLR,Airport,FLR,Florence,11.2051,43.81
+AP_PSA,Airport,PSA,Pisa International (Galileo Galilei),10.3927,43.6839
+AP_PEG,Airport,PEG,Perugia San Francesco d'Assisi - Umbria International,12.5132,43.0959
+AP_TSF,Airport,TSF,Treviso-Sant'Angelo,12.1944,45.6484
+AP_VRN,Airport,VRN,Verona Villafranca,10.8885,45.3957
+AP_VNO,Airport,VNO,Vilnius,25.2858,54.6341
+AP_KUN,Airport,KUN,Kaunas International,24.0848,54.9639
+AP_SQQ,Airport,SQQ,Siauliai International,23.395,55.8939
+AP_LUX,Airport,LUX,Luxembourg Findel,6.20444,49.6233
+AP_RIX,Airport,RIX,Riga International,23.9711,56.9236
+AP_MST,Airport,MST,Maastricht Aachen,5.77014,50.9117
+AP_EIN,Airport,EIN,Eindhoven,5.37453,51.4501
+AP_AMS,Airport,AMS,Amsterdam Schiphol,4.76389,52.3086
+AP_RTM,Airport,RTM,Rotterdam The Hague,4.43722,51.9569
+AP_OSL,Airport,OSL,Oslo,11.1004,60.1939
+AP_BGO,Airport,BGO,Bergen,5.21814,60.2934
+AP_KSU,Airport,KSU,Kristiansund,7.82452,63.1118
+AP_TRD,Airport,TRD,Trondheim,10.924,63.4578
+AP_SVG,Airport,SVG,Stavanger,5.63778,58.8767
+AP_TRF,Airport,TRF,Sandefjord,10.2586,59.1867
+AP_WRO,Airport,WRO,Copernicus Wroclaw,16.8858,51.1027
+AP_BZG,Airport,BZG,Bydgoszcz Ignacy Jan Paderewski,17.9777,53.0968
+AP_LCJ,Airport,LCJ,Lodz Wladyslaw Reymont,19.3981,51.7219
+AP_LUZ,Airport,LUZ,Lublin,22.7136,51.2403
+AP_IEG,Airport,IEG,Zielona Gora,15.7986,52.1385
+AP_KRK,Airport,KRK,John Paul II International Krakow-Balice,19.7848,50.0777
+AP_RDO,Airport,RDO,Radom,21.2133,51.3892
+AP_WAW,Airport,WAW,Warsaw Chopin,20.9671,52.1657
+AP_WMI,Airport,WMI,Warsaw Modlin,20.6518,52.4511
+AP_RZE,Airport,RZE,Rzeszow-Jasionka,22.019,50.11
+AP_GDN,Airport,GDN,Gdansk Lech Walesa,18.4662,54.3776
+AP_KTW,Airport,KTW,Katowice International,19.08,50.4743
+AP_SZY,Airport,SZY,Olsztyn-Mazury Regional,20.9377,53.4819
+AP_POZ,Airport,POZ,Poznań–Ławica Henryk Wieniawski,16.8263,52.421
+AP_SZZ,Airport,SZZ,Solidarity Szczecin-Goleniow,14.9022,53.5847
+AP_FAO,Airport,FAO,Faro,-7.96591,37.0144
+AP_LIS,Airport,LIS,Lisbon Portela,-9.13592,38.7813
+AP_OPO,Airport,OPO,Francisco Sá Carneiro,-8.67806,41.2356
+AP_BCM,Airport,BCM,Bacau International,26.9103,46.5219
+AP_OMR,Airport,OMR,Oradea International,21.9025,47.0253
+AP_GHV,Airport,GHV,Brasov,25.5172,45.6942
+AP_BBU,Airport,BBU,Aurel Vlaicu International,26.0814,44.496
+AP_CLJ,Airport,CLJ,Cluj-Napoca International,23.6862,46.7852
+AP_CRA,Airport,CRA,Craiova International,23.8886,44.3181
+AP_IAS,Airport,IAS,Iasi International,27.6206,47.1785
+AP_OTP,Airport,OTP,Bucharest Henri Coandă International,26.085,44.5711
+AP_BAY,Airport,BAY,Baia Mare,23.4673,47.6606
+AP_TGM,Airport,TGM,Targu Mures International,24.4125,46.4677
+AP_SUJ,Airport,SUJ,Satu Mare International,22.8857,47.7033
+AP_SBZ,Airport,SBZ,Sibiu International,24.0913,45.7856
+AP_SCV,Airport,SCV,Suceava International (Stefan cel Mare Int'l),26.3541,47.6875
+AP_TSR,Airport,TSR,Timisoara Traian Vuia International,21.3379,45.8099
+AP_HAD,Airport,HAD,Halmstad (Halmstad City),12.8202,56.6911
+AP_ORB,Airport,ORB,Orebro,15.038,59.2237
+AP_LPI,Airport,LPI,Linkoping City,15.6805,58.4062
+AP_AGH,Airport,AGH,Angelholm-Helsingborg,12.8471,56.2961
+AP_MMX,Airport,MMX,Malmo,13.3704,55.5346
+AP_NYO,Airport,NYO,Stockholm Skavsta,16.9122,58.7886
+AP_ARN,Airport,ARN,Stockholm Arlanda,17.9186,59.6519
+AP_BMA,Airport,BMA,Stockholm Bromma,17.9436,59.3556
+AP_KSD,Airport,KSD,Karlstad,13.3374,59.4447
+AP_VST,Airport,VST,Stockholm Vasteras,16.6284,59.6018
+AP_GOT,Airport,GOT,Goteborg Landvetter,12.2798,57.6628
+AP_LJU,Airport,LJU,Ljubljana Joze Pucnik (Brnik),14.4576,46.2237
+AP_MBX,Airport,MBX,Maribor Edvard Rusjan,15.6861,46.4799
+AP_BTS,Airport,BTS,M. R. Stefanik,17.2127,48.1702
+AP_KSC,Airport,KSC,Kosice International,21.2411,48.6631
+AP_TAT,Airport,TAT,Poprad-Tatry,20.2411,49.0736
+STN_0000,Rail station,0,Bucureşti Nord Gr.A,26.073654,44.446693
+STN_0005,Multimodal station,5,Timişoara Nord,21.205246,45.750652
+STN_0013,Rail station,13,Ploieşti Vest,25.994612,44.924545
+STN_0020,Multimodal station,20,Ploieşti Sud,26.029722,44.92508
+STN_0028,Multimodal station,28,Sofia (Serdika bus station),23.321608,42.711533
+STN_0031,Multimodal station,31,Plovdiv Train station,24.741022,42.134815
+STN_0033,Rail station,33,Варна,27.911985,43.19834
+STN_0035,Multimodal station,35,Бургас,27.473137,42.49065
+STN_0036,Multimodal station,36,Tallinn,24.737087,59.440357
+STN_0037,Multimodal station,37,"Riga, Bus Station",24.115799,56.944996
+STN_0038,Bus station,38,"Tallinn, Bus Station",24.772943,59.42705
+STN_0039,Multimodal station,39,Praha Florenc/Busbahnhof,14.440371,50.08939
+STN_0040,Multimodal station,40,Vilniaus autobusų stotis,25.281996,54.670624
+STN_0042,Multimodal station,42,St-Pancras-International,-0.12599105,51.53142
+STN_0043,Multimodal station,43,Paris Est,2.35724,48.87835
+STN_0044,Multimodal station,44,Bruxelles-Midi,4.336115,50.83568
+STN_0045,Multimodal station,45,Lille Flandres,3.0727024,50.637905
+STN_0046,Multimodal station,46,Rotterdam Centraal,4.468345,51.9245
+STN_0047,Multimodal station,47,Amsterdam Centraal,4.900934,52.379025
+STN_0048,Multimodal station,48,Köln Hbf,6.959104,50.94313
+STN_0049,Multimodal station,49,Düsseldorf Hbf,6.7943826,51.2205
+STN_0050,Multimodal station,50,Dortmund Hbf,7.458816,51.518093
+STN_0052,Multimodal station,52,Helsinki,24.941282,60.172035
+STN_0053,Multimodal station,53,Tampere,23.771406,61.495945
+STN_0057,Multimodal station,57,Jyväskylä,25.754885,62.241848
+STN_0058,Multimodal station,58,Oulu,25.48518,65.011116
+STN_0059,Multimodal station,59,Turku,22.26433,60.456673
+STN_0061,Bus station,61,"Helsinki, Bus Station (Kamppi)",24.93359,60.169582
+STN_0063,Bus station,63,"Ostrava (Nám. Republiky, ÚAN)",18.280333,49.830387
+STN_0064,Bus station,64,Nice (Vauban Bus Station),7.286133,43.708687
+STN_0065,Bus station,65,Rouen (Avenue Champlain),1.0926079,49.434155
+STN_0067,Bus station,67,Pool Meadow Bus Station,-1.5069404,52.410206
+STN_0068,Multimodal station,68,Leeds City Bus Station,-1.5371342,53.797318
+STN_0069,Multimodal station,69,Catania (Via D'Amico),15.099441,37.508167
+STN_0070,Multimodal station,70,Basel Bad Bf,7.6076403,47.56766
+STN_0071,Bus station,71,Varna (bus station),27.897223,43.215977
+STN_0073,Bus station,73,Cambridge Parkside - Stop 18,0.12599108,52.20431
+STN_0075,Multimodal station,75,Constanța (Autogara Sud Herli-Sof),28.632149,44.17009
+STN_0076,Multimodal station,76,"Berlin Airport BER (Berlin Brandenburg), Terminal 1/2",13.512794,52.364395
+STN_0077,Multimodal station,77,Örebro Resecentrum,15.210832,59.278492
+STN_0079,Multimodal station,79,Troyes,4.0648246,48.296528
+STN_0081,Multimodal station,81,Berlin Ostbahnhof,13.434861,52.510513
+STN_0082,Multimodal station,82,Leipzig Hbf,12.382421,51.345314
+STN_0083,Multimodal station,83,Dresden Hauptbahnhof,13.731855,51.04016
+STN_0084,Multimodal station,84,Marseille (Saint-Antoine),5.356935,43.369568
+STN_0085,Multimodal station,85,Aberdeen Bus Station,-2.0963151,57.14426
+STN_0086,Multimodal station,86,Košice (bus station),21.26755,48.721783
+STN_0088,Bus station,88,Bilbao (Bus Station),-2.9495468,43.261154
+STN_0089,Multimodal station,89,Aachen station west (Henricistraße),6.072513,50.783516
+STN_0090,Multimodal station,90,Hamburg Hbf,10.008483,53.552353
+STN_0091,Multimodal station,91,S+U Berlin Hauptbahnhof,13.369352,52.525253
+STN_0094,Multimodal station,94,Vigo (Bus Station),-8.713607,42.23437
+STN_0096,Bus station,96,Iași (Autogara Metchim),27.554224,47.173744
+STN_0098,Bus station,98,Budapest Airport,19.262094,47.43262
+STN_0099,Multimodal station,99,Palermo (Via Fazello),13.366909,38.10878
+STN_0100,Multimodal station,100,Olsztyn Główny,20.49748,53.785416
+STN_0103,Bus station,103,Bucharest (bus station Militari),26.006273,44.43294
+STN_0104,Bus station,104,Etretat,0.2089965,49.704727
+STN_0105,Multimodal station,105,Aachen Hbf,6.091059,50.768074
+STN_0106,Bus station,106,Birmingham - Great Charles Street Queensway,-1.9047136,52.481647
+STN_0109,Bus station,109,Valencia (Bus Station),-0.38740247,39.480556
+STN_0112,Bus station,112,Madrid (South Bus Station),-3.6778,40.39469
+STN_0113,Multimodal station,113,Zielona Góra Główna,15.512265,51.947044
+STN_0118,Bus station,118,Cosenza (Autostazione),16.25336,39.304462
+STN_0119,Multimodal station,119,Budapest Kelenföld bus station,19.021278,47.46399
+STN_0121,Bus station,121,Liverpool (One Bus Station) - Stand 6,-2.9879978,53.40192
+STN_0123,Bus station,123,"Torun, Bus Station",18.607645,53.01569
+STN_0125,Bus station,125,Graz P&R Webling,15.409932,47.036484
+STN_0126,Bus station,126,Taranto (Terminal Cimino),17.300833,40.466206
+STN_0128,Bus station,128,Aalborg (Busterminal),9.918373,57.041603
+STN_0129,Multimodal station,129,Kielce Główne,20.61936,50.874844
+STN_0131,Multimodal station,131,Anvers-Central,4.4204698,51.21742
+STN_0132,Multimodal station,132,Lisbon (Oriente),-9.100654,38.767773
+STN_0133,Multimodal station,133,Szczecin Główny,14.550421,53.41894
+STN_0135,Multimodal station,135,Thessaloniki train station,22.9298,40.64419
+STN_0136,Bus station,136,Leicester (Fosse Park),-1.177798,52.598953
+STN_0137,Multimodal station,137,Sheffield Interchange,-1.4639356,53.380154
+STN_0138,Bus station,138,Newcastle-Upon-Tyne,-1.6117146,54.97429
+STN_0139,Multimodal station,139,Bradford Interchange Bus Station,-1.7511381,53.79099
+STN_0141,Multimodal station,141,Malmö Hyllie,12.97633,55.563217
+STN_0142,Multimodal station,142,Buchanan Bus Station,-4.251213,55.86506
+STN_0144,Multimodal station,144,Praha hl.n.,14.435734,50.08326
+STN_0146,Bus station,146,St Margaret's Bus Station,-1.1339834,52.639603
+STN_0148,Multimodal station,148,Newport Train Station,-2.9963927,51.58857
+STN_0150,Bus station,150,Edinburgh Bus Station,-3.1923099,55.955242
+STN_0152,Multimodal station,152,Craiova (bus station Pelendava Nord),23.817364,44.32838
+STN_0153,Multimodal station,153,Karlsruhe Hauptbahnhof,8.401126,48.993214
+STN_0157,Multimodal station,157,Galați (bus station Metropoli),28.060083,45.442917
+STN_0158,Bus station,158,Oradea (bus station Intrans),21.958487,47.04307
+STN_0159,Multimodal station,159,Wien Hauptbahnhof,16.376984,48.185085
+STN_0160,Multimodal station,160,Uppsala Centralstationen,17.648031,59.857735
+STN_0165,Bus station,165,Braga (Centro de Transportes),-8.425437,41.555317
+STN_0166,Bus station,166,Bristol Bus Station (UK),-2.5925188,51.459015
+STN_0167,Multimodal station,167,Reggio Calabria,15.63606,38.103344
+STN_0168,Bus station,168,Nice Airport (Bus Station - Terminal 1),7.20964,43.66484
+STN_0169,Bus station,169,Northampton Town Centre (Victoria Street),-0.8962151,52.239944
+STN_0170,Bus station,170,Coimbra,-8.439008,40.22017
+STN_0171,Bus station,171,Konstanz Fernbusbahnhof Europabrücke Bstg 1,9.163366,47.672085
+STN_0172,Multimodal station,172,Porto (TIC - Campanhã),-8.583736,41.150917
+STN_0174,Bus station,174,Amiens (Les Hortillonnages),2.311491,49.897095
+STN_0176,Multimodal station,176,Shudehill Interchange,-2.2389438,53.485676
+STN_0177,Multimodal station,177,Edinburgh - Regent Road,-3.1843648,55.953537
+STN_0179,Bus station,179,Berlin ZOB [Fernbus],13.279552,52.507294
+STN_0180,Multimodal station,180,Zürich HB,8.53758,47.378853
+STN_0181,Multimodal station,181,Freiburg Hauptbahnhof,7.841155,47.9974
+STN_0182,Multimodal station,182,München Hbf,11.555985,48.14078
+STN_0183,Multimodal station,183,Frankfurt (Main) Hauptbahnhof,8.662246,50.10626
+STN_0184,Multimodal station,184,"Heidelberg, Hauptbahnhof",8.67651,49.404346
+STN_0185,Multimodal station,185,"Mannheim, Hauptbahnhof",8.470078,49.47909
+STN_0186,Multimodal station,186,Nürnberg Hbf,11.082824,49.44547
+STN_0187,Bus station,187,Strasbourg,7.753911,48.574554
+STN_0188,Multimodal station,188,Wiesdorf Leverkusen Mitte Bf,6.9908757,51.032154
+STN_0190,Multimodal station,190,"Braunschweig, Hauptbahnhof",10.539463,52.25207
+STN_0191,Multimodal station,191,Bayreuth Hbf,11.579095,49.95026
+STN_0192,Multimodal station,192,Bochum Hbf,7.223913,51.478836
+STN_0193,Multimodal station,193,Essen Hbf,7.013925,51.451035
+STN_0194,Multimodal station,194,Koblenz Hauptbahnhof,7.589158,50.35035
+STN_0195,Multimodal station,195,Rostock Hauptbahnhof,12.130682,54.077736
+STN_0197,Multimodal station,197,Hannover Hauptbahnhof,9.74112,52.377377
+STN_0198,Multimodal station,198,Halle(Saale)Hbf,11.986639,51.477154
+STN_0199,Multimodal station,199,Tübingen Hauptbahnhof,9.055004,48.515915
+STN_0200,Multimodal station,200,Oldenburg(Oldb) Hbf,8.223382,53.144478
+STN_0201,Multimodal station,201,Bremen Hbf,8.812912,53.08321
+STN_0202,Multimodal station,202,Münster Hauptbahnhof,7.6344934,51.95605
+STN_0203,Multimodal station,203,"Mainz, Hauptbahnhof",8.259231,50.001244
+STN_0204,Multimodal station,204,Bonn UN Campus (Museumsmeile),7.120409,50.71267
+STN_0205,Multimodal station,205,Kiel ZOB,10.132707,54.315712
+STN_0206,Bus station,206,Saarbrücken Fernbusbahnhof,6.999787,49.24202
+STN_0207,Multimodal station,207,Wiesbaden Hauptbahnhof,8.244217,50.07062
+STN_0209,Bus station,209,Ulm Fernbus-Halt,10.010675,48.425694
+STN_0210,Multimodal station,210,Erfurt Hbf,11.039112,50.972794
+STN_0211,Multimodal station,211,Duisburg Hbf,6.776202,51.429916
+STN_0212,Multimodal station,212,Lübeck ZOB/Hauptbahnhof,10.670488,53.866425
+STN_0215,Multimodal station,215,Passau Hbf,13.450557,48.573826
+STN_0217,Bus station,217,Milan (Lampugnano bus station),9.127541,45.48973
+STN_0218,Multimodal station,218,Arnhem Centraal,5.900842,51.984646
+STN_0219,Multimodal station,219,"Bielefeld, Brackwede Bahnhof",8.499911,51.99799
+STN_0220,Multimodal station,220,Groningen,6.5652575,53.211067
+STN_0221,Multimodal station,221,Basel SBB,7.589451,47.546986
+STN_0222,Rail station,222,Wien Westbahnhof,16.337297,48.197136
+STN_0224,Bus station,224,Innsbruck Südbahnstraße,11.39982,47.25835
+STN_0226,Multimodal station,226,Wrocław Główny,17.036757,51.097607
+STN_0227,Bus station,227,"Bydgoszcz, Bus station",18.017502,53.12202
+STN_0228,Bus station,228,Budapest Népliget bus station,19.09859,47.474434
+STN_0229,Multimodal station,229,"Gdansk, Bus Station",18.643293,54.356266
+STN_0230,Multimodal station,230,Den Haag Centraal,4.3253794,52.08011
+STN_0231,Multimodal station,231,Flensburg,9.436836,54.774498
+STN_0232,Bus station,232,Florence (Villa Costanza),11.172532,43.75506
+STN_0233,Bus station,233,"Katowice, Bus Station Sadowa",19.010395,50.25918
+STN_0234,Multimodal station,234,Klagenfurt Hauptbahnhof,14.3127985,46.61597
+STN_0235,Multimodal station,235,Copenhagen Busterminal,12.560976,55.664516
+STN_0236,Multimodal station,236,Kraków Główny,19.948282,50.06811
+STN_0237,Multimodal station,237,Linz/Donau Hauptbahnhof,14.291584,48.29033
+STN_0238,Multimodal station,238,Ljubljana bus station,14.511839,46.058144
+STN_0239,Multimodal station,239,Malmö Centralstation,13.001028,55.608925
+STN_0240,Bus station,240,Metz (central bus station),6.183587,49.11035
+STN_0241,Multimodal station,241,Opole Główne,17.92781,50.662178
+STN_0242,Bus station,242,Padua,11.873498,45.41875
+STN_0243,Bus station,243,Plzeň (central bus station),13.3630705,49.746346
+STN_0244,Multimodal station,244,Rome Tiburtina Bus station,12.529674,41.910145
+STN_0245,Multimodal station,245,Trieste (Autostazione),13.770771,45.657223
+STN_0247,Multimodal station,247,Verona Porta Nuova,10.9819,45.429996
+STN_0249,Bus station,249,Zagreb (Bus Station),15.992277,45.803417
+STN_0250,Bus station,250,Vienna Erdberg (Busterminal VIB),16.41408,48.190872
+STN_0251,Multimodal station,251,"Zwickau, Hauptbahnhof",12.476709,50.715363
+STN_0252,Multimodal station,252,Amsterdam Sloterdijk,4.8383093,52.389736
+STN_0253,Multimodal station,253,Heilbronn Hauptbahnhof,9.20756,49.1425
+STN_0254,Multimodal station,254,Flughafen/Messe Bstg 1,9.196821,48.69156
+STN_0255,Multimodal station,255,Reutlingen Hauptbahnhof,9.210044,48.49566
+STN_0256,Multimodal station,256,Bruxelles-Nord,4.360094,50.86036
+STN_0257,Bus station,257,Zingst Zentrum,12.686355,54.433594
+STN_0258,Bus station,258,Turin (Vittorio Emanuele),7.6580405,45.070065
+STN_0259,Multimodal station,259,Reims - Champagne Ardenne TGV,3.9945345,49.214924
+STN_0260,Multimodal station,260,Ghent Dampoort (Bus parking),3.7405212,51.05353
+STN_0261,Multimodal station,261,Venezia Mestre,12.23304,45.482155
+STN_0262,Multimodal station,262,Brescia (SAIA bus station),10.214199,45.53283
+STN_0263,Multimodal station,263,Genoa (Fanti d'Italia/Principe bus station),8.919697,44.416367
+STN_0264,Multimodal station,264,Bologna (central bus station),11.3453665,44.504814
+STN_0265,Multimodal station,265,Stockholm Cityterminalen,18.057076,59.330975
+STN_0266,Multimodal station,266,Pescara,14.204419,42.469646
+STN_0267,Multimodal station,267,Bari (FS Park Via Capruzzi),16.864126,41.117134
+STN_0268,Bus station,268,Clermont-Ferrand (Bus Station),3.0822682,45.770763
+STN_0270,Bus station,270,Lausanne (P+R Vélodrome),6.6233644,46.536293
+STN_0271,Bus station,271,Bern (Neufeld car terminal),7.433688,46.96374
+STN_0272,Multimodal station,272,Genève,6.1428885,46.210186
+STN_0273,Multimodal station,273,Bordeaux Saint-Jean,-0.556226,44.826122
+STN_0274,Multimodal station,274,Bruges,3.2167122,51.19687
+STN_0275,Multimodal station,275,Chambéry - Challes-les-Eaux,5.918714,45.57081
+STN_0276,Multimodal station,276,Dijon,5.0272,47.3234
+STN_0277,Multimodal station,277,La Rochelle,-1.1452916,46.15271
+STN_0278,Multimodal station,278,Lyon Perrache,4.8258815,45.748596
+STN_0279,Bus station,279,Mons Av. Léo Collard,3.936132,50.459534
+STN_0280,Bus station,280,Montpellier (Sabines),3.8601916,43.58399
+STN_0281,Multimodal station,281,Nantes (Haluchère),-1.520838,47.248882
+STN_0282,Multimodal station,282,Rennes,-1.6722708,48.103558
+STN_0284,Multimodal station,284,Toulouse Matabiau,1.4534947,43.611446
+STN_0286,Multimodal station,286,London Victoria Coach Station,-0.1475474,51.49299
+STN_0287,Multimodal station,287,Grenoble,5.714109,45.191906
+STN_0288,Multimodal station,288,Angers Saint-Laud,-0.5570448,47.46466
+STN_0289,Multimodal station,289,Annecy,6.1209583,45.90196
+STN_0290,Bus station,290,Bayonne (Quai de Lesseps),-1.4789819,43.49777
+STN_0291,Multimodal station,291,Brest,-4.4808073,48.38754
+STN_0292,Multimodal station,292,Caen,-0.34727597,49.176414
+STN_0293,Multimodal station,293,Dunkerque,2.3689206,51.03072
+STN_0294,Multimodal station,294,Le Havre,0.12517805,49.49246
+STN_0295,Bus station,295,Le Mans,0.149493,48.01747
+STN_0296,Multimodal station,296,Lorient,-3.3657343,47.75551
+STN_0297,Multimodal station,297,Eindhoven Centraal,5.479963,51.443604
+STN_0298,Multimodal station,298,San Sebastian / Donostia (Bus Station),-1.9772108,43.317017
+STN_0299,Multimodal station,299,Valence Gare Routière,4.8929853,44.927776
+STN_0300,Multimodal station,300,Aarhus C FlixBus stop,10.20799,56.151924
+STN_0301,Multimodal station,301,Saint-Étienne Châteaucreux,4.400547,45.442955
+STN_0304,Multimodal station,304,Ferrara,11.603238,44.842392
+STN_0305,Multimodal station,305,Naples - Bus Station,14.273979,40.851315
+STN_0306,Multimodal station,306,Bergamo (Bus Station),9.675298,45.691338
+STN_0307,Bus station,307,Lecce,18.168364,40.363064
+STN_0310,Multimodal station,310,Toulon,5.929818,43.128185
+STN_0311,Multimodal station,311,Split bus station,16.44283,43.5043
+STN_0312,Bus station,312,Brașov (bus station Bartolomeu),25.570017,45.659786
+STN_0313,Bus station,313,Timișoara (Bus station Normandia),21.254255,45.744774
+STN_0314,Bus station,314,Bratislava (bus station Mlynské Nivy),17.127817,48.14686
+STN_0316,Multimodal station,316,Vicenza (Bus Station),11.538561,45.54216
+STN_0317,Multimodal station,317,Marseille Saint-Charles,5.3805943,43.303104
+STN_0318,Multimodal station,318,Göteborg Centralstation,11.97352,57.709515
+STN_0319,Multimodal station,319,Salerno (Piazza Concordia),14.770518,40.674053
+STN_0320,Multimodal station,320,Barcelona (Bus Terminal Nord),2.1830168,41.39432
+STN_0321,Multimodal station,321,Oslo S,10.756101,59.910713
+STN_0322,Multimodal station,322,Helsingborg Centralstation,12.6952915,56.04303
+STN_0323,Multimodal station,323,Linköping (Fjärrbussterminal) Flixbus Stop,15.621205,58.418285
+STN_0324,Bus station,324,Orléans (Libération),1.903494,47.919533
+STN_0325,Multimodal station,325,Poznań Główny,16.912285,52.402073
+STN_0327,Multimodal station,327,"Rzeszow, Bus Station",21.994398,50.043068
+STN_0328,Multimodal station,328,"Liberec,aut.nádr.",15.046614,50.76306
+STN_0329,Multimodal station,329,Warszawa Zachodnia,20.964006,52.218994
+STN_0330,Multimodal station,330,Udine (autostazione),13.242516,46.056698
+STN_0331,Bus station,331,Bergamo (Orio al Serio Airport - BGY),9.697448,45.665813
+STN_0335,Bus station,335,Perugia (Piazza Partigiani),12.387827,43.10568
+STN_0336,Multimodal station,336,Anvers-Berchem,4.4335036,51.199924
+STN_0337,Multimodal station,337,Flughafen Köln/Bonn Bf,7.1190495,50.879364
+STN_0338,Bus station,338,Paris (Bercy Seine),2.3804214,48.835377
+STN_0340,Multimodal station,340,Brno (bus station Hotel Grand),16.613583,49.192158
+STN_0341,Multimodal station,341,Amsterdam Schiphol Airport,4.7611456,52.307854
+STN_0342,Bus station,342,"Luxembourg, P+R Bouillon",6.105346,49.60001
+STN_0344,Multimodal station,344,Lublin Główny,22.567995,51.231438
+STN_0345,Multimodal station,345,Łódź Fabryczna,19.468946,51.769512
+STN_0346,Bus station,346,Murcia (Bus Station),-1.1393021,37.985535
+STN_0347,Multimodal station,347,Białystok,23.135393,53.133293
+STN_0350,Multimodal station,350,Luzern,8.310762,47.048557
+STN_0354,Multimodal station,354,Barcelona (Sants),2.1400702,41.379513
+STN_0355,Bus station,355,Salzburg South (Hellbrunner Landesstraße),13.0708,47.76992
+STN_0357,Bus station,357,Plymouth Coach Station,-4.143638,50.37279
+STN_0358,Multimodal station,358,Hauptbahnhof (oben),9.182887,48.785107
+STN_0361,Bus station,361,Bus Station,-1.4721624,52.922188
+STN_0362,Multimodal station,362,Bergen busstasjon,5.334291,60.388355
+STN_0364,Bus station,364,Loughborough (The Rushes),-1.2065016,52.7727
+STN_0365,Bus station,365,Regent Circus Swindon (Stop C),-1.7807404,51.558872
+STN_0366,Bus station,366,Norwich (Bus Station),1.2933958,52.62417
+STN_0367,Bus station,367,Cardiff North Road (Friary Gardens),-3.179231,51.483692
+STN_0368,Multimodal station,368,Alkmaar,4.74098,52.638145
+STN_0369,Multimodal station,369,Nottingham Broad Marsh Bus Station (Bay 1),-1.1493117,52.95068
+STN_0372,Bus station,372,Brighton (Stop Z Old Steine),-0.13759667,50.819992
+STN_0373,Bus station,373,Cluj-Napoca (Airport),23.68141,46.78157
+STN_0374,Bus station,374,Lyon (Gerland Bus Station),4.8281455,45.72618
+STN_0375,Multimodal station,375,Utrecht Leidsche Rijn Centrum,5.067127,52.098293
+STN_0377,Multimodal station,377,Nantes,-1.5415894,47.217266
+STN_0378,Bus station,378,Tours (Vaucanson),0.71119875,47.423553
+STN_0379,Multimodal station,379,Köln Messe/Deutz Bf,6.975664,50.940815
+STN_0381,Bus station,381,Kauno autobusų stotis,23.928703,54.889732
+STN_0384,Multimodal station,384,Sárbogárd,18.611944,46.896942
+STN_0385,Multimodal station,385,Budapest-Keleti,19.084448,47.500492
+STN_0386,Multimodal station,386,Budapest-Nyugati,19.057283,47.510624
+STN_0389,Multimodal station,389,"Székesfehérvár, vasútállomás",18.42462,47.183647
+STN_0390,Multimodal station,390,Miskolc-Tiszai,20.81139,48.09861
+STN_0391,Multimodal station,391,Debrecen,21.62861,47.52028
+STN_0392,Multimodal station,392,"Nyíregyháza, autóbusz-állomás",21.704252,47.949863
+STN_0394,Multimodal station,394,"Győr, autóbusz-állomás",17.63577,47.681515
+STN_0396,Multimodal station,396,Szeged,20.143057,46.239723
+STN_0397,Multimodal station,397,Trondheim S,10.400277,63.43637
+STN_0398,Multimodal station,398,Sandnes bussterminal Ruten,5.736537,58.851215
+STN_0399,Multimodal station,399,Västerås Centralstation,16.55257,59.607998
+STN_0404,Multimodal station,404,København H,12.565165,55.67258
+STN_0409,Multimodal station,409,Innsbruck Hauptbahnhof,11.4007435,47.263187
+STN_0414,Multimodal station,414,Salzburg Hauptbahnhof,13.045675,47.813
+STN_0418,Multimodal station,418,Graz Hauptbahnhof,15.416579,47.072655
+STN_0421,Multimodal station,421,Bohumín,18.359516,49.900745
+STN_0423,Rail station,423,Zagreb Glavni kolodvor,15.97889,45.804432
+STN_0424,Multimodal station,424,Padova stazione,11.881531,45.417465
+STN_0427,Multimodal station,427,Šentilj železniška postaja,15.658098,46.674217
+STN_0428,Multimodal station,428,Maribor Železniška postaja,15.657517,46.561512
+STN_0429,Multimodal station,429,Bratislava hlavná stanica,17.10627,48.158424
+STN_0430,Multimodal station,430,Bratislava-Petržalka stanica,17.098795,48.12152
+STN_0434,Multimodal station,434,Bydgoszcz Główna,17.991636,53.135284
+STN_0435,Multimodal station,435,Płock,19.7127,52.552742
+STN_0437,Multimodal station,437,Radom Główny,21.155903,51.39108
+STN_0439,Multimodal station,439,Katowice,19.017365,50.257633
+STN_0441,Multimodal station,441,Bielsko-Biała Główna,19.0454,49.83007
+STN_0443,Multimodal station,443,Rzeszów Główny,22.005949,50.043076
+STN_0445,Multimodal station,445,Görlitz Bahnhof,14.97863,51.147038
+STN_0448,Multimodal station,448,Częstochowa,19.121014,50.80863
+STN_0449,Multimodal station,449,Toruń Główny,18.615236,53.000286
+STN_0450,Multimodal station,450,Toruń Wschodni,18.63325,53.026276
+STN_0453,Multimodal station,453,Tarnów,20.974638,50.006065
+STN_0455,Multimodal station,455,Nowy Sącz,20.702475,49.606495
+STN_0457,Multimodal station,457,Czechowice-Dziedzice,19.00644,49.915325
+STN_0459,Multimodal station,459,Guben,14.706591,51.958424
+STN_0460,Multimodal station,460,Neubrandenburg,13.260586,53.56168
+STN_0461,Multimodal station,461,Pasewalk Bahnhof,13.989144,53.51492
+STN_0462,Multimodal station,462,Schwerin Hauptbahnhof,11.407675,53.634926
+STN_0463,Multimodal station,463,"Bützow, Bahnhof",11.997733,53.836834
+STN_0465,Multimodal station,465,Donaueschingen Bahnhof,8.498767,47.947952
+STN_0469,Multimodal station,469,Singen (Htw) Bahnhof,8.841397,47.758907
+STN_0470,Multimodal station,470,Stockach ZOB,9.005621,47.850388
+STN_0473,Bus station,473,Rust Rathaus,7.7232437,48.269096
+STN_0477,Multimodal station,477,Göttingen,9.926028,51.53644
+STN_0479,Multimodal station,479,Offenburg,7.9463344,48.476273
+STN_0489,Multimodal station,489,Villingen Bahnhof/ZOB,8.465385,48.05781
+STN_0491,Multimodal station,491,Konstanz Bahnhof,9.177273,47.65879
+STN_0492,Multimodal station,492,Bonn-Beuel,7.1276016,50.7385
+STN_0494,Multimodal station,494,Ulm Hbf,9.982867,48.39895
+STN_0496,Multimodal station,496,Friedrichshafen Stadtbahnhof,9.473677,47.65315
+STN_0504,Multimodal station,504,Milano Centrale,9.204593,45.4869
+STN_0520,Multimodal station,520,Lausanne,6.629417,46.5168
+STN_0536,Multimodal station,536,Schaffhausen,8.632631,47.698185
+STN_0552,Multimodal station,552,St. Gallen,9.368929,47.42308
+STN_0555,Multimodal station,555,Bern,7.437481,46.948566
+STN_0574,Multimodal station,574,Nancy,6.1745143,48.68985
+STN_0575,Multimodal station,575,Lorraine TGV,6.1698065,48.947655
+STN_0576,Multimodal station,576,Reims,4.023963,49.259537
+STN_0577,Multimodal station,577,Mulhouse,7.343119,47.74254
+STN_0578,Multimodal station,578,Metz,6.1772003,49.109444
+STN_0580,Multimodal station,580,Strasbourg,7.7341285,48.58517
+STN_0582,Multimodal station,582,Paris Austerlitz,2.3656006,48.84199
+STN_0584,Rail station,584,Saint-Pierre-des-Corps,0.7236027,47.386032
+STN_0585,Multimodal station,585,Paris Gare de Lyon Hall 1 - 2,2.3735886,48.84492
+STN_0587,Multimodal station,587,Lyon Part Dieu,4.860485,45.760612
+STN_0589,Multimodal station,589,Besançon Viotte,6.0219593,47.247128
+STN_0593,Multimodal station,593,Clermont-Ferrand,3.1006384,45.778893
+STN_0597,Multimodal station,597,Nice-Ville,7.2618823,43.704597
+STN_0598,Multimodal station,598,Valence TGV Rhône-Alpes Sud,4.978796,44.99182
+STN_0599,Multimodal station,599,Avignon Centre,4.8058395,43.94184
+STN_0600,Rail station,600,Montpellier Saint-Roch,3.8806984,43.6047
+STN_0601,Multimodal station,601,Nîmes Centre,4.3660183,43.8323
+STN_0602,Multimodal station,602,Perpignan,2.8794186,42.69597
+STN_0603,Multimodal station,603,Luxembourg,6.1341314,49.599487
+STN_0605,Multimodal station,605,Breda,4.779727,51.59574
+STN_0606,Multimodal station,606,Lille Flandres (FR),3.066667,50.63333
+STN_0616,Multimodal station,616,Louvain,4.7153625,50.882305
+STN_0618,Multimodal station,618,Liège-Guillemins,5.5667357,50.624477
+STN_0628,Multimodal station,628,Namur,4.8621764,50.46887
+STN_0630,Multimodal station,630,Marchienne-au-Pont,4.39422,50.41217
+STN_0632,Multimodal station,632,Charleroi-Central,4.4381933,50.404842
+STN_0636,Multimodal station,636,Mons,3.9426713,50.454025
+STN_0646,Multimodal station,646,Gand-Saint-Pierre,3.710562,51.036037
+STN_0654,Multimodal station,654,Kehl,7.8068156,48.576263
+STN_0655,Multimodal station,655,"Trier, Hauptbahnhof",6.6513186,49.75753
+STN_0656,Multimodal station,656,Saarbrücken Hbf,6.9907613,49.241135
+STN_0658,Rail station,658,Turin Porta Susa,7.666374,45.07366
+STN_0659,Multimodal station,659,Milano Porta Garibaldi,9.187533,45.484684
+STN_0661,Multimodal station,661,Amiens,2.308277,49.890583
+STN_0662,Multimodal station,662,Avignon TGV,4.7859216,43.922077
+STN_0664,Multimodal station,664,Valenciennes,3.517124,50.363186
+STN_0665,Multimodal station,665,Douai,3.0897534,50.37187
+STN_0666,Multimodal station,666,Lens,2.828301,50.426865
+STN_0668,Multimodal station,668,Paris Montparnasse Hall 1 - 2,2.3204494,48.841125
+STN_0669,Multimodal station,669,Le Mans,0.192614,47.995613
+STN_0670,Multimodal station,670,Rouen Rive Droite,1.0941035,49.44868
+STN_0674,Multimodal station,674,Saint-Brieuc,-2.765128,48.50757
+STN_0675,Multimodal station,675,Gare de Saint-Nazaire,-2.2114067,47.286057
+STN_0679,Multimodal station,679,Orléans,1.9042403,47.90795
+STN_0680,Multimodal station,680,Les Aubrais,1.9068377,47.926765
+STN_0681,Multimodal station,681,Poitiers,0.33389273,46.58303
+STN_0682,Multimodal station,682,Angoulême,0.16484562,45.653538
+STN_0683,Multimodal station,683,Limoges Bénédictins,1.26771,45.836006
+STN_0685,Multimodal station,685,Pau,-0.369675,43.29171
+STN_0686,Multimodal station,686,Bayonne,-1.470368,43.49679
+STN_0688,Rail station,688,LUNEL - Gare Multimodale,4.1292877,43.67911
+STN_0691,Rail station,691,Split,16.455835,43.5227
+STN_0692,Rail station,692,Αθήνα,23.72084,37.99261
+STN_0693,Multimodal station,693,Roma Termini,12.501901,41.900635
+STN_0695,Rail station,695,Torino Porta Nuova,7.677713,45.061
+STN_0696,Multimodal station,696,Villa San Giovanni,15.634555,38.216656
+STN_0697,Multimodal station,697,Firenze Stazione S.M.N.,11.248061,43.776405
+STN_0698,Multimodal station,698,Firenze C.M.,11.276779,43.77715
+STN_0701,Multimodal station,701,Bari Centrale,16.870173,41.117702
+STN_0702,Multimodal station,702,Parma,10.328577,44.81024
+STN_0703,Multimodal station,703,Taranto,17.224312,40.483486
+STN_0704,Multimodal station,704,Cosenza,16.260506,39.318977
+STN_0707,Multimodal station,707,Genova Brignole,8.947197,44.406998
+STN_0709,Rail station,709,Trento,11.118901,46.07229
+STN_0710,Multimodal station,710,Perugia,12.37562,43.103832
+STN_0720,Multimodal station,720,Messina Centrale,15.561792,38.18454
+STN_0723,Bus station,723,Cagliari,9.108012,39.216267
+STN_0726,Rail station,726,Prato C.Le,11.108941,43.878727
+STN_0729,Rail station,729,Trepuzzi,18.076624,40.40992
+STN_0740,Multimodal station,740,Birmingham New Street Rail Station,-1.90021,52.47782
+STN_0743,Multimodal station,743,Blackpool North Rail Station,-3.04927,53.82191
+STN_0746,Multimodal station,746,Bus Station,-2.4807055,53.748756
+STN_0748,Multimodal station,748,Barnsley Rail Station,-1.4777582,53.554146
+STN_0750,Multimodal station,750,Bournemouth Rail Station,-1.86465,50.72703
+STN_0753,Multimodal station,753,Brighton Railway Station - Stroudley Road,-0.14135875,50.831364
+STN_0757,Multimodal station,757,Bristol Temple Meads Rail Station,-2.58044,51.44927
+STN_0762,Multimodal station,762,Cambridge Rail Station,0.13746,52.19407
+STN_0767,Multimodal station,767,Cheltenham Spa Rail Station,-2.09962,51.8974
+STN_0771,Multimodal station,771,Chester Rail Station,-2.8803566,53.196663
+STN_0775,Multimodal station,775,Coventry Rail Station,-1.51346,52.40081
+STN_0776,Multimodal station,776,Customhouse Street JG,-3.176955,51.476604
+STN_0780,Multimodal station,780,Doncaster Rail Station,-1.1391042,53.523754
+STN_0781,Multimodal station,781,Derby Rail Station,-1.46335,52.91655
+STN_0786,Multimodal station,786,Eastleigh Rail Station,-1.35008,50.96925
+STN_0789,Multimodal station,789,London Euston Rail Station,-0.13496,51.52846
+STN_0793,Rail station,793,Rail Station,-1.1909661,50.8527
+STN_0808,Multimodal station,808,Huddersfield Bus Station,-1.7864913,53.64565
+STN_0816,Multimodal station,816,Hull Interchange,-0.34499478,53.744423
+STN_0820,Multimodal station,820,Ipswich Rail Station,1.14443,52.05059
+STN_0824,Multimodal station,824,Leicester Rail Station,-1.12449,52.63131
+STN_0826,Multimodal station,826,Lincoln Central Rail Station,-0.53992,53.22609
+STN_0830,Multimodal station,830,Luton Airport Parkway Rail Station,-0.39588,51.87244
+STN_0831,Multimodal station,831,Luton Station Interchange,-0.41511333,51.882153
+STN_0832,Multimodal station,832,Queen Square Bus Station,-2.982056,53.407272
+STN_0835,Multimodal station,835,Middlesbrough Rail Station,-1.23472,54.5791
+STN_0837,Multimodal station,837,Meadowhall Rail Station,-1.4129481,53.416946
+STN_0839,Multimodal station,839,Central Railway Station,-0.77347517,52.03471
+STN_0843,Multimodal station,843,Manchester Piccadilly Rail Station,-2.23047,53.47701
+STN_0845,Multimodal station,845,Motherwell Rail Station,-3.99433,55.79167
+STN_0849,Multimodal station,849,Northampton Rail Station,-0.907,52.23736
+STN_0850,Multimodal station,850,Bus Station,-1.4663715,52.524635
+STN_0851,Multimodal station,851,Norwich Rail Station,1.30695,52.62665
+STN_0853,Multimodal station,853,Newcastle Rail Station,-1.6200184,54.967995
+STN_0855,Multimodal station,855,Newton-le-Willows Interchange,-2.6132982,53.452915
+STN_0857,Multimodal station,857,London Paddington Rail Station,-0.17802498,51.516895
+STN_0858,Multimodal station,858,Peterborough Rail Station,-0.2483096,52.574856
+STN_0861,Multimodal station,861,Plymouth Rail Station,-4.14332,50.37783
+STN_0864,Multimodal station,864,Preston Rail Station,-2.70711,53.75534
+STN_0870,Multimodal station,870,Reading Rail Station,-0.97113955,51.4579
+STN_0880,Multimodal station,880,Swindon Rail Station,-1.78561,51.56459
+STN_0883,Multimodal station,883,Sleaford Rail Station,-0.41035,52.99547
+STN_0884,Multimodal station,884,Interchange,-1.3846796,54.902954
+STN_0885,Multimodal station,885,Southampton Central Rail Station,-1.41148,50.90671
+STN_0887,Multimodal station,887,Southport Rail Station,-3.00243,53.64652
+STN_0890,Multimodal station,890,Coach Station,0.26287204,51.889004
+STN_0892,Multimodal station,892,Stoke-on-Trent Rail Station,-2.18099,53.00798
+STN_0894,Rail station,894,Strood Rail Station,0.49651018,51.39501
+STN_0897,Multimodal station,897,Swansea Rail Station,-3.94086,51.62532
+STN_0900,Multimodal station,900,Tiverton Parkway Rail Station,-3.35964,50.91718
+STN_0913,Multimodal station,913,Woking Rail Station,-0.55696,51.31847
+STN_0915,Multimodal station,915,"Warrington, Interchange",-2.5942676,53.391125
+STN_0916,Multimodal station,916,Warrington Bank Quay Rail Station,-2.60236,53.38601
+STN_0918,Multimodal station,918,Rail Station,-1.0909653,53.95821
+STN_0920,Multimodal station,920,BEAULIEU PARK,0.51822,51.75719
+STN_0925,Bus station,925,SASSARI VIA TURATI,8.557568,40.71557
+STN_0935,Multimodal station,935,Kornwestheim,9.180061,48.862194
+STN_0937,Multimodal station,937,München Ostbahnhof,11.605509,48.127377
+STN_0941,Multimodal station,941,Augsburg Hbf,10.885784,48.365383
+STN_0944,Multimodal station,944,Zwolle,6.0907874,52.504738
+STN_0945,Rail station,945,"[Brummen] Voorzijde station, Stationsweg",6.147259,52.0909
+STN_0948,Multimodal station,948,Hengelo,6.7938523,52.26196
+STN_0949,Multimodal station,949,Oberhausen Hbf,6.8514113,51.474613
+STN_0951,Multimodal station,951,Bielefeld Hbf,8.532938,52.029297
+STN_0953,Multimodal station,953,S Spandau Bhf (Berlin),13.197075,52.53461
+STN_0957,Multimodal station,957,Enschede,6.8900003,52.222424
+STN_0960,Multimodal station,960,"Hamm (Westf), Hauptbahnhof",7.807696,51.678352
+STN_0963,Multimodal station,963,'s-Hertogenbosch,5.2939634,51.69036
+STN_0964,Multimodal station,964,Leeuwarden,5.791847,53.196377
+STN_0965,Multimodal station,965,MG Hbf /Europaplatz,6.4459248,51.19697
+STN_0966,Multimodal station,966,"Nijmegen, Centraal Station",5.853415,51.843628
+STN_0967,Multimodal station,967,Osnabrück Hbf,8.060587,52.273045
+STN_0968,Multimodal station,968,"Tilburg, Centraal Station",5.08205,51.560535
+STN_0970,Multimodal station,970,Utrecht Centraal,5.1094155,52.089375
+STN_0972,Multimodal station,972,Venlo,6.172027,51.36468
+STN_0975,Multimodal station,975,"Apeldoorn, Station",5.9705906,52.209553
+STN_0988,Bus station,988,"Kampen, GSG Pieter Zandt",5.9234424,52.542263
+STN_0997,Multimodal station,997,"Lelystad, Station Centrum",5.4731493,52.50756
+STN_1000,Multimodal station,1000,Den Haag HS,4.3224053,52.06968
+STN_1035,Bus station,1035,"Grave, Busstation",5.734611,51.76057
+STN_1047,Bus station,1047,"Lauwersoog, Veerhaven",6.1962,53.41051
+STN_1055,Multimodal station,1055,Pforzheim Hauptbahnhof,8.703945,48.893787
+STN_1057,Multimodal station,1057,Aschaffenburg Hbf,9.143216,49.980267
+STN_1067,Multimodal station,1067,Vaihingen (E),8.957929,48.94729
+STN_1097,Multimodal station,1097,Mühlacker Bahnhof,8.846569,48.953
+STN_1115,Multimodal station,1115,Windeck Au (Sieg) Bf,7.6566453,50.773613
+STN_1122,Multimodal station,1122,Bad Laasphe ZOB,8.421525,50.92956
+STN_1130,Multimodal station,1130,Bamberg,10.899406,49.90054
+STN_1134,Rail station,1134,"Bensheim, Bahnhof",8.617128,49.681705
+STN_1150,Multimodal station,1150,Bonn Hbf,7.0979915,50.732018
+STN_1157,Multimodal station,1157,Bremerhaven Hbf,8.599112,53.535316
+STN_1166,Multimodal station,1166,"Chemnitz, Hauptbahnhof",12.92991,50.83998
+STN_1167,Multimodal station,1167,"Cottbus, Hauptbahnhof",14.324475,51.750763
+STN_1170,Multimodal station,1170,Dachau Bahnhof,11.44329,48.254734
+STN_1171,Multimodal station,1171,Darmstadt Hauptbahnhof,8.63093,49.872257
+STN_1177,Multimodal station,1177,Dillenburg Bahnhof,8.294406,50.734783
+STN_1182,Multimodal station,1182,Dresden Bahnhof Neustadt,13.740693,51.065834
+STN_1188,Multimodal station,1188,"Eberbach, Bahnhof",8.984025,49.465446
+STN_1204,Multimodal station,1204,Flieden Bahnhof,9.577685,50.421913
+STN_1205,Multimodal station,1205,Frankfurt (Main) Flughafen Terminal 1,8.57068,50.051983
+STN_1208,Multimodal station,1208,Frankfurt (Main) Südbahnhof,8.686205,50.099148
+STN_1218,Multimodal station,1218,Fulda Bahnhof,9.683876,50.554615
+STN_1227,Multimodal station,1227,Gießen Bahnhof,8.663359,50.5801
+STN_1228,Multimodal station,1228,"Glauchau, Bahnhof",12.548555,50.828323
+STN_1231,Multimodal station,1231,"Greifswald, ZOB (DB)",13.37002,54.093586
+STN_1239,Multimodal station,1239,Haiger Bahnhof,8.221886,50.74115
+STN_1245,Multimodal station,1245,Hamburg-Harburg,9.991632,53.456234
+STN_1247,Multimodal station,1247,Hanau Hauptbahnhof,8.929521,50.121098
+STN_1260,Multimodal station,1260,Hildesheim Bahnhof Stadtbus,9.951969,52.159435
+STN_1264,Multimodal station,1264,Homburg (Saar) Hbf,7.337014,49.327797
+STN_1266,Rail station,1266,Hoyerswerda Bahnhof,14.231971,51.434258
+STN_1271,Multimodal station,1271,Ingolstadt Hbf,11.436915,48.744694
+STN_1272,Multimodal station,1272,Ingolstadt Nord,11.432096,48.77352
+STN_1278,Multimodal station,1278,"Kaiserslautern, Hbf",7.768594,49.436005
+STN_1282,Multimodal station,1282,Kassel-Wilhelmshöhe,9.4473,51.312115
+STN_1284,Multimodal station,1284,Kempten (Allgäu) Hbf,10.317405,47.711895
+STN_1290,Multimodal station,1290,Krefeld Hbf,6.568948,51.32542
+STN_1291,Multimodal station,1291,Kreiensen,9.967798,51.85142
+STN_1304,Multimodal station,1304,Landshut (Bay) Hauptbahnhof,12.135922,48.547115
+STN_1322,Multimodal station,1322,Magdeburg Hbf,11.626232,52.13075
+STN_1324,Multimodal station,1324,Marburg Hauptbahnhof,8.774809,50.819305
+STN_1336,Multimodal station,1336,Münsingen Bhf,9.490671,48.4095
+STN_1343,Rail station,1343,Neuenmarkt-Wirsberg,11.58101,50.093735
+STN_1351,Multimodal station,1351,Neustrelitz Hauptbahnhof,13.0743475,53.359325
+STN_1367,Multimodal station,1367,"Paderborn, Hauptbahnhof",8.740895,51.71304
+STN_1372,Multimodal station,1372,Plau am See Bahnhof,12.256124,53.460255
+STN_1382,Multimodal station,1382,Regensburg Hbf,12.099279,49.01209
+STN_1383,Multimodal station,1383,Rendsburg Bahnhofstraße/ZOB,9.669067,54.30274
+STN_1391,Multimodal station,1391,Rosenheim,12.119109,47.85019
+STN_1408,Multimodal station,1408,Schweinfurt Hbf,10.21155,50.035633
+STN_1414,Multimodal station,1414,"Schönberg, Bahnhof",11.961185,50.528416
+STN_1416,Multimodal station,1416,Siegen Hbf,8.016619,50.875698
+STN_1418,Multimodal station,1418,"Sinsheim, Hauptbahnhof",8.877084,49.250896
+STN_1419,Multimodal station,1419,Springe Bahnhof (ZOB),9.556486,52.215183
+STN_1421,Rail station,1421,Bf. Stade,9.476454,53.596306
+STN_1423,Multimodal station,1423,Stralsund Hauptbahnhof,13.0787325,54.30828
+STN_1429,Multimodal station,1429,Troisdorf Bf,7.1508427,50.814056
+STN_1440,Multimodal station,1440,"Waren, ZOB",12.681356,53.520863
+STN_1450,Multimodal station,1450,Wetzlar Bahnhof,8.503396,50.565422
+STN_1452,Multimodal station,1452,"Wolfsburg, Hauptbahnhof",10.788071,52.42917
+STN_1454,Multimodal station,1454,Wuppertal Hbf,7.148867,51.254303
+STN_1455,Multimodal station,1455,Wuppertal Oberbarmen Bf,7.2224727,51.274178
+STN_1459,Multimodal station,1459,Würzburg Hbf,9.935545,49.801884
+STN_1460,Multimodal station,1460,Zittau Bahnhof,14.805558,50.9043
+STN_1472,Bus station,1472,"Aichach, Sparkasse",11.131636,48.461796
+STN_1491,Multimodal station,1491,Amorbach,9.223269,49.64525
+STN_1516,Bus station,1516,Bad Brückenau Staatsbad Schlosspark,9.746379,50.301403
+STN_1519,Bus station,1519,"Bad Füssing, Johannesbad",13.328223,48.348114
+STN_1712,Rail station,1712,"Demmin, ZOB (EA)",13.052809,53.901176
+STN_2221,Multimodal station,2221,"Lüd., Brügge Bahnhof",7.571337,51.207993
+STN_2463,Multimodal station,2463,"Reichenbach, Bahnhof",12.29278,50.627613
+STN_2524,Multimodal station,2524,Sarstedt Bahnhof,9.842592,52.2326
+STN_2593,Multimodal station,2593,Siegburg Bf,7.203596,50.7937
+STN_2618,Rail station,2618,Speele Pommernstraße,9.56499,51.378357
+STN_2686,Multimodal station,2686,Usti nad Labem hl.n.,14.044026,50.659725
+STN_2724,Multimodal station,2724,Biedenkopf-Wallau Bahnhofstraße,8.469154,50.92314
+STN_2852,Multimodal station,2852,Überlingen Busbahnhof,9.163263,47.769127
+STN_2886,Bus station,2886,Bus Station,-2.695821,53.76077
+STN_2897,Bus station,2897,Chorlton Street Coach Station,-2.236983,53.478024
+STN_2930,Bus station,2930,VITORIA-GASTEIZ - ESTACION AUTOBUSES LAKUA,-2.6856012,42.85911
+STN_2931,Multimodal station,2931,UNI.GASTEIZ - UNIVERSIDAD C/AGUIRRE MIRAMON,-2.674095,42.83898
+STN_2936,Multimodal station,2936,Versailles Chantiers,2.135912,48.795746
+STN_2997,Multimodal station,2997,Horsens St.,9.836367,55.862663
+STN_2998,Multimodal station,2998,Odense St.,10.385336,55.4023
+STN_3012,Bus station,3012,Orléans - Georges Pompidou Bus Stop,1.854014,47.896133
+STN_3015,Bus station,3015,Nantes - Airport - Arrivals Zone 1,-1.600819,47.157814
+STN_3018,Bus station,3018,Nancy - Quai Sainte-Catherine,6.190492,48.694817
+STN_3019,Multimodal station,3019,Santiago de Compostela - Bus Station,-8.544346,42.870323
+STN_3025,Multimodal station,3025,Hallsberg station,15.110659,59.066956
+STN_3130,Multimodal station,3130,Estació Intermodal Castelló de la Plana,-0.052092735,39.98865
+STN_3134,Bus station,3134,Estació Autobusos Alacant,-0.49144593,38.337337
+STN_3135,Multimodal station,3135,Estació Autobusos Elx,-0.691258,38.27214
+STN_3159,Multimodal station,3159,Shipley Market Square,-1.7767701,53.83331
+STN_3182,Bus station,3182,Middlesbrough Bus Station 'Stand 19',-1.2398508,54.575928
+STN_3218,Bus station,3218,Clarence Pier,-1.10018,50.78582
+STN_3220,Bus station,3220,Bus Station,0.27572033,51.437683
+STN_3261,Bus station,3261,Lost Village Festival Site,-0.6847015,53.14055
+STN_3281,Bus station,3281,Chester Bus Interchange,-2.8892245,53.19453
+STN_3295,Bus station,3295,Bay Campus,-3.8800328,51.62036
+STN_3311,Multimodal station,3311,Chevin Avenue,-1.7316428,53.892708
+STN_3312,Bus station,3312,Reading (Mereoak Park and Ride),-0.9801353,51.406055
+STN_3322,Bus station,3322,Milton Keynes Coachway,-0.6987255,52.055653
+STN_3384,Bus station,3384,Birmingham Coach Station,-1.88858,52.47518
+STN_3390,Bus station,3390,Birmingham Airport Bus Terminal,-1.73112,52.45335
+STN_3391,Bus station,3391,Blackpool (Central Coach Station),-3.0527496,53.813503
+STN_3408,Bus station,3408,Outlet Village,-2.880513,53.264713
+STN_3409,Multimodal station,3409,Barnsley Road/Probert Avenue,-1.3124852,53.53313
+STN_3432,Bus station,3432,Sophia Gardens,-3.190162,51.48444
+STN_3466,Bus station,3466,Bampfylde Street,-3.52313,50.72689
+STN_3477,Multimodal station,3477,Braga,-8.434369,41.548595
+STN_3479,Multimodal station,3479,Coimbra-B,-8.440501,40.224716
+STN_3503,Bus station,3503,Pamplona/Iruña. Estación Bus. Yanguas y Miranda,-1.6453071,42.811478
+STN_3504,Multimodal station,3504,Zaragoza. Estación Bus. Av. Navarra 80,-0.91131526,41.658707
+STN_3512,Rail station,3512,Grand Central Station,-5.9388323,54.594574
+STN_3515,Multimodal station,3515,Connolly,-6.2506943,53.35063
+STN_3517,Multimodal station,3517,Dublin Heuston,-6.2934012,53.346508
+STN_3521,Rail station,3521,Mallow,-8.655046,52.138683
+STN_3531,Multimodal station,3531,CASTELFRANCO E. STAZIONE,11.056333,44.59725
+STN_3588,Rail station,3588,Madrid-Chamartín-Clara Campoamor,-3.682733,40.471462
+STN_3589,Rail station,3589,Almeria,-2.455519,36.83495
+STN_3590,Multimodal station,3590,Bilbao-Abando Indalecio Prieto,-2.9288547,43.25987
+STN_3591,Multimodal station,3591,Vigo Guixar,-8.714609,42.239265
+STN_3592,Multimodal station,3592,Valencia-Estaciò Del Nord,-0.37720406,39.46693
+STN_3593,Multimodal station,3593,Pamplona/Iruña,-1.661419,42.82488
+STN_3594,Multimodal station,3594,Madrid Pta.Atocha - Almudena Grandes,-3.6904898,40.406372
+STN_3595,Multimodal station,3595,Leon,-5.582428,42.596046
+STN_3596,Multimodal station,3596,A Corunya,-8.415563,43.349693
+STN_3597,Rail station,3597,Valladolid,-4.726972,41.642185
+STN_3598,Multimodal station,3598,Cádiz,-6.287189,36.52839
+STN_3599,Multimodal station,3599,Cordoba,-4.789453,37.88829
+STN_3600,Multimodal station,3600,Sevilla-Santa Justa,-5.9751577,37.39219
+STN_3601,Multimodal station,3601,Alicante/Alacant,-0.49519226,38.344536
+STN_3602,Multimodal station,3602,Tarragona,1.2532209,41.111595
+STN_3603,Multimodal station,3603,Cartagena,-0.97590464,37.604378
+STN_3604,Multimodal station,3604,Murcia,-1.1309508,37.97473
+STN_3605,Multimodal station,3605,Malaga Maria Zambrano,-4.4329133,36.71208
+STN_3606,Rail station,3606,Granada,-3.609154,37.184036
+STN_3607,Rail station,3607,Huelva,-6.950971,37.25308
+STN_3608,Multimodal station,3608,Valencia Joaquin Sorolla,-0.38296735,39.459087
+STN_3609,Rail station,3609,Gijón/Xixón,-5.677332,43.5389
+STN_3610,Multimodal station,3610,Santander,-3.8106415,43.458817
+STN_3641,Multimodal station,3641,Amara-Donostia,-1.9815749,43.31261
+STN_3642,Multimodal station,3642,Matiko-Bilbao,-2.9255435,43.269024
+STN_3646,Multimodal station,3646,Estación De Autobuses Jerez,-6.126668,36.679413
+STN_3658,Bus station,3658,Tarragona (estació d'autobusos),1.2444276,41.11827
+STN_3667,Bus station,3667,MARBELLA,-4.892167,36.51949
+STN_3668,Bus station,3668,A Coruña E.A.,-8.404204,43.353577
+STN_3673,Multimodal station,3673,Camp Tarragona,1.272666,41.192066
+STN_3680,Multimodal station,3680,[OVIEDO/UVIÉU]  Estación Bus Oviedo FL- Pepe Cosmen [CTA 01549],-5.85221,43.36791
+STN_3715,Multimodal station,3715,Calvo Sotelo - Instituto,-5.8525476,43.35907
+STN_3737,Rail station,3737,"Ludwigslust, Bahnhof",11.4949255,53.334198
+STN_3741,Bus station,3741,"Olomouc,aut.nádr.",17.28565,49.588036
+STN_3743,Multimodal station,3743,"Brno,ÚAN Zvonařka",16.616545,49.185535
+STN_3748,Multimodal station,3748,"Olomouc,hl.nádr.",17.277351,49.592472
+STN_3751,Multimodal station,3751,"Ostrava,Svinov,nádraží",18.2087,49.821316
+STN_3761,Multimodal station,3761,"Rokycany,aut.nádr.",13.591021,49.741035
+STN_3764,Multimodal station,3764,"Praha,Nádraží Holešovice",14.439302,50.109066
+STN_3773,Multimodal station,3773,Kaunas,23.931744,54.886227
+STN_3785,Rail station,3785,Kalisz,18.071184,51.742783
+STN_3786,Rail station,3786,Łódź Widzew,19.543186,51.76321
+STN_3810,Multimodal station,3810,"Werdohl, Bahnhof",7.757789,51.259315
+STN_3850,Rail station,3850,Breclav(Gr),16.86837,48.71265
+STN_3853,Multimodal station,3853,Horka(Gr),15.032184,51.2862
+STN_3867,Rail station,3867,Forst(Gr),14.661881,51.73637
+STN_3868,Multimodal station,3868,Nyirabrany,22.01684,47.523888
+STN_3870,Multimodal station,3870,Brașov,25.613585,45.661213
+STN_3871,Rail station,3871,Cluj Napoca,23.586168,46.784626
+STN_3872,Multimodal station,3872,Oradea,21.936182,47.070057
+STN_3873,Multimodal station,3873,Iași,27.569733,47.165432
+STN_3922,Multimodal station,3922,Regis-Breitingen,12.426034,51.083553
+STN_3928,Multimodal station,3928,Rimini,12.573995,44.064022
+STN_3933,Bus station,3933,Avignon (Le Pontet),4.855938,43.960625
+STN_3934,Bus station,3934,Athens Lagoumitzi,23.724775,37.956066
+STN_3936,Bus station,3936,Antwerp (P+R Luchtbal),4.419757,51.26269
+STN_3943,Multimodal station,3943,Friedrichshafen Flughafen,9.522541,47.671867
+STN_3950,Bus station,3950,Seville (Airport),-5.901126,37.423595
+STN_3957,Bus station,3957,Timisoara (Autogara Super Imposer),21.207071,45.746006
+STN_3959,Bus station,3959,Rimini (Centro Studi),12.582369,44.04972
+STN_3973,Bus station,3973,Aéroport de PORTO,-8.68139,41.2481
+STN_3974,Bus station,3974,Aéroport de NAPLES,14.2908,40.886
+STN_3975,Bus station,3975,Aéroport de NICE,7.21587,43.6584
+STN_3978,Bus station,3978,Aéroport de COPENHAGUE,12.656,55.6179
+STN_3981,Bus station,3981,Aéroport de ALICANTE,-0.558156,38.2822
+STN_3983,Bus station,3983,Aéroport de VENISE,12.3519,45.5053
+STN_3984,Bus station,3984,Aéroport de LISBONNE,-9.13592,38.7813
+STN_3985,Bus station,3985,Aéroport de BERLIN,13.503333,52.36667
+STN_3986,Bus station,3986,Aéroport de BERGAME,9.70417,45.6739
+STN_3989,Bus station,3989,Aéroport de FRANCFORT,8.570556,50.033333
+STN_3991,Bus station,3991,Aéroport de LONDRES-STANSTED,0.235,51.885
+STN_3992,Bus station,3992,Aéroport de FLORENCE,11.2051,43.81
+STN_3993,Bus station,3993,Aéroport de SEVILLE,-5.89311,37.418
+STN_3994,Bus station,3994,Aéroport de SPLIT,16.298,43.5389
+STN_3997,Bus station,3997,Aéroport de HERAKLION,25.1803,35.3397
+STN_3998,Bus station,3998,Aéroport de PALERME,13.091,38.176
+STN_3999,Bus station,3999,Aéroport de PRAGUE,14.26,50.1008
+STN_4001,Bus station,4001,Aéroport de PALMA DE MAJORQUE,2.73881,39.5517
+STN_4002,Bus station,4002,Aéroport de ROME,12.238889,41.800278
+STN_4017,Bus station,4017,ANICHE - Delforge,3.2435567,50.333954
+STN_4044,Multimodal station,4044,ORCHIES - Gare SNCF (N.D Providence),3.2479851,50.47755
+STN_4052,Multimodal station,4052,SAINT AMAND LES EAUX - Gare SNCF,3.4192634,50.44353
+STN_4063,Bus station,4063,DENAIN - Lycée Kastler,3.4058416,50.3323
+STN_4123,Bus station,4123,Béhal-Jean Zay - Quai 7,2.8235412,50.443653
+STN_4129,Bus station,4129,"Miskolc, autóbusz-állomás",20.79157,48.105988
+STN_4131,Bus station,4131,"Debrecen, autóbusz-állomás",21.618328,47.525356
+STN_4139,Multimodal station,4139,"Szeged, autóbusz-állomás",20.140774,46.257076
+STN_4142,Bus station,4142,"Pécs, autóbusz-állomás",18.232231,46.070267
+STN_4161,Bus station,4161,"Székesfehérvár, autóbusz-állomás",18.409597,47.188656
+STN_4167,Bus station,4167,Nowy Sącz MDA,20.698505,49.617165
+STN_4183,Bus station,4183,Centro Pecci 2,11.108651,43.861618
+STN_4198,Multimodal station,4198,Szentlőrinc,17.990833,46.033333
+STN_4235,Multimodal station,4235,Mirfield Rail Station,-1.69255,53.6714
+STN_4237,Multimodal station,4237,Loughborough (Leics) Rail Station,-1.19593,52.77895
+STN_4273,Multimodal station,4273,"Gutenfürst, Bahnhof",11.960951,50.41923
+STN_4513,Rail station,4513,Hemmoor-Basbeck Bahnhof,9.166024,53.684395
+STN_4580,Bus station,4580,Grenoble - Condillac Universités,5.774446,45.1893
+STN_4587,Multimodal station,4587,MEER-GRENS,4.73459,51.48591

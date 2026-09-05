@@ -44,25 +44,29 @@ The current repository covers part of the first submodule: base 3MG generation.
 **3MG** refers to the "Multi-modal, multi-agency, multi-label (3M) graph" developed as part of the first major task of 3MARS WP2.
 It combines Functional Urban Areas (FUAs), population, airports, intercity bus and rail services, scheduled flights, the road network and local access links into a common node-link model.
 It is a directed multigraph connecting major cities (FUAs) and their transport hubs with intracity and intercity links by multiple modes and agencies/operators.
+It is illustrated in the figure below:
+![3MG Schematic|1000](3MG-schematic.png)
 
-It consists of two types of nodes:
+It consists of two types of nodes (currently in [**m3-nodes.csv**](m3-nodes.csv)):
 
 - **Cities**: These serve as the demand producers and attractors. They are located by their population-weighted centroids over their boundary.
-- **Transport hubs**: These nodes serve as the supply providers for demand distribution. These consist of airports and public transport (PT) stations, i.e., bus and rail stations.
+- **Transport hubs**: These nodes serve as the supply providers for demand distribution. These consist of airports and public transport (PT) stations, i.e., bus and train stations, some of which have both bus and train connections ("intermodal stations").
 
-3MG has three types of links:
+3MG has three types of links (currently in [**m3-links.csv**](m3-links.csv)):
 
 - **Intercity**: They connect a transport hub of a city to a hub of another city by a unique travel mode and agency/operator (directed). Four modes are considered:
   - **Car** (driving between city centroids)
   - **Bus and rail** (by different operators)
   - **Air** (by different airlines)
 - **Local**: They represent the connections among the transport hubs of a city (FUA), used mainly for network connectivity (directed). They are assumed to be used by agency-agnostic local public transportation.
-- **Connector**: These virtual access/egress links serve as the topological connection between the demand generators/attractors (i.e., population distribution of an FUA) and the supply nodes (i.e., the transport hubs of that FUA). They are assumed to be used by car and do not contain any service information.
+- **Connector**: These virtual access/egress links serve as the topological connection between the demand generators/attractors (i.e., population distribution of an FUA) and the supply nodes (i.e., the transport hubs of that FUA). They are assumed to be used by car and do not contain any service information. Note that an airport can be linked to multiple FUAs and may lie outside the FUA boundary.
 
 3MG is a static supply graph in P-space representation, meaning all nodes that have a direct connection by a single service or route are connected by a direct link. The modal tables provide travel time, routed distance and service frequency, while the final graph currently retains travel time and frequency. These metrics provide the basis for later multi-class estimates of generalised travel cost (GTC), such as different perceived costs for travellers with different income levels or trip purposes. Fares and capacities are not yet included.
-<!-- It is currently a static, service-aggregated representation: travel time and frequency summarise timetables or routing results rather than describing a complete time-dependent event graph. -->
 
 The current development snapshot contains 1,370 nodes and 191,476 links; the release-blocking endpoint issue described under [Limitations](#limitations) still applies.
+
+The following map shows the included countries, FUAs and intercity bus and rail segments.
+![3MG intercity PT map|1000](3MG-PT-map.png)
 
 ## How to use
 
@@ -237,7 +241,7 @@ flowchart LR
 ```python
 import config as C
 
-# C.load(table) is equivalent to `pandas.read_parquet(C.DATA / f"{table}.parquet")`
+# C.load(table) is equivalent to `pandas.read_parquet(f"{C.DATA}/{table}.parquet")`
 nodes = C.load("3m-nodes")
 edges = C.load("3m-edges")
 

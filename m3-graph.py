@@ -140,3 +140,5 @@ edges = (
 #%% Export
 C.save(nodes, "3m-nodes")
 C.save(edges, "3m-edges")
+nodes.to_csv("nodes.csv", index=False)
+edges.to_csv("links.csv", index=False)
