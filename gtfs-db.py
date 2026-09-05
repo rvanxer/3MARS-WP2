@@ -153,6 +153,9 @@ def get_service_dates(feed: str,
             return d.year * 10_000 + d.month * 100 + d.day
         df["date"] = df.apply(get_imp_dates, axis=1)
         df = df[["service_id", "date"]].explode("date")
+        # Shift the dates only for Hellenic Train (to ensure network coverage)
+        if feed == "man-TrainOSE":
+            df["date"] += 60000 # shift from 2019 to 2025
         df = df[df["date"] >= start_int]
         df = df.explode("service_id")
         cal = pd.concat([cal, df])
