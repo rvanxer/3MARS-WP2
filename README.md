@@ -65,7 +65,8 @@ It consists of two types of nodes (currently in [**m3-nodes.csv**](m3-nodes.csv)
 
 The current development snapshot contains 1,370 nodes and 191,476 links; the release-blocking endpoint issue described under [Limitations](#limitations) still applies.
 
-The following map shows the included countries, FUAs and intercity bus and rail segments.
+The following map shows the included countries, FUAs and intercity bus and rail segments:
+
 ![3MG intercity PT map|1000](3MG-PT-map.png)
 
 ## How to use
@@ -285,30 +286,29 @@ Note that unlike MDB feeds, these feeds are downloaded once and not anchored to 
 These zip files are renamed to `man-{feed_name}.zip` ("man" for "manual") to distinguish from the MDB feeds and stored in `{DATA}/gtfs/feeds`.
 <!-- The following supplemental archives were present in the audited local snapshot. Publisher names and links come from embedded `feed_info.txt` or `agency.txt` metadata where available; they describe provenance, not verified redistribution permission. -->
 
-| Feed name | Region/Operator | Data URL (⬇︎ indicates direct download) | Preparation note |
-|---|---|---|---|
-| ATC | Romania and Moldova, rail | [CFR Călători](https://www.cfrcalatori.ro/), Astra Trans Carpatic and CFM | Multi-agency GTFS archive |
-| BDZ | Bulgaria, rail | https://sipbg.gov.bg/bgnap/portal/en/catalog/710c84db-9f73-46b2-9731-d0df793a6133 | GTFS API export |
-| Elron | Estonia, rail | ⬇︎ https://eu-gtfs.remix.com/elron.zip | Operator GTFS archive |
-| Estonia | Estonia, multimodal | ⬇︎ https://s3.transitpdf.com/files/uran/improved-gtfs-maanteeamet.zip | Aggregated national archive |
-| EuroStar | International high-speed rail | https://transport.data.gouv.fr/datasets/eurostar-gtfs-plan-de-transport-et-temps-reel | Multi-agency GTFS archive |
-| Finland | Finland, multimodal | ⬇︎ https://mobility.mobility-database.fintraffic.fi/en | National GTFS archive |
-| Latvia | Latvia, rail | ⬇︎ https://vivi.lv/uploads/GTFS.zip | Operator GTFS archive |
-| Lithuania | Lithuania, multimodal | ⬇︎ https://data.public-transport.earth/gtfs/lt | National GTFS archive |
-| MAV | Hungary, rail and bus | https://www.mavcsoport.hu/en/gtfs-request | National operator archive (needs sign up) |
-| Norway | Norway, multimodal | ⬇︎ https://data.public-transport.earth/gtfs/no | National aggregated GTFS archive |
-| OBB | Austria, rail and bus | [ÖBB](https://www.oebb.at/en/) via Busmaps metadata | Aggregated GTFS archive |
-| PKPIntercity | Poland, intercity rail | ⬇︎ https://mkuran.pl/gtfs/pkpic.zip | Operator GTFS archive |
-| PolRegio | Poland, regional rail | ⬇︎ https://mkuran.pl/gtfs/polregio.zip | Operator GTFS archive |
-| Poland-rail | Intended Polish rail supplement | [Mikołaj Kuranowski GTFS archive](https://mkuran.pl/gtfs/) | **Requires replacement or exclusion:** the local file contains Japanese operators and is mislabelled |
-| SBB | Switzerland, multimodal | [SBB](https://www.sbb.ch/en/) | National timetable archive |
-| SNCB | Belgium, rail | [NMBS/SNCB](https://www.belgiantrain.be/en) | Operator GTFS archive |
-| SNCF | France, rail | [SNCF](https://www.sncf.com/en) | Operator GTFS archive |
-| Slovakia | Slovakia, rail | https://data.europa.eu/data/datasets/ca4cb74c-7192-4198-b074-34acd9d295e7 | National rail GTFS archive |
-| Slovenia | Slovenia, bus | https://podatki.gov.si/dataset/register-linijskih-odsekov/resource/cc6c38a8-2424-41ae-9b43-f760c09d13b7 | National bus GTFS archive |
-| TrainOSE | Greece, rail | ⬇︎ https://s3.transitpdf.com/files/uran/improved-gtfs-trainose.zip | Archive has 2019 service dates and requires currency review |
-| Trenitalia | Italy, rail | https://www.cciss.it/nap/mmtis/public/en/catalog/Dataset/1077621 | NeTEx converted to GTFS; station names and coordinates matched to the [Trainline station database](https://github.com/trainline-eu/stations) |
-| UK_rail | Great Britain, rail | https://raildata.org.uk/dataProduct/P-04b05b6e-c14d-4a53-ba34-76ee7c48cc72/overview | ATOC timetable converted with [UK2GTFS](https://github.com/ITSLeeds/UK2GTFS) |
+| Feed name | Region/operator with data URL <br>(⬇︎: direct download)</br> | Preparation note |
+|---|---|---|
+| ❌ ATC | Romanian rail: [CFR Călători](https://www.cfrcalatori.ro/), Astra Trans Carpatic and CFM | Multi-agency GTFS archive |
+| BDZ | [Bulgarian state railways](https://sipbg.gov.bg/bgnap/portal/en/catalog/710c84db-9f73-46b2-9731-d0df793a6133) | GTFS API export |
+| Elron | ⬇︎ [Estonian rail: Elron](https://eu-gtfs.remix.com/elron.zip) | Operator GTFS archive |
+| ❌ Estonia | ⬇︎ [Estonia bus-rail](https://s3.transitpdf.com/files/uran/improved-gtfs-maanteeamet.zip) | Aggregated national archive; link expired as of 2026-09-05 |
+| EuroStar | [EuroStar high-speed rail](https://transport.data.gouv.fr/datasets/eurostar-gtfs-plan-de-transport-et-temps-reel) | Multi-agency GTFS archive |
+| Finland | ⬇︎ [Finland full feed](https://mobility.mobility-database.fintraffic.fi/en) | National GTFS archive |
+| Latvia | ⬇︎ [Latvia rail (Vivi)](https://vivi.lv/uploads/GTFS.zip) | Operator GTFS archive |
+| Lithuania | ⬇︎ [Lithuania full feed](https://data.public-transport.earth/gtfs/lt) | National GTFS archive |
+| MAV | [Hungary bus-rail: MÁV](https://www.mavcsoport.hu/en/gtfs-request) | National operator archive (needs sign up) |
+| Norway | ⬇︎ [Norway full feed](https://data.public-transport.earth/gtfs/no) | National aggregated GTFS archive |
+| OBB | [Austria ÖBB bus-rail](https://mobilitaetsdaten.gv.at/en/daten/gtfs-fahrplan) | Aggregated GTFS archive |
+| PKPIntercity | ⬇︎ [Poland intercity rail](https://mkuran.pl/gtfs/pkpic.zip) | Operator GTFS archive |
+| Poland-rail | ⬇︎ [Poland rail](https://mkuran.pl/gtfs/polish_trains.zip) | Operator GTFS archive |
+| SBB | [Swiss rail: SBB](https://data.opentransportdata.swiss/dataset/timetable-2026-gtfs2020) | National timetable archive |
+| ☑️ SNCB | [Belgian rail: NMBS/SNCB](https://transportdata.be/dataset/sncb-gfts-scheduled-timetable-and-real-time-data) | Operator GTFS archive |
+| SNCF | [French rail: SNCF](https://transport.data.gouv.fr/resources/67595) | Operator GTFS archive |
+| ❌ Slovakia | [Slovakia rail](https://data.europa.eu/data/datasets/ca4cb74c-7192-4198-b074-34acd9d295e7) | National rail GTFS archive; link expired as of 2026-09-05 |
+| Slovenia | ⬇︎ [Slovenia bus](https://podatki.gov.si/dataset/a87483b0-a055-488c-a854-1c4a8d079a35/resource/cc6c38a8-2424-41ae-9b43-f760c09d13b7/download/20170405gtfs.zip) | National bus GTFS archive |
+| ❌ TrainOSE | ⬇︎ [Greek rail: Hellenic Train](https://s3.transitpdf.com/files/uran/improved-gtfs-trainose.zip) | Archive has 2019 service dates and requires currency review; link expired as of 2026-09-05 |
+| Trenitalia | [Italian rail: Trenitalia](https://www.cciss.it/nap/mmtis/public/en/catalog/Dataset/1077621) | NeTEx converted to GTFS; station names and coordinates matched to the [Trainline station database](https://github.com/trainline-eu/stations) |
+| UK_rail | [British rail](https://raildata.org.uk/dataProduct/P-04b05b6e-c14d-4a53-ba34-76ee7c48cc72/overview) | ATOC timetable converted with [UK2GTFS](https://github.com/ITSLeeds/UK2GTFS) |
 
 The operator mapping in `gtfs/agency2toc.xlsx` is a project-curated input. It translates heterogeneous GTFS agency names into the operator and domicile labels used in 3MG and, because the merge retains only mapped agencies, also determines which candidate intercity services enter the final public transport network.
 
