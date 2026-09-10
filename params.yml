@@ -1,5 +1,5 @@
 # Snapshot date of OSM extracts for study countries
-OSM_SNAPSHOT_DATE: 2026-08-30
+OSM_SNAPSHOT_DATE: 2026-09-01
 # Target MobilityDatabase GTFS snapshot date
 MDB_SNAPSHOT_DATE: 2026-08-30
 # Minimum population of a functional urban area (FUA)

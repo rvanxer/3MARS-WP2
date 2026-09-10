@@ -20,7 +20,6 @@ COUNTRIES = sorted(
     .replace({"UK": "GB", "EL": "GR"})
     .unique()
 )
-FEED_DIR = C.DATA / "gtfs/feeds"
 
 #%% MobilityDatabase API
 class API:
@@ -158,7 +157,7 @@ catalog = build_catalog(rebuild=False)#.view()
 #%% Download feeds
 def download_feeds(
     catalog: pd.DataFrame,
-    outdir=FEED_DIR,
+    outdir=C.DATA / "gtfs/feeds",
     overwrite=False,
     remove_stale=True,
 ) -> None:

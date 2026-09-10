@@ -20,13 +20,12 @@ pts = fuas.get_coordinates()
 
 #%% Times using base highway network [1m27s]
 C.log("Computing intercity driving times using base highway network")
-osm_path = C.DATA / "osm/highways.osm.pbf"
 ttm = get_travel_times(
-    pts, pts, 
-    osm_path,
+    pts, pts,
+    C.DATA / "osm/highways.osm.pbf",
     workdir=C.DATA / "osrm",
     server_start_timeout=900
-).view()
+)#.view()
 
 #%% Manually add paths across intercity bridges
 # directional distances (km) & times (min) between nearest bridge cities [Google Maps]
