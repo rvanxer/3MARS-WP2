@@ -26,7 +26,7 @@ FEED_DIR = C.DATA / "gtfs/feeds"
 class API:
     """Small replacement for mobility_db_api.MobilityAPI."""
 
-    base_url = "https://api.mobilitydatabase.org/v1"
+    base_url = C.URLS["mdb-root"]
     token_error = ("Mobility Database refresh token not found. "
                    "Set MDB_API_KEY in `env.yml`.")
 

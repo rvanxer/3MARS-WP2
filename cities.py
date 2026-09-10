@@ -12,9 +12,10 @@ params = C.load_params()
 Centre (JRC)."""
 C.log("Reading JRC FUA boundaries")
 fua_jrc = (
-    gpd.read_file("https://cidportal.jrc.ec.europa.eu/ftp/"
-                  "jrc-opendata/LUISA/SecondaryOutput_Indicators/"
-                  "Europe/REF-2014/FUA/UI-boundaries-FUA.zip")
+    gpd.read_file(C.URLS["fua-jrc"])
+    # gpd.read_file("https://cidportal.jrc.ec.europa.eu/ftp/"
+    #               "jrc-opendata/LUISA/SecondaryOutput_Indicators/"
+    #               "Europe/REF-2014/FUA/UI-boundaries-FUA.zip")
     .rename(columns={"FUA_NAME": "name", "COUNTRY_CO": "icc"})
     .drop_duplicates(["icc", "name"])
     .to_crs(C.CRS_DEG)
@@ -27,9 +28,10 @@ are obtained from the Geographic Information System of the EU Commission
 (GISCO) portal."""
 C.log("Reading GISCO FUA boundaries")
 fua_gisco = (
-    gpd.read_file("https://gisco-services.ec.europa.eu/"
-                  "distribution/v2/urau/gpkg/"
-                  "URAU_RG_100K_2021_3035_FUA.gpkg",
+    gpd.read_file(C.URLS["fua-gisco"],
+    # gpd.read_file("https://gisco-services.ec.europa.eu/"
+    #               "distribution/v2/urau/gpkg/"
+    #               "URAU_RG_100K_2021_3035_FUA.gpkg",
                   columns=["CNTR_CODE", "URAU_NAME", "geometry"])
     .query("CNTR_CODE in ('CH', 'NO')")
     .rename(columns={"CNTR_CODE": "icc"})
@@ -48,13 +50,13 @@ fuas = (
 )#.view()
 
 #%% Population grid
-url = ("https://ec.europa.eu/eurostat/cache/GISCO/geodatafiles/"
-       "JRC_GRID_2018.zip/JRC_POPULATION_2018.shp")
+# url = ("https://ec.europa.eu/eurostat/cache/GISCO/geodatafiles/"
+#        "JRC_GRID_2018.zip/JRC_POPULATION_2018.shp")
 popu = C.load("popu-grid", quiet=True)
 if popu is None:
     C.log("Downloading JRC population grid")
     popu = (
-        gpd.read_file(f"/vsizip//vsicurl/{url}",
+        gpd.read_file("/vsizip//vsicurl/" + C.URLS["popu-grid"],
                       columns=["CNTR_ID", "TOT_P_2018", "geometry"])
         .rename(columns={"CNTR_ID": "icc", "TOT_P_2018": "popu"})
         .astype({"icc": "category", "popu": np.int32})

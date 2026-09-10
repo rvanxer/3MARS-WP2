@@ -42,8 +42,7 @@ sched#.view();
 
 #%% Airport codes & locations
 airports = (
-    pd.read_csv("https://raw.githubusercontent.com/ip2location/"
-                "ip2location-iata-icao/master/iata-icao.csv")
+    pd.read_csv(C.URLS["airport-locations"])
     .rename(columns={"airport": "name"})
     .pipe(C.pdf2gdf, "longitude", "latitude", C.CRS_DEG)
     .sjoin(C.load("countries")[["icc", "geometry"]])

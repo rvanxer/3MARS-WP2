@@ -44,8 +44,7 @@ boundaries from the data portal of the Geographic Information System of the
 EU Commission (GISCO) with spatial precision of 10 m."""
 C.log("Downloading NUTS level 0 & 1 boundaries")
 nuts0 = (
-    gpd.read_file("https://gisco-services.ec.europa.eu/distribution/v2/"
-                    f"nuts/gpkg/NUTS_RG_10M_2024_4326_LEVL_0.gpkg")
+    gpd.read_file(C.URLS["regions-nuts0"])
     .rename(columns={
         "CNTR_CODE": "icc",
         "NUTS_ID": "geoid",
@@ -61,13 +60,9 @@ nuts0 = nuts0.dropna(subset="name")
 International Territorial Level (ITL) data layer from the  UK's Office for 
 National Statistics website at the Generalised Clipped Boundary Level 1."""
 C.log("Downloading UK ITL-1 boundaries")
-itl = gpd.read_file(
-    "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/"
-    "rest/services/ITL1_JAN_2025_UK_BGC/FeatureServer/0/query?"
-    "where=1%3D1&returnGeometry=true&f=geojson"
-).rename(columns={"ITL125CD": "geoid"})
+itl = gpd.read_file(C.URLS["regions-itl1"])
+itl = itl.rename(columns={"ITL125CD": "geoid"})
 itl.geometry = itl.simplify(0.1) # round off geometry to 0.1°
-
 itl0 = itl.dissolve().assign(icc="UK", name="United Kingdom")
 
 #%% Countries

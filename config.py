@@ -1,7 +1,6 @@
 """Custom configuration and utility tools for this project."""
 
 #%% Imports
-from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Union
@@ -9,7 +8,6 @@ from typing import Union
 import geopandas as gpd
 from IPython.display import display
 import logging
-# import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
@@ -21,20 +19,19 @@ CRS_DEG = "EPSG:4326"
 # Spatial CRS best suited for Europe (unit: metres)
 CRS_EU = "EPSG:3035"
 
+
+#%% URLs/URIs of data sources
+with open("urls.yml", "r") as f:
+    URLS = yaml.safe_load(f)
+
+
 #%% User-specific environment variables
-try:
-    with open("env.yml", "r") as f:
-        env_data = yaml.safe_load(f)
-except FileNotFoundError:
-    raise FileNotFoundError("Environment file `./env.yml` not found.")
+with open("env.yml", "r") as f:
+    env_data = yaml.safe_load(f)
 
 # Main data directory for the project
 DATA = Path(env_data.get("DATA_DIR", "./data")).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
-
-# Folder for output figures [optional]
-FIG = Path(env_data.get("FIG_DIR", "./fig")).resolve()
-FIG.mkdir(parents=True, exist_ok=True)
 
 # MobilityDatabase API key
 MDB_API_KEY = env_data.get("MDB_API_KEY")
@@ -159,60 +156,3 @@ def _view_gdf(df: gpd.GeoDataFrame, nrow: int = 0):
 # add the `disp` method to pandas and geopandas series & DF classes
 pd.DataFrame.view = _view_pdf
 gpd.GeoDataFrame.view = _view_gdf
-
-def _map(df: gpd.GeoDataFrame, *args, tiles="CartoDB.Voyager", **kwargs):
-    return df.explore(*args, tiles=tiles, **kwargs)
-    
-gpd.GeoDataFrame.map = _map
-
-
-#%% Plotting
-pyplot_params = {
-    "axes.edgecolor": "k",
-    "axes.edgecolor": "k",
-    "axes.formatter.use_mathtext": True,
-    "axes.grid": True,
-    "axes.labelcolor": "k",
-    "axes.labelsize": 13,
-    "axes.linewidth": 0.5,
-    "axes.titlesize": 15,
-    "figure.dpi": 150,
-    "figure.titlesize": 15,
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Noto Sans", "DejaVu Serif"],
-    "grid.alpha": 0.15,
-    "grid.color": "k",
-    "grid.linewidth": 0.5,
-    "legend.edgecolor": "none",
-    "legend.facecolor": ".9",
-    "legend.fontsize": 11,
-    "legend.framealpha": 0.5,
-    "legend.labelcolor": "k",
-    "legend.title_fontsize": 13,
-    "mathtext.fontset": "cm",
-    "text.color": "k",
-    "text.color": "k",
-    "xtick.bottom": True,
-    "xtick.color": "k",
-    "xtick.labelsize": 10,
-    "xtick.minor.visible": True,
-    "ytick.color": "k",
-    "ytick.labelsize": 10,
-    "ytick.left": True,
-    "ytick.minor.visible": True,
-}
-
-# def imsave(title=None, fig=None, ax=None, dpi=300,
-#            root=FIG, ext="png", opaque=True):
-#     """Save the current matplotlib figure to disk."""
-#     fig = fig or plt.gcf()
-#     ax = ax or fig.axes[0]
-#     time = datetime.now().strftime("%Y-%m-%d_%H-%m-%S")
-#     title = title or fig._suptitle or ax.get_title() or f"Untitled {time}"
-#     fig.savefig(
-#         f"{mkdir(root)}/{title}.{ext}",
-#         dpi=dpi,
-#         bbox_inches="tight",
-#         transparent=not opaque,
-#         facecolor="white" if opaque else "auto",
-#     )

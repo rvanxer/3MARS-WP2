@@ -62,8 +62,7 @@ for icc, uri in osm_uris.items():
     try:
         C.log(f"Downloading OSM extract for {icc}")
         full_pbf = outdir / f"full-{icc}.osm.pbf"
-        url = "https://download.geofabrik.de/europe/"
-        url += f"{uri}-{snapshot_str}.osm.pbf"
+        url = C.URLS["geofabrik-root"] + f"/{uri}-{snapshot_str}.osm.pbf"
         resp = requests.get(url, stream=True)
         resp.raise_for_status()
         with open(full_pbf, "wb") as f:
@@ -90,14 +89,13 @@ if rail is None:
     outdir = C.mkdir(C.DATA / "osm/railways")
     for icc in osm_uris:
         try:
-            cmd = [
+            subprocess.run([
                 "osmium", "tags-filter", str(indir / f"{icc}.osm.pbf"),
                 "r/route=train", "r/route=light_rail", "r/route=subway",
                 "w/railway=rail", "w/railway=light_rail",
                 "w/railway=subway", "w/railway=tram",
                 "-o", str(outdir / f"{icc}.osm.pbf"), "--overwrite"
-            ]
-            subprocess.run(cmd)
+            ])
             osm = OSM(f"{outdir}/{icc}.osm.pbf")
             df = osm.get_data_by_custom_criteria(
                 custom_filter={"railway": ["rail"]},
@@ -150,39 +148,36 @@ if hway is None:
     for icc in (pbar := tqdm(osm_uris)):
         pbar.set_description(icc)
         tmpfile = tmpdir / f"{icc}.osm.pbf"
-        cmd = [
+        subprocess.run([
             "osmium", "tags-filter", "--overwrite", "-f", "pbf",
             "-o", str(tmpfile),
-            str(C.DATA / f"osm/country-{snapshot_str}/{icc}.osm.pbf")
-        ]
-        cmd += [f"w/highway={x}" for x in [
+            str(C.DATA / f"osm/country-{snapshot_str}/{icc}.osm.pbf"),
+            *[f"w/highway={x}" for x in [
                 "motorway", "motorway_link",
                 "trunk", "trunk_link",
                 "primary", "primary_link"
-        ]]
-        subprocess.run(cmd, check=True)
+            ]]
+        ], check=True)
         outfile = outdir / tmpfile.name
-        cmd = [
+        subprocess.run([
             "osmium", "cat", "-c", "version", "-o", str(outfile),
             "--overwrite", str(tmpfile)
-        ]
-        subprocess.run(cmd, check=True)
+        ], check=True)
     rmtree(tmpdir)
     # Merge all networks
     osm_path = C.DATA / "osm/highways.osm.pbf"
-    cmd = ["osmium", "merge", "--overwrite", "-o", str(osm_path),
-           "-f", "pbf"]
-    cmd += [str(f) for f in C.DATA.glob("osm/highways/*.osm.pbf")]
-    subprocess.run(cmd, check=True)
+    subprocess.run([
+        "osmium", "merge", "--overwrite", "-o", str(osm_path), "-f", "pbf",
+        *[str(f) for f in C.DATA.glob("osm/highways/*.osm.pbf")]
+    ], check=True)
     # Convert OSM PBF to GPKG
     gpkg_path = C.DATA / "osm/highways.gpkg"
-    cmd = [
+    subprocess.run([
         "ogr2ogr", "--config", "OSM_USE_CUSTOM_INDEXING", "NO",
-        "-f", "GPKG", str(gpkg_path), str(osm_path)
-    ]
-    cmd += ["-sql", "SELECT * FROM lines WHERE highway IS NOT NULL"]
-    cmd += ["-nln", "roads", "-overwrite", "-lco", "SPATIAL_INDEX=YES"]
-    subprocess.run(cmd, check=True)
+        "-f", "GPKG", str(gpkg_path), str(osm_path),
+        "-sql", "SELECT * FROM lines WHERE highway IS NOT NULL",
+        "-nln", "roads", "-overwrite", "-lco", "SPATIAL_INDEX=YES"
+    ], check=True)
     
     ## Manually add some connector links
     hway = gpd.read_file(gpkg_path, columns=["geometry"])
@@ -232,15 +227,15 @@ def clip_osmium(in_osm, in_json, out_osm, overwrite=False):
         return
     try:
         C.mkdir(Path(out_osm).parent)
-        cmd = [
+        subprocess.run([
             "osmium", "extract", "--strategy=complete_ways",
             "-S", "relations=true", "--overwrite", "-p", str(in_json),
             "-o", str(out_osm), str(in_osm)
-        ]
-        subprocess.run(cmd, check=True)
+        ], check=True)
     except Exception as e:
         print(f"ERROR in {str(in_json).split("/")[-1]}: {e}")
         
+C.log("Filtering OSM extracts for each FUA")
 for icc, df in (pbar := tqdm(fuas.groupby("icc"))):
     pbar.set_description(icc)
     cntr_osm = C.DATA / f"osm/country-{snapshot_str}/{icc}.osm.pbf"

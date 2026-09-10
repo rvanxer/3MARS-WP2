@@ -693,8 +693,7 @@ if __name__ == "__main__":
     ROOT = C.mkdir(C.DATA / "gtfs")
     # ## Download the NeTEx feed from the CCISS website
     if not (xml_gz_path := ROOT / "trenitalia.xml.gz").exists():
-        urlretrieve("https://www.cciss.it/nap/mmtis/public/api/v1/download/"
-                    "blob/Asset/1080596/checkedResource", xml_gz_path)
+        urlretrieve(C.URLS["trenitalia-feed"], xml_gz_path)
     # ## Unzip the NeTEx XML file
     if not (xml_path := ROOT / "trenitalia.xml").exists():
         with gzip.open(xml_gz_path, "rb") as file_in:
