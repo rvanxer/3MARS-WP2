@@ -1,7 +1,6 @@
 #%% Imports
 import logging
 from pathlib import Path
-import shlex
 from shutil import rmtree
 import warnings
 
@@ -72,12 +71,12 @@ for icc, uri in osm_uris.items():
                 if chunk:
                     f.write(chunk)
         C.log(f"Extracting OSM extract for {icc}")
-        subprocess.run(shlex.split(
-            "osmium tags-filter --overwrite -f pbf "
-            f"-o {outfile} {full_pbf} "
-            "w/highway w/railway w/bridge w/tunnel "
-            "r/route=train r/route=light_rail r/route=subway"
-        ), check=True)
+        subprocess.run([
+            "osmium", "tags-filter", "--overwrite", "-f", "pbf",
+            "-o", str(outfile), str(full_pbf),
+            "w/highway", "w/railway", "w/bridge", "w/tunnel",
+            "r/route=train", "r/route=light_rail", "r/route=subway"
+        ], check=True)
         full_pbf.unlink()
     except Exception as e:
         C.error(f"{icc}: {e}")
@@ -91,12 +90,14 @@ if rail is None:
     outdir = C.mkdir(C.DATA / "osm/railways")
     for icc in osm_uris:
         try:
-            cmd = (f"osmium tags-filter {indir}/{icc}.osm.pbf "
-                   "r/route=train r/route=light_rail r/route=subway "
-                   "w/railway=rail w/railway=light_rail "
-                   "w/railway=subway w/railway=tram "
-                   f"-o {outdir}/{icc}.osm.pbf --overwrite")
-            subprocess.run(shlex.split(cmd))
+            cmd = [
+                "osmium", "tags-filter", str(indir / f"{icc}.osm.pbf"),
+                "r/route=train", "r/route=light_rail", "r/route=subway",
+                "w/railway=rail", "w/railway=light_rail",
+                "w/railway=subway", "w/railway=tram",
+                "-o", str(outdir / f"{icc}.osm.pbf"), "--overwrite"
+            ]
+            subprocess.run(cmd)
             osm = OSM(f"{outdir}/{icc}.osm.pbf")
             df = osm.get_data_by_custom_criteria(
                 custom_filter={"railway": ["rail"]},
@@ -107,7 +108,7 @@ if rail is None:
             df = df.assign(icc=icc)[["icc", "len_km", "geometry"]]
             rail.append(df)
         except Exception as e:
-            C.log(f"{icc}: {e}", "error")
+            C.error(f"{icc}: {e}")
     rail = (pd.concat(rail, ignore_index=True)
             .astype({"icc": "category", "len_km": np.float32}))
     ## Manually add some connector links
@@ -149,29 +150,38 @@ if hway is None:
     for icc in (pbar := tqdm(osm_uris)):
         pbar.set_description(icc)
         tmpfile = tmpdir / f"{icc}.osm.pbf"
-        subprocess.run(shlex.split(
-            f"osmium tags-filter --overwrite -f pbf -o {tmpfile} " + 
-            f"{C.DATA}/osm/country-{snapshot_str}/{icc}.osm.pbf " + 
-            " ".join([f"w/highway=" + x for x in [
+        cmd = [
+            "osmium", "tags-filter", "--overwrite", "-f", "pbf",
+            "-o", str(tmpfile),
+            str(C.DATA / f"osm/country-{snapshot_str}/{icc}.osm.pbf")
+        ]
+        cmd += [f"w/highway={x}" for x in [
                 "motorway", "motorway_link",
                 "trunk", "trunk_link",
                 "primary", "primary_link"
-        ]])), check=True)
+        ]]
+        subprocess.run(cmd, check=True)
         outfile = outdir / tmpfile.name
-        cmd = f"osmium cat -c version -o {outfile} --overwrite {tmpfile}"
-        subprocess.run(shlex.split(cmd), check=True)
+        cmd = [
+            "osmium", "cat", "-c", "version", "-o", str(outfile),
+            "--overwrite", str(tmpfile)
+        ]
+        subprocess.run(cmd, check=True)
     rmtree(tmpdir)
     # Merge all networks
     osm_path = C.DATA / "osm/highways.osm.pbf"
-    cmd = f"osmium merge --overwrite -o {osm_path} -f pbf "
-    cmd += " ".join([str(f) for f in C.DATA.glob("osm/highways/*.osm.pbf")])
-    subprocess.run(shlex.split(cmd), check=True)
+    cmd = ["osmium", "merge", "--overwrite", "-o", str(osm_path),
+           "-f", "pbf"]
+    cmd += [str(f) for f in C.DATA.glob("osm/highways/*.osm.pbf")]
+    subprocess.run(cmd, check=True)
     # Convert OSM PBF to GPKG
     gpkg_path = C.DATA / "osm/highways.gpkg"
-    cmd = ("ogr2ogr --config OSM_USE_CUSTOM_INDEXING NO -f GPKG " +
-           f"{gpkg_path} {osm_path} ").split()
+    cmd = [
+        "ogr2ogr", "--config", "OSM_USE_CUSTOM_INDEXING", "NO",
+        "-f", "GPKG", str(gpkg_path), str(osm_path)
+    ]
     cmd += ["-sql", "SELECT * FROM lines WHERE highway IS NOT NULL"]
-    cmd += "-nln roads -overwrite -lco SPATIAL_INDEX=YES".split()
+    cmd += ["-nln", "roads", "-overwrite", "-lco", "SPATIAL_INDEX=YES"]
     subprocess.run(cmd, check=True)
     
     ## Manually add some connector links
@@ -222,9 +232,12 @@ def clip_osmium(in_osm, in_json, out_osm, overwrite=False):
         return
     try:
         C.mkdir(Path(out_osm).parent)
-        cmd = ("osmium extract --strategy=complete_ways -S relations=true "
-               f"--overwrite -p {in_json} -o {out_osm} {in_osm}")
-        subprocess.run(cmd.split(), check=True)
+        cmd = [
+            "osmium", "extract", "--strategy=complete_ways",
+            "-S", "relations=true", "--overwrite", "-p", str(in_json),
+            "-o", str(out_osm), str(in_osm)
+        ]
+        subprocess.run(cmd, check=True)
     except Exception as e:
         print(f"ERROR in {str(in_json).split("/")[-1]}: {e}")
         

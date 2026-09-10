@@ -6,7 +6,6 @@ import logging
 import os
 from pathlib import Path
 import requests
-import shlex
 import subprocess
 from tempfile import TemporaryDirectory
 import time
@@ -25,15 +24,13 @@ CRS_M = "EPSG:3035" # spatial CRS (unit: metres)
 
 
 def run(
-    cmd: str | list[str],
+    cmd: list[str],
     *,
     check: bool = True,
     quiet: bool = False,
     **kwargs: Any
 ) -> subprocess.CompletedProcess:
     """Run a command as a subprocess."""
-    if isinstance(cmd, str):
-        cmd = shlex.split(cmd)
     if quiet:
         kwargs |= {
             "stdout": subprocess.DEVNULL,
@@ -55,7 +52,8 @@ def _start_server(
     verbosity: str = "ERROR"
 ) -> subprocess.Popen:
     """Preprocess an OSM extract, start OSRM and await requests."""
-    run(f"docker container rm --force {container}", quiet=True, check=False)
+    run(["docker", "container", "rm", "--force", container],
+        quiet=True, check=False)
     verb = f"--verbosity {verbosity}"
     steps = (
         f"osrm-extract {verb} -p /opt/{profile}.lua "
@@ -66,7 +64,7 @@ def _start_server(
         f"--max-table-size {max_table_size} /data/tmp.osrm"
     )
     process = subprocess.Popen([
-        "docker", "run", "--rm", "--volume", f"{workdir}:/data",
+        "docker", "run", "--rm", "--volume", f"{workdir.as_posix()}:/data",
         "--name", container, "--publish", f"127.0.0.1:{port}:{port}",
         osrm_img, "sh", "-c", steps
     ], text=True)
@@ -91,7 +89,8 @@ def _start_server(
 
 def _stop_server(process: subprocess.Popen, container: str) -> None:
     """Stop the OSRM Docker container and its attached process."""
-    run(f"docker container stop --time 10 {container}", quiet=True, check=False)
+    run(["docker", "container", "stop", "--time", "10", container],
+        quiet=True, check=False)
     try:
         process.wait(timeout=15)
     except subprocess.TimeoutExpired:
@@ -226,11 +225,11 @@ def get_travel_times(
         ], crs=CRS_M)
         json_path = workdir / "boundary.geojson"
         extent.to_crs(CRS_DEG).to_file(json_path, driver="GeoJSON")
-        run(
-            "osmium extract --no-progress --strategy=complete_ways "
-            f"--overwrite -p {json_path} "
-            f"-o {workdir}/tmp.osm.pbf {osm_path}"
-        )
+        run([
+            "osmium", "extract", "--no-progress", "--strategy=complete_ways",
+            "--overwrite", "-p", str(json_path),
+            "-o", str(workdir / "tmp.osm.pbf"), str(osm_path)
+        ])
         ## Preprocess the extract and start OSRM server
         probe_pt = tuple(pts.geometry.iloc[0].coords[0])
         server = _start_server(
