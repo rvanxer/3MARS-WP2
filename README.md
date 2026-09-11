@@ -370,19 +370,19 @@ Airport codes, names and coordinates come from the [IP2Location IATA/ICAO list](
 
 ## Parameters
 
-Study-defining parameters are stored in [params.yml](params.yml). Values in the first group affect the present base-network pipeline; the pathset parameters are retained for the subsequent WP2 stages but are not consumed when generating the current `3m-nodes` and `3m-edges` tables.
+The important model parameters influential in the resulting 3MG are listed in [params.yml]. These are described below:
 
-| Parameter | Value | Description |
-|---|---:|---|
-| `OSM_SNAPSHOT_DATE` | 1/9/2026 | Requested date of the Geofabrik country extracts |
-| `MDB_SNAPSHOT_DATE` | 30/8/2026 | Latest MobilityDatabase dataset admitted on or before this
-| `MIN_FUA_POPU` | 200,000 | Minimum 2018 population of a retained FUA |
-| `SERVICE_START` | 1/1/2023 | First service date retained in the intercity calendar matrix |
-| `SERVICE_END` | 31/12/2026 | Last service date retained in the intercity calendar matrix |
-| `STOP_CLUSTER_RADIUS` | 400 m | DBSCAN radius for combining intercity terminal stops into stations |
-| `STATION_BUFFER_RADIUS` | 400 m | Radius for associating nearby stops with a station when recovering local services |
-| `MAX_STN_OSM_OFFSET` | 5 km | Maximum station-to-network snapping distance for OSM routing |
-| `AIRPORT_CATCH_RADIUS` | 150 km | Maximum distance between an airport and an associated FUA centre |
+| Parameter | Value | Role in this project | Used in module |
+|---|---:|---|---|
+| `OSM_SNAPSHOT_DATE` | 1/9/2026 | Requested date of the Geofabrik country extracts | [osm.py](osm.py) |
+| `MDB_SNAPSHOT_DATE` | 1/9/2026 | Latest MobilityDatabase dataset admitted on or before this | [gtfs-mdb.py](gtfs-mdb.py) |
+| `MIN_FUA_POPU` | 200,000 | Minimum 2018 population of a retained FUA | [cities.py](cities.py) |
+| `SERVICE_START` | 1/1/2023 | First service date retained in the intercity calendar matrix | [intercity.py](intercity.py) |
+| `SERVICE_END` | 31/12/2026 | Last service date retained in the intercity calendar matrix | [intercity.py](intercity.py) |
+| `STOP_CLUSTER_RADIUS` | 400 m | DBSCAN radius for combining intercity terminal stops into stations | [intercity.py](intercity.py) |
+| `STN_BUFFER_RADIUS` | 400 m | Radius for associating nearby stops with a station when recovering local services | [intercity.py](intercity.py) |
+| `MAX_STN_OSM_OFFSET` | 5 km | Maximum station-to-network snapping distance for OSM routing | [seg-geometry.py](seg-geometry.py) |
+| `AIRPORT_CATCH_RADIUS` | 150 km | Maximum distance between an airport and an associated FUA centre | [air-times.py](air-times.py) |
 <!-- | `CRS_EU` | EPSG:3035 | ETRS89-LAEA Europe | Metric spatial processing, including buffers, lengths and population centres |
 | `CRS_DEG` | EPSG:4326 | WGS 84 | Stored GeoParquet geometries and longitude/latitude coordinates | -->
 

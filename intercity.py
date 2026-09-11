@@ -182,7 +182,7 @@ jrn_ic = (
 C.log("Mapping nearby stops to stations for intracity routing")
 stn_stops = (
     stns.to_crs(C.CRS_EU)
-    .buffer(C.PARAMS["STATION_BUFFER_RADIUS"])
+    .buffer(C.PARAMS["STN_BUFFER_RADIUS"])
     .rename("geometry").reset_index()
     .to_crs(C.CRS_DEG)
     .sjoin(stops, predicate="contains")

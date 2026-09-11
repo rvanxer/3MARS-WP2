@@ -10,7 +10,7 @@ SERVICE_END: 2026-12-31
 # Radius/bandwidth (metres) used in clustering of nearby stops
 STOP_CLUSTER_RADIUS: 400
 # Buffer radius (metres) of stops around stations for intracity trips
-STATION_BUFFER_RADIUS: 400
+STN_BUFFER_RADIUS: 400
 # Maximum distance (metres) of a station to its nearest OSM junction
 MAX_STN_OSM_OFFSET: 5000
 # Catchment radius (km) of an airport for FUA centroid mapping
