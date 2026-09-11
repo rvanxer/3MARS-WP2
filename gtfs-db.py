@@ -1,7 +1,7 @@
 """Clean original GTFS feeds into a database for downstream use."""
 
 #%% Imports
-import datetime
+import datetime as dt
 from pathlib import Path
 
 import numpy as np
@@ -129,8 +129,8 @@ def get_routes(feed):
 
 #%% Service dates
 def get_service_dates(feed: str,
-                      start_date=C.PARAMS["BASE_START_DATE"],
-                      end_date=C.PARAMS["BASE_END_DATE"]):
+                      start_date=dt.datetime.datetime(2020, 1, 1),
+                      end_date=dt.datetime.datetime(2030, 1, 1)):
     cal, removed = [pd.DataFrame([], columns=["service_id", "date"])] * 2
     start_int = int(str(start_date).replace("-", ""))
     ## Calendar table
@@ -146,7 +146,7 @@ def get_service_dates(feed: str,
         def get_imp_dates(r):
             dates = pd.date_range(r["start_date"], r["end_date"])
             d = dates[dates >= pd.to_datetime(start_date)]
-            d = d[d <= pd.to_datetime(end_date)]
+            d = d[d < pd.to_datetime(end_date)]
             d = d[d.day_of_week.map(dict(enumerate(r["days"]))).astype(bool)]
             return d.year * 10_000 + d.month * 100 + d.day
         df["date"] = df.apply(get_imp_dates, axis=1)

@@ -30,11 +30,22 @@ stops = (
 
 #%% Routes
 C.log("Identifying routes and computing timezone offsets")
+# See https://gtfs.org/documentation/schedule/reference/#routestxt and
+# https://developers.google.com/transit/gtfs/reference/extended-route-types
+rail_route_types = (
+    2, 100, 101, 102, 103, 105, 106, 107, 108, 109, 111,
+    113, 114, 117, 900, 901, 902, 903, 904, 905, 906
+)
+bus_route_types = (
+    3, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+    700, 701, 702, 703, 704, 705, 706, 707, 708,
+    709, 710, 711, 712, 713, 714, 715, 716
+)
 routes = (
     C.load("gtfs/db-routes")
     .assign(rail=lambda df: df["mode_id"].map(
-        {x: 0 for x in C.PARAMS["BUS_ROUTE_TYPES"]} |
-        {x: 1 for x in C.PARAMS["RAIL_ROUTE_TYPES"]}
+        {x: 0 for x in bus_route_types} |
+        {x: 1 for x in rail_route_types}
     )).dropna(subset="rail", ignore_index=True)
     .astype({"agency": "category", "rail": bool})
     .rename(columns={"id": "route", "fid": "feed"})

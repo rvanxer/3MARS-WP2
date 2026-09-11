@@ -4,6 +4,7 @@ _old
 data
 fig
 notebooks
+.vscode
 *.ipynb
 env.yml
 gtc-params.yml
