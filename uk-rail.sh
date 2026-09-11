@@ -12,6 +12,30 @@ fail() {
     exit 1
 }
 
+output_exists() {
+    local data_dir output_file
+    data_dir="$(sed -n 's/^[[:space:]]*DATA_DIR:[[:space:]]*//p' \
+        "$SCRIPT_DIR/env.yml" | head -n 1)"
+    data_dir="${data_dir%$'\r'}"
+
+    if [[ "$data_dir" =~ ^\"(.*)\"$ ]]; then
+        data_dir="${BASH_REMATCH[1]}"
+    elif [[ "$data_dir" =~ ^\'(.*)\'$ ]]; then
+        data_dir="${BASH_REMATCH[1]}"
+    fi
+    [ -n "$data_dir" ] || return 1
+
+    case "$data_dir" in
+        "~") data_dir="$HOME" ;;
+        "~/"*) data_dir="$HOME/${data_dir#\~/}" ;;
+        /*) ;;
+        *) data_dir="$SCRIPT_DIR/$data_dir" ;;
+    esac
+    output_file="$data_dir/gtfs/feeds/ext-UK_rail.zip"
+    [ -f "$output_file" ] || return 1
+    printf 'Output already exists; skipping: %s\n' "$output_file"
+}
+
 run_as_root() {
     if [ "$(id -u)" -eq 0 ]; then
         "$@"
@@ -258,6 +282,10 @@ main() {
 
     [ -f "$R_SCRIPT" ] || fail "R script not found: $R_SCRIPT"
     [ -f "$SCRIPT_DIR/env.yml" ] || fail "Configuration file not found: $SCRIPT_DIR/env.yml"
+
+    if [ "$check_only" -eq 0 ] && output_exists; then
+        return
+    fi
 
     if ! find_r; then
         install_r
