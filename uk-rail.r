@@ -66,7 +66,7 @@ DATA <- normalizePath(
 
 path_in <- file.path(DATA, "gtfs", "uk-atoc.zip")
 out_dir <- file.path(DATA, "gtfs", "feeds")
-out_name <- "man-UK_rail"
+out_name <- "ext-UK_rail"
 
 if (!file.exists(path_in)) {
     stop("ATOC input not found: ", path_in)

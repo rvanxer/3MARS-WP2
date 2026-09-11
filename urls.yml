@@ -6,26 +6,6 @@ fua-jrc: https://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/LUISA/SecondaryOutp
 fua-gisco: https://gisco-services.ec.europa.eu/distribution/v2/urau/gpkg/URAU_RG_100K_2021_3035_FUA.gpkg
 # Root URI of the GeoFabrik server for Europe
 geofabrik-root: https://download.geofabrik.de/europe
-# Direct download links of GTFS feeds outside of the MobilityDatabase
-gtfs-feeds:
-    - Denmark: https://data.public-transport.earth/gtfs/dk
-    - Elron: https://eu-gtfs.remix.com/elron.zip
-    - Estonia: https://eu-gtfs.remix.com/estonia_unified_gtfs.zip
-    - EuroStar: https://integration-storage.dm.eurostar.com/gtfs-prod/gtfs_static_commercial_v2.zip
-    - Finland: https://mobility.mobility-database.fintraffic.fi/static/finland_gtfs.zip?versionId=zcnvxQ5iruRsa8lHIdZvxHKdsu5quu5g
-    - Latvia: https://vivi.lv/uploads/GTFS.zip
-    - Lithuania: https://data.public-transport.earth/gtfs/lt
-    - Luxembourg: https://data.public-transport.earth/gtfs/lu
-    - Norway: https://data.public-transport.earth/gtfs/no
-    - Poland-rail: https://mkuran.pl/gtfs/polish_trains.zip
-    - SBB: https://data.opentransportdata.swiss/dataset/timetable-2026-gtfs2020/resource_permalink/gtfs_fp2026_20260829.zip
-    - Slovakia: https://data.slovensko.sk/download?id=1c8bfe3b-ba74-49b7-85d2-51ef719fe364
-    - Slovenia: https://podatki.gov.si/dataset/a87483b0-a055-488c-a854-1c4a8d079a35/resource/cc6c38a8-2424-41ae-9b43-f760c09d13b7/download/20170405gtfs.zip
-    - Sweden: https://data.public-transport.earth/gtfs/se
-    - SNCB: https://opendata-discovery-gtfs-static.api.production.belgianmobility.io/api/gtfs/feed/nmbssncb/static
-    - SNCF: https://eu.ftp.opendatasoft.com/sncf/gtfs/transilien-gtfs.zip
-    - Switzerland: https://data.public-transport.earth/gtfs/ch
-    - TrainOSE: https://jbb.ghsq.de/gtfs/gr-hellenic-train.gtfs.zip
 # Population grid (1x1 km) of 2018 population estimates from the JRC
 popu-grid: https://ec.europa.eu/eurostat/cache/GISCO/geodatafiles/JRC_GRID_2018.zip/JRC_POPULATION_2018.shp
 # Root URI of the MobilityDatabase API for catalogue and feed data download
@@ -34,5 +14,50 @@ mdb-root: https://api.mobilitydatabase.org/v1
 regions-itl1: https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ITL1_JAN_2025_UK_BGC/FeatureServer/0/query?where=1%3D1&returnGeometry=true&f=geojson
 # Boundary geometry of Europe's countries (NUTS level 0 regions)
 regions-nuts0: https://gisco-services.ec.europa.eu/distribution/v2/nuts/gpkg/NUTS_RG_10M_2024_4326_LEVL_0.gpkg
-# Trenitalia's GTFS feed in NeTEx XML format from Italy's NAP "CCISS"
-trenitalia-feed: https://www.cciss.it/nap/mmtis/public/api/v1/download/blob/Asset/1080596/checkedResource
+# Train stations as per the Trainline database
+stns-trainline: https://raw.githubusercontent.com/trainline-eu/stations/refs/heads/master/stations.csv
+# Direct download links of GTFS feeds outside of the MobilityDatabase
+gtfs-feeds:
+    Denmark: https://data.public-transport.earth/gtfs/dk
+    Elron: https://eu-gtfs.remix.com/elron.zip
+    Estonia: https://eu-gtfs.remix.com/estonia_unified_gtfs.zip
+    EuroStar: https://integration-storage.dm.eurostar.com/gtfs-prod/gtfs_static_commercial_v2.zip
+    Finland: https://mobility.mobility-database.fintraffic.fi/static/finland_gtfs.zip?versionId=zcnvxQ5iruRsa8lHIdZvxHKdsu5quu5g
+    Latvia: https://vivi.lv/uploads/GTFS.zip
+    Lithuania: https://data.public-transport.earth/gtfs/lt
+    Luxembourg: https://data.public-transport.earth/gtfs/lu
+    OBB: https://static.web.oebb.at/open-data/soll-fahrplan-gtfs/GTFS_Fahrplan_2026.zip
+    Norway: https://data.public-transport.earth/gtfs/no
+    Poland-rail: https://mkuran.pl/gtfs/polish_trains.zip
+    SBB: https://data.opentransportdata.swiss/dataset/timetable-2026-gtfs2020/resource_permalink/gtfs_fp2026_20260829.zip
+    Slovakia: https://data.slovensko.sk/download?id=1c8bfe3b-ba74-49b7-85d2-51ef719fe364
+    Slovenia: https://podatki.gov.si/dataset/a87483b0-a055-488c-a854-1c4a8d079a35/resource/cc6c38a8-2424-41ae-9b43-f760c09d13b7/download/20170405gtfs.zip
+    Sweden: https://data.public-transport.earth/gtfs/se
+    SNCB: https://opendata-discovery-gtfs-static.api.production.belgianmobility.io/api/gtfs/feed/nmbssncb/static
+    SNCF: https://eu.ftp.opendatasoft.com/sncf/gtfs/transilien-gtfs.zip
+    Switzerland: https://data.public-transport.earth/gtfs/ch
+    TrainOSE: https://jbb.ghsq.de/gtfs/gr-hellenic-train.gtfs.zip
+# Catalogue-resolved, converted or user-supplied external feeds
+gtfs-edge-cases:
+    # Bulgarian State Railways (BDZ) data portal
+    BDZ:
+        api-root: https://sipbg.gov.bg/bgnap/portal/api/catalog
+        dataset-id: 710c84db-9f73-46b2-9731-d0df793a6133
+    # Romania's public data portal
+    RO:
+        api-root: https://data.gov.ro/api/3/action
+        organisation: sc-informatica-feroviara-sa
+        timetable-period: 2025-2026
+        converter-url: https://github.com/vasile/data.gov.ro-gtfs-exporter/archive/ff708394200235a558adafa633bad91ed9486e2a.zip
+    # Hungary's MÁV rail timetable (needs manual download)
+    MAV:
+        landing-page: https://www.mavcsoport.hu/en/gtfs-request
+        filename: man-MAV.zip
+    # Trenitalia's GTFS feed in NeTEx XML format from Italy's NAP "CCISS"
+    Trenitalia:
+        url: https://www.cciss.it/nap/mmtis/public/api/v1/download/blob/Asset/1080596/checkedResource
+    # UK's rail timetable (needs manual download)
+    UK:
+        landing-page: https://raildata.org.uk/dataProduct/P-04b05b6e-c14d-4a53-ba34-76ee7c48cc72/overview
+        input: gtfs/uk-atoc.zip
+        output: gtfs/feeds/man-UK_rail.zip

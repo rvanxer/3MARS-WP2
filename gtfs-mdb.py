@@ -200,9 +200,9 @@ def download_feeds(
     if remove_stale:
         removed = []
         for file in sorted(outdir.glob("*.zip")):
-            manually_downloaded = file.stem.startswith("man-")
+            external_feeds = file.stem.startswith("ext-")
             in_catalog = file.stem in set(catalog["name"])
-            if not in_catalog and not manually_downloaded:
+            if not in_catalog and not external_feeds:
                 file.unlink()
                 removed.append(file.stem)
         C.warn(f"Deleted {len(removed)} stale feeds: " + ", ".join(removed))

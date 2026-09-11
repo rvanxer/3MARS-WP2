@@ -23,6 +23,7 @@ import csv
 import re
 import shutil
 import zipfile
+from zipfile import ZIP_DEFLATED
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -262,11 +263,17 @@ def pass2_extract_stops(xml_path: Path) -> Dict[str, StopRow]:
         elif ln == "Quay":
             qid = get_id(elem)
             if qid:
-                name = text_or_none(find_first(elem, ["./n:Name", ".//n:Name"])) or qid
+                name = text_or_none(find_first(
+                    elem, ["./n:Name", ".//n:Name"]
+                )) or qid
                 lat, lon = extract_lat_lon(elem)
                 # If quay has no coords, try to inherit via a StopPlaceRef if present
-                parent_ref = get_ref(find_first(elem, ["./n:StopPlaceRef", ".//n:StopPlaceRef"]))
-                if (lat is None or lon is None) and parent_ref and parent_ref in stopplace_coords:
+                parent_ref = get_ref(find_first(
+                    elem, ["./n:StopPlaceRef", ".//n:StopPlaceRef"]
+                ))
+                if ((lat is None or lon is None) and 
+                    parent_ref and parent_ref in stopplace_coords
+                ):
                     lat, lon = stopplace_coords[parent_ref]
                 upsert_stop(StopRow(
                     stop_id=qid,
@@ -279,11 +286,17 @@ def pass2_extract_stops(xml_path: Path) -> Dict[str, StopRow]:
         elif ln == "ScheduledStopPoint":
             spid = get_id(elem)
             if spid:
-                name = text_or_none(find_first(elem, ["./n:Name", ".//n:Name"])) or spid
+                name = text_or_none(find_first(
+                    elem, ["./n:Name", ".//n:Name"]
+                )) or spid
                 lat, lon = extract_lat_lon(elem)
                 # Try parent station ref
-                parent_ref = get_ref(find_first(elem, ["./n:StopPlaceRef", ".//n:StopPlaceRef"]))
-                if (lat is None or lon is None) and parent_ref and parent_ref in stopplace_coords:
+                parent_ref = get_ref(find_first(
+                    elem, ["./n:StopPlaceRef", ".//n:StopPlaceRef"]
+                ))
+                if ((lat is None or lon is None) and 
+                    parent_ref and parent_ref in stopplace_coords
+                ):
                     lat, lon = stopplace_coords[parent_ref]
                 upsert_stop(StopRow(
                     stop_id=spid,
@@ -293,23 +306,31 @@ def pass2_extract_stops(xml_path: Path) -> Dict[str, StopRow]:
                     location_type=0,
                     parent_station=parent_ref
                 ))
-
         elem.clear()
-
     return stops
 
 
-def pass3_extract_routes(xml_path: Path, agency_id: str) -> Dict[str, RouteRow]:
+def pass3_extract_routes(
+    xml_path: Path,
+    agency_id: str
+) -> Dict[str, RouteRow]:
     routes: Dict[str, RouteRow] = {}
-
     # We prefer Line objects as routes in GTFS
-    for event, elem in etree.iterparse(str(xml_path), events=("end",), huge_tree=True):
+    for _, elem in etree.iterparse(
+        str(xml_path),
+        events=("end",),
+        huge_tree=True
+    ):
         ln = localname(elem.tag)
         if ln == "Line":
             lid = get_id(elem)
             if lid:
-                name = text_or_none(find_first(elem, ["./n:Name", ".//n:Name"])) or lid
-                public_code = text_or_none(find_first(elem, ["./n:PublicCode", ".//n:PublicCode"]))
+                name = text_or_none(find_first(
+                    elem, ["./n:Name", ".//n:Name"]
+                )) or lid
+                public_code = text_or_none(find_first(
+                    elem, ["./n:PublicCode", ".//n:PublicCode"]
+                ))
                 short = public_code or name
                 routes[lid] = RouteRow(
                     route_id=lid,
@@ -318,14 +339,19 @@ def pass3_extract_routes(xml_path: Path, agency_id: str) -> Dict[str, RouteRow]:
                     route_long_name=name[:1000]
                 )
         elem.clear()
-
     # Fallback: if no Lines, use Route elements
     if not routes:
-        for event, elem in etree.iterparse(str(xml_path), events=("end",), huge_tree=True):
+        for _, elem in etree.iterparse(
+            str(xml_path),
+            events=("end",),
+            huge_tree=True
+        ):
             if localname(elem.tag) == "Route":
                 rid = get_id(elem)
                 if rid:
-                    name = text_or_none(find_first(elem, ["./n:Name", ".//n:Name"])) or rid
+                    name = text_or_none(find_first(
+                        elem, ["./n:Name", ".//n:Name"]
+                    )) or rid
                     routes[rid] = RouteRow(
                         route_id=rid,
                         agency_id=agency_id,
@@ -343,19 +369,17 @@ def pass4_write_trips_and_stop_times(
     trips_csv: Path,
     stop_times_csv: Path,
 ) -> Tuple[int, int]:
-    num_trips = 0
-    num_stop_times = 0
-
     def route_fallback() -> str:
         return next(iter(routes.keys())) if routes else "UNKNOWN_ROUTE"
-
+    
+    num_trips = 0
+    num_stop_times = 0
     in_journey = False
     cur_trip_id: Optional[str] = None
     cur_route_id: Optional[str] = None
     cur_service_id: Optional[str] = None
     cur_headsign: Optional[str] = None
     cur_seq = 0
-
     # Passing-time context
     in_pt = False
     pt_stop_ref: Optional[str] = None
@@ -366,15 +390,19 @@ def pass4_write_trips_and_stop_times(
          stop_times_csv.open("w", newline="", encoding="utf-8") as fs:
         trips_w = csv.writer(ft)
         st_w = csv.writer(fs)
-        trips_w.writerow(["route_id", "service_id", "trip_id", "trip_headsign"])
-        st_w.writerow(["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence"])
-
-        context = etree.iterparse(str(xml_path), events=("start", "end"), huge_tree=True)
-
+        trips_w.writerow(["route_id", "service_id", 
+                          "trip_id", "trip_headsign"])
+        st_w.writerow(["trip_id", "arrival_time", "departure_time", 
+                       "stop_id", "stop_sequence"])
+        context = etree.iterparse(
+            str(xml_path),
+            events=("start", "end"),
+            huge_tree=True
+        )
         for event, elem in context:
             tag = localname(elem.tag)
-
-            # --- Journey context (note: file uses ServiceJourney elements with ids that start IT::VehicleJourney...)
+            # --- Journey context (note: file uses ServiceJourney elements 
+            # with ids that start IT::VehicleJourney...)
             if event == "start" and tag in {"ServiceJourney", "VehicleJourney"}:
                 in_journey = True
                 cur_trip_id = get_id(elem)
@@ -384,7 +412,6 @@ def pass4_write_trips_and_stop_times(
                 cur_seq = 0
                 # don"t clear on start
                 continue
-
             # --- Passing time context
             if in_journey and event == "start" and tag == "TimetabledPassingTime":
                 in_pt = True
@@ -392,7 +419,6 @@ def pass4_write_trips_and_stop_times(
                 pt_arr = None
                 pt_dep = None
                 continue
-
             if in_journey and in_pt and event == "end":
                 # Stop refs commonly appear as elements with @ref
                 if tag in {
@@ -405,24 +431,22 @@ def pass4_write_trips_and_stop_times(
                     r = elem.get("ref")
                     if r and pt_stop_ref is None:
                         pt_stop_ref = r
-
                 # Times: can be ArrivalTime/DepartureTime or nested structures.
                 elif tag == "ArrivalTime":
                     pt_arr = strip_time((elem.text or "").strip())
                 elif tag == "DepartureTime":
                     pt_dep = strip_time((elem.text or "").strip())
-
                 # Some feeds use <Arrival><Time>HH:MM:SS</Time></Arrival>
                 elif tag == "Time":
                     # only use this if we haven"t already captured arr/dep
                     t = strip_time((elem.text or "").strip())
                     if t:
-                        # Heuristic: first Time encountered inside PT becomes arrival, second becomes departure
+                        # Heuristic: first Time encountered inside PT 
+                        # becomes arrival, second becomes departure
                         if pt_arr is None:
                             pt_arr = t
                         elif pt_dep is None:
                             pt_dep = t
-
                 elif tag == "TimetabledPassingTime":
                     # End of passing time: write stop_time row if we have enough
                     if cur_trip_id and pt_stop_ref and (pt_arr or pt_dep):
@@ -431,22 +455,18 @@ def pass4_write_trips_and_stop_times(
                         cur_seq += 1
                         st_w.writerow([cur_trip_id, arr, dep, pt_stop_ref, cur_seq])
                         num_stop_times += 1
-
                     # reset PT context
                     in_pt = False
                     pt_stop_ref = None
                     pt_arr = None
                     pt_dep = None
-
                     # safe to clear this element now
                     elem.clear()
                     continue
-
                 # While inside PT, do NOT blindly clear children before end-of-PT.
                 # But it"s still okay to clear leaf nodes AFTER we"ve read them:
                 elem.clear()
                 continue
-
             # --- Still inside journey: capture metadata refs
             if in_journey and event == "end" and not in_pt:
                 if tag == "LineRef":
@@ -465,7 +485,6 @@ def pass4_write_trips_and_stop_times(
                     t = (elem.text or "").strip()
                     if t:
                         cur_headsign = t
-
                 elif tag in {"ServiceJourney", "VehicleJourney"}:
                     # journey end: write trip
                     if cur_trip_id:
@@ -473,26 +492,20 @@ def pass4_write_trips_and_stop_times(
                         sid = cur_service_id or "ALL_DAYS"
                         trips_w.writerow([rid, sid, cur_trip_id, cur_headsign or ""])
                         num_trips += 1
-
                     in_journey = False
                     cur_trip_id = None
                     cur_route_id = None
                     cur_service_id = None
                     cur_headsign = None
                     cur_seq = 0
-
                     elem.clear()
                     continue
-
                 elem.clear()
                 continue
-
             # --- Outside journey: can safely clear
             if event == "end":
                 elem.clear()
-
     return num_trips, num_stop_times
-
 
 
 def write_gtfs_zip(
@@ -509,23 +522,22 @@ def write_gtfs_zip(
     stop_times_csv: Path,
 ) -> None:
     tmpdir = trips_csv.parent
-
     agency_txt = tmpdir / "agency.txt"
     stops_txt = tmpdir / "stops.txt"
     routes_txt = tmpdir / "routes.txt"
     calendar_txt = tmpdir / "calendar.txt"
     feed_info_txt = tmpdir / "feed_info.txt"
-
     # agency.txt
     with agency_txt.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["agency_id", "agency_name", "agency_url", "agency_timezone"])
+        w.writerow(["agency_id", "agency_name",
+                    "agency_url", "agency_timezone"])
         w.writerow([agency_id, agency_name, agency_url, agency_timezone])
-
     # stops.txt
     with stops_txt.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["stop_id", "stop_name", "stop_lat", "stop_lon", "location_type", "parent_station"])
+        w.writerow(["stop_id", "stop_name", "stop_lat", "stop_lon",
+                    "location_type", "parent_station"])
         for s in stops.values():
             w.writerow([
                 s.stop_id,
@@ -535,39 +547,41 @@ def write_gtfs_zip(
                 s.location_type,
                 s.parent_station or ""
             ])
-
     # routes.txt
     with routes_txt.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["route_id", "agency_id", "route_short_name", "route_long_name", "route_type"])
+        w.writerow(["route_id", "agency_id", "route_short_name",
+                    "route_long_name", "route_type"])
         for r in routes.values():
-            w.writerow([r.route_id, r.agency_id, r.route_short_name, r.route_long_name, r.route_type])
-
+            w.writerow([r.route_id, r.agency_id, r.route_short_name,
+                        r.route_long_name, r.route_type])
     # calendar.txt
     # We declare every service_id active all days across ValidBetween.
-    # To get the list of service_ids, read trips_csv (streaming is fine; it"s small-ish).
+    # To get the list of service_ids, read trips_csv
+    # (streaming is fine; it"s small-ish).
     service_ids = set()
     with trips_csv.open("r", encoding="utf-8") as f:
         rdr = csv.DictReader(f)
         for row in rdr:
             service_ids.add(row["service_id"])
-
     with calendar_txt.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["service_id", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "start_date", "end_date"])
+        w.writerow(["service_id", "monday", "tuesday", "wednesday",
+                    "thursday", "friday", "saturday", "sunday",
+                    "start_date", "end_date"])
         sd = from_d.strftime("%Y%m%d")
         ed = to_d.strftime("%Y%m%d")
         for sid in sorted(service_ids):
             w.writerow([sid, 1, 1, 1, 1, 1, 1, 1, sd, ed])
-
     # feed_info.txt
     with feed_info_txt.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["feed_publisher_name", "feed_publisher_url", "feed_lang", "feed_start_date", "feed_end_date"])
-        w.writerow([agency_name, agency_url, "it", from_d.strftime("%Y%m%d"), to_d.strftime("%Y%m%d")])
-
+        w.writerow(["feed_publisher_name", "feed_publisher_url", 
+                    "feed_lang", "feed_start_date", "feed_end_date"])
+        w.writerow([agency_name, agency_url, "it",
+                    from_d.strftime("%Y%m%d"), to_d.strftime("%Y%m%d")])
     # Build zip
-    with zipfile.ZipFile(out_zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
+    with zipfile.ZipFile(out_zip, "w", compression=ZIP_DEFLATED) as z:
         z.write(agency_txt, arcname="agency.txt")
         z.write(stops_txt, arcname="stops.txt")
         z.write(routes_txt, arcname="routes.txt")
@@ -578,12 +592,6 @@ def write_gtfs_zip(
 
 
 def convert_netex_to_gtfs(xml_path: Path, out_zip: Path):
-    # if len(sys.argv) != 3:
-    #     print("Usage: python netex_to_gtfs_min.py <netex.xml> <out_gtfs.zip>", file=sys.stderr)
-    #     sys.exit(2)
-    # xml_path = Path(sys.argv[1]).expanduser().resolve()
-    # out_zip = Path(sys.argv[2]).expanduser().resolve()
-
     if not xml_path.exists():
         raise FileNotFoundError(xml_path)
     tmpdir = out_zip.parent / (out_zip.stem + "_tmp")
@@ -628,24 +636,29 @@ def convert_netex_to_gtfs(xml_path: Path, out_zip: Path):
 
 def get_station_coords(stops_file):
     ## NeTEx train stops
-    stops = pd.read_csv(stops_file, usecols=["stop_id", "location_type", "parent_station"])
+    stops = pd.read_csv(stops_file, usecols=[
+        "stop_id", "location_type", "parent_station"])
     stops["code"] = stops["stop_id"].str.split(":").str[-1].str[2:].astype(int)
     ## Train stations from Trainline database
-    url = "https://raw.githubusercontent.com/trainline-eu/stations/refs/heads/master/stations.csv"
-    stns = (pd.read_csv(url, sep=";", usecols=["name", "uic", "country", "longitude", "latitude"])
+    stns = (
+        pd.read_csv(C.URLS["stns-trainline"], sep=";", usecols=[
+            "name", "uic", "country", "longitude", "latitude"])
         .query("country == 'IT'").dropna()
         .rename(columns={"longitude": "lon", "latitude": "lat"})
         .astype({"uic": int}).astype({"uic": str})
-        .reset_index(drop=True)[["uic", "name", "lon", "lat"]])
+        .reset_index(drop=True)[["uic", "name", "lon", "lat"]]
+    )
     stns["code"] = stns["uic"].str[2:].astype(int)
     ## Get coordinates from Trainline table to NeTEx table
-    stops = (stops.merge(stns, on="code")
-             .rename(columns=dict(lon="stop_lon", lat="stop_lat", name="stop_name"))
-             ["stop_id stop_name stop_lat stop_lon location_type parent_station".split()])
-    return stops
+    return (
+        stops.merge(stns, on="code")
+        .rename(columns=dict(lon="stop_lon", lat="stop_lat", name="stop_name"))
+        [["stop_id", "stop_name", "stop_lat", "stop_lon",
+          "location_type", "parent_station"]]
+    )
 
 
-def build_spjp_map(netex_xml_path: str) -> dict[str, str]:
+def build_spjp_map(xml_path: str) -> dict[str, str]:
     """
     Returns dict: StopPointInJourneyPattern.id -> referenced physical stop id
     (prefers QuayRef, then ScheduledStopPointRef, then StopPlaceRef).
@@ -654,7 +667,7 @@ def build_spjp_map(netex_xml_path: str) -> dict[str, str]:
     in_spjp = False
     cur_spjp_id = None
     cur_ref = None
-    ctx = etree.iterparse(netex_xml_path, events=("start", "end"), huge_tree=True)
+    ctx = etree.iterparse(xml_path, events=("start", "end"), huge_tree=True)
     for event, el in ctx:
         tag = localname(el.tag)
         if event == "start" and tag == "StopPointInJourneyPattern":
@@ -672,8 +685,13 @@ def build_spjp_map(netex_xml_path: str) -> dict[str, str]:
                         cur_ref = r
                     else:
                         # upgrade if we currently have a lower-priority ref
-                        prio = {"StopPlaceRef": 0, "ScheduledStopPointRef": 1, "QuayRef": 2}
-                        if prio[tag] > prio.get(cur_ref.split(":")[2] if "::" in cur_ref else "", -1):
+                        prio = {
+                            "StopPlaceRef": 0,
+                            "ScheduledStopPointRef": 1,
+                            "QuayRef": 2
+                        }
+                        x = cur_ref.split(":")[2] if "::" in cur_ref else ""
+                        if prio[tag] > prio.get(x, -1):
                             cur_ref = r
             elif tag == "StopPointInJourneyPattern":
                 if cur_spjp_id and cur_ref:
@@ -689,27 +707,27 @@ def build_spjp_map(netex_xml_path: str) -> dict[str, str]:
     return spjp_to_stop
 
 
-if __name__ == "__main__":
-    ROOT = C.mkdir(C.DATA / "gtfs")
-    # ## Download the NeTEx feed from the CCISS website
-    if not (xml_gz_path := ROOT / "trenitalia.xml.gz").exists():
-        urlretrieve(C.URLS["trenitalia-feed"], xml_gz_path)
-    # ## Unzip the NeTEx XML file
-    if not (xml_path := ROOT / "trenitalia.xml").exists():
+def process_trenitalia(netex_url: str, root=C.DATA / "gtfs"):
+    C.log("Downloading Trenitalia feed and converting from NeTEX to GTFS")
+    ## Download the NeTEx feed from the CCISS website
+    if not (xml_gz_path := root / "trenitalia.xml.gz").exists():
+        urlretrieve(netex_url, xml_gz_path)
+    ## Unzip the NeTEx XML file
+    if not (xml_path := root / "trenitalia.xml").exists():
         with gzip.open(xml_gz_path, "rb") as file_in:
             with open(xml_path, "wb") as file_out:
                 shutil.copyfileobj(file_in, file_out)
-    # ## Convert NeTEx to GTFS and unzip zip
-    if not (zip_path := ROOT / "trenitalia.gtfs.zip").exists():
+    ## Convert NeTEx to GTFS and unzip zip
+    if not (zip_path := root / "trenitalia.gtfs.zip").exists():
         convert_netex_to_gtfs(xml_path, zip_path)
-    feed_name = "man-Trenitalia"
-    if not (gtfs_dir := ROOT / "feeds" / feed_name).exists():
+    feed_name = "ext-Trenitalia"
+    if not (gtfs_dir := root / "feeds" / feed_name).exists():
         with zipfile.ZipFile(zip_path, "r") as f:
             f.extractall(C.mkdir(gtfs_dir))
-    # ## Obtain station names from the Trainline dataset
+    ## Obtain station names from the Trainline dataset
     stops = get_station_coords(stops_file := gtfs_dir / "stops.txt")
     stops.to_csv(stops_file, index=False)
-    # ## Map stoptimes.stop_id to stops.stop_id
+    ## Map stoptimes.stop_id to stops.stop_id
     stops = pd.read_csv(stops_file := gtfs_dir / "stops.txt")
     times = pd.read_csv(times_file := gtfs_dir / "stop_times.txt")
     spjp2stop = build_spjp_map(xml_path)
@@ -718,7 +736,7 @@ if __name__ == "__main__":
     stops = stops.merge(times["stop_id"].drop_duplicates(), on="stop_id")
     stops.to_csv(stops_file, index=False)
     times.to_csv(times_file, index=False)
-    with zipfile.ZipFile(ROOT / f"feeds/{feed_name}.zip", "w") as zf:
+    with zipfile.ZipFile(root / f"feeds/{feed_name}.zip", "w") as zf:
         for file in gtfs_dir.glob("*.txt"):
             zf.write(file, arcname=file.name)
     xml_path.unlink()
