@@ -2,7 +2,6 @@
 
 #%% Imports
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Union
 
 import geopandas as gpd
@@ -24,6 +23,9 @@ CRS_EU = "EPSG:3035"
 with open("urls.yml", "r") as f:
     URLS = yaml.safe_load(f)
 
+#%% Model parameters
+with open("params.yml", "r") as f:
+    PARAMS = yaml.safe_load(f)
 
 #%% User-specific environment variables
 with open("env.yml", "r") as f:
@@ -107,14 +109,6 @@ def save(df: pd.DataFrame | gpd.GeoDataFrame,
     """Write a processed dataframe to a parquet file in a given folder."""
     df.to_parquet(root / f"{name}.parquet", **kwargs)
     log(f"Saved table '{name}'")
-    
-
-def load_params(yml_file: str | Path = Path("params.yml")):
-    """Load the study parameters into a simple namespace object."""
-    with open(yml_file, "r") as f:
-        params = yaml.safe_load(f)
-    log("Loaded parameters")
-    return SimpleNamespace(**params)
 
 
 #%% Data handling

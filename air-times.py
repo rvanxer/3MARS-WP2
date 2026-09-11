@@ -7,8 +7,6 @@ import pandas as pd
 
 import config as C
 
-params = C.load_params()
-
 #%% OAG flight schedules [14s]
 sched = C.load("air-timetable")
 if sched is None:
@@ -65,7 +63,7 @@ fua_centroids = (
 airports2 = airports.merge(
     airports.set_index("iata")
     .to_crs(C.CRS_EU)
-    .buffer(params.AIRPORT_CATCH_RADIUS * 1000)
+    .buffer(C.PARAMS["AIRPORT_CATCH_RADIUS"] * 1000)
     .rename("geometry").reset_index()
     .sjoin(fua_centroids)
     .sort_values("fua")

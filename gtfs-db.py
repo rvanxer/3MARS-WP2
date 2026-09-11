@@ -13,8 +13,6 @@ I16, I32 = np.int16, np.int32
 
 import config as C
 
-params = C.load_params()
-
 #%% Compile feed info and assign feed_id
 feeds = []
 imp_tables = ("agency", "routes", "stops", "trips", "stop_times",
@@ -131,8 +129,8 @@ def get_routes(feed):
 
 #%% Service dates
 def get_service_dates(feed: str,
-                      start_date: datetime.date = params.BASE_START_DATE,
-                      end_date: datetime.date = params.BASE_END_DATE):
+                      start_date=C.PARAMS["BASE_START_DATE"],
+                      end_date=C.PARAMS["BASE_END_DATE"]):
     cal, removed = [pd.DataFrame([], columns=["service_id", "date"])] * 2
     start_int = int(str(start_date).replace("-", ""))
     ## Calendar table

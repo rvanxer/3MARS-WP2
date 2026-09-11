@@ -16,8 +16,6 @@ from tqdm import tqdm
 
 import config as C
 
-params = C.load_params()
-
 #%% Create base modal graph
 def create_graph(mode: str, islands={
     "Ireland": (-11.563513, 51.283195, -5.257361, 55.535445),
@@ -153,7 +151,7 @@ g_r = contract_edges(g0_r) # 7s
 #%% Stations snapped to nodes
 def get_stations(
     graph: ig.Graph,
-    max_snap_dist: float = params.MAX_STN_OSM_OFFSET
+    max_snap_dist: float = C.PARAMS["MAX_STN_OSM_OFFSET"]
 ) -> pd.DataFrame:
     C.log("Snapping stations to graph nodes")
     stns = (

@@ -15,8 +15,6 @@ I16, UI16, I32 = np.int16, np.uint16, np.int32
 
 import config as C
 
-params = C.load_params()
-
 #%% Urban stops [3s]
 C.log("Filtering urban stops")
 
@@ -35,8 +33,8 @@ C.log("Identifying routes and computing timezone offsets")
 routes = (
     C.load("gtfs/db-routes")
     .assign(rail=lambda df: df["mode_id"].map(
-        {x: 0 for x in params.BUS_ROUTE_TYPES} |
-        {x: 1 for x in params.RAIL_ROUTE_TYPES}
+        {x: 0 for x in C.PARAMS["BUS_ROUTE_TYPES"]} |
+        {x: 1 for x in C.PARAMS["RAIL_ROUTE_TYPES"]}
     )).dropna(subset="rail", ignore_index=True)
     .astype({"agency": "category", "rail": bool})
     .rename(columns={"id": "route", "fid": "feed"})
@@ -65,9 +63,9 @@ dates = (
     .explode("day_id").astype({"day_id": np.int32})
 )
 date2int = lambda date: np.int32(str(date).replace("-", ""))
-dates["date"] = dates.pop("day_id") + date2int(params.BASE_START_DATE)
-dates = dates[dates["date"] >= date2int(params.SERVICE_START)]
-dates = dates[dates["date"] <= date2int(params.SERVICE_END)]
+dates["date"] = dates.pop("day_id") + date2int(C.PARAMS["BASE_START_DATE"])
+dates = dates[dates["date"] >= date2int(C.PARAMS["SERVICE_START"])]
+dates = dates[dates["date"] <= date2int(C.PARAMS["SERVICE_END"])]
 row_codes, dateset_ids = pd.factorize(dates.index, sort=True)
 col_codes, date_ids = pd.factorize(dates["date"], sort=True)
 date_mat = np.zeros((len(dateset_ids), len(date_ids)), dtype=bool)
@@ -133,7 +131,7 @@ stns = (
     .get_coordinates().reset_index()
 )
 stns["stn"] = DBSCAN(
-    eps=params.STOP_CLUSTER_RADIUS,
+    eps=C.PARAMS["STOP_CLUSTER_RADIUS"],
     min_samples=1,
     algorithm="ball_tree"
 ).fit_predict(stns[["x", "y"]])
@@ -173,7 +171,7 @@ jrn_ic = (
 C.log("Mapping nearby stops to stations for intracity routing")
 stn_stops = (
     stns.to_crs(C.CRS_EU)
-    .buffer(params.STATION_BUFFER_RADIUS)
+    .buffer(C.PARAMS["STATION_BUFFER_RADIUS"])
     .rename("geometry").reset_index()
     .to_crs(C.CRS_DEG)
     .sjoin(stops, predicate="contains")

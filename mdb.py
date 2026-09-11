@@ -10,10 +10,9 @@ from tqdm import tqdm
 
 import config as C
 
-
 #%% Configuration
-params = C.load_params()
-SNAPSHOT_DATE = dt.datetime.combine(params.MDB_SNAPSHOT_DATE, dt.time())
+SNAPSHOT_DATE = dt.datetime.combine(
+    C.PARAMS["MDB_SNAPSHOT_DATE"], dt.time())
 
 COUNTRIES = sorted(
     C.load("countries")["icc"]

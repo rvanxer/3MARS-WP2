@@ -15,14 +15,12 @@ from tqdm import tqdm
 
 import config as C
 
-params = C.load_params()
-
 warnings.filterwarnings("ignore", category=pd.errors.ChainedAssignmentError)
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas._config")
 logging.getLogger("pyogrio").setLevel(logging.WARNING)
 
 #%% Country-level rai/highway OSM geodatabase [53m19s]
-snapshot_date = params.OSM_SNAPSHOT_DATE
+snapshot_date = C.PARAMS["OSM_SNAPSHOT_DATE"]
 snapshot_str = snapshot_date.strftime("%y%m%d")
 C.log(f"Downloading country-wise OSM snapshots on {snapshot_date}")
 osm_uris = dict(
