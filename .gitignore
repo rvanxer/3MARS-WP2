@@ -2,6 +2,7 @@ __pycache__
 _old
 .DS_Store
 data
+doc
 fig
 notebooks
 .vscode

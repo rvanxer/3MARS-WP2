@@ -370,7 +370,7 @@ Airport codes, names and coordinates come from the [IP2Location IATA/ICAO list](
 
 ## Parameters
 
-The important model parameters influential in the resulting 3MG are listed in [params.yml]. These are described below:
+The important model parameters influential in the resulting 3MG are listed in [params.yml](params.yml). These are described below:
 
 | Parameter | Value | Role in this project | Used in module |
 |---|---:|---|---|
@@ -383,23 +383,6 @@ The important model parameters influential in the resulting 3MG are listed in [p
 | `STN_BUFFER_RADIUS` | 400 m | Radius for associating nearby stops with a station when recovering local services | [intercity.py](intercity.py) |
 | `MAX_STN_OSM_OFFSET` | 5 km | Maximum station-to-network snapping distance for OSM routing | [seg-geometry.py](seg-geometry.py) |
 | `AIRPORT_CATCH_RADIUS` | 150 km | Maximum distance between an airport and an associated FUA centre | [air-times.py](air-times.py) |
-<!-- | `CRS_EU` | EPSG:3035 | ETRS89-LAEA Europe | Metric spatial processing, including buffers, lengths and population centres |
-| `CRS_DEG` | EPSG:4326 | WGS 84 | Stored GeoParquet geometries and longitude/latitude coordinates | -->
-
-<!-- Parameters reserved for pathset construction and subsequent assignment work are listed below to distinguish planned modelling choices from the present network-generation assumptions.
-
-| Parameter | Current value | Unit | Intended downstream use |
-|---|---:|---|---|
-| `MIN_PATH_LENGTH` | 50 | kilometres | Minimum intercity path length |
-| `MAX_ROUTE_SPEED_BUS` | 120 | km/h | Bus-path plausibility threshold |
-| `MAX_ROUTE_SPEED_RAIL` | 360 | km/h | Rail-path plausibility threshold |
-| `N_SHORTEST_PATHS` | 20 | paths | Maximum alternatives per OD, mode and departure period |
-| `DEP_HR_BINS` | 0, 6, 9, 12, 15, 18, 21, 24 | hour boundaries | Departure-time periods |
-| `MIN_TRANS_TIME` | 5 | minutes | Minimum feasible transfer time |
-| `MAX_TRANS_TIME` | 120 | minutes | Maximum admitted transfer time |
-| `BASE_WAIT` | 10 | minutes | Assumed waiting time at the origin |
-| `TRANSFER_TIME_FACTOR` | 1.7 | multiplier | Weight applied to transfer time in generalised travel time |
-| `TRANSFER_PENALTY` | 10 | minutes per transfer | Fixed transfer penalty | -->
 
 ## Methods
 
