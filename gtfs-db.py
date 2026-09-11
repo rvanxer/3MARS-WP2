@@ -129,10 +129,10 @@ def get_routes(feed):
 
 #%% Service dates
 def get_service_dates(feed: str,
-                      start_date=dt.datetime.datetime(2020, 1, 1),
-                      end_date=dt.datetime.datetime(2030, 1, 1)):
+                      start_date=dt.datetime(2020, 1, 1),
+                      end_date=dt.datetime(2030, 1, 1)):
     cal, removed = [pd.DataFrame([], columns=["service_id", "date"])] * 2
-    start_int = int(str(start_date).replace("-", ""))
+    start_int = int(str(start_date.date()).replace("-", ""))
     ## Calendar table
     df = read_gtfs_table(feed, "calendar")
     if len(df) > 0:
@@ -177,7 +177,7 @@ def get_service_dates(feed: str,
     df = df.groupby("day_id")["service_id"].agg(list).reset_index()
     return df.rename_axis("id")
 
-# x = get_service_dates("man-Estonia"); x
+# x = get_service_dates("ext-Estonia"); x
 
 #%% Process feed
 def process_feed(feed, overwrite=False):

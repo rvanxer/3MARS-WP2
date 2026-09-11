@@ -73,10 +73,10 @@ dates = (
     .rename(columns={"id": "dateset_id", "fid": "feed"})
     .explode("day_id").astype({"day_id": np.int32})
 )
-date2int = lambda date: np.int32(str(date).replace("-", ""))
-dates["date"] = dates.pop("day_id") + date2int(C.PARAMS["BASE_START_DATE"])
-dates = dates[dates["date"] >= date2int(C.PARAMS["SERVICE_START"])]
-dates = dates[dates["date"] <= date2int(C.PARAMS["SERVICE_END"])]
+dates["date"] = dates.pop("day_id") + 20200101 # start date of day IDs
+start_date = int(C.PARAMS["SERVICE_START"].strftime("%Y%m%d"))
+end_date = int(C.PARAMS["SERVICE_END"].strftime("%Y%m%d"))
+dates = dates.query(f"{start_date} <= date <= {end_date}")
 row_codes, dateset_ids = pd.factorize(dates.index, sort=True)
 col_codes, date_ids = pd.factorize(dates["date"], sort=True)
 date_mat = np.zeros((len(dateset_ids), len(date_ids)), dtype=bool)
