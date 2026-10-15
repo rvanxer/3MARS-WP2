@@ -2,6 +2,8 @@
 OSM_SNAPSHOT_DATE: 2026-09-01
 # Target MobilityDatabase GTFS snapshot date
 MDB_SNAPSHOT_DATE: 2026-09-01
+# Date for timezone computation of airports
+AIR_TIMEZONE_DATE: 2026-01-01
 # Minimum population of a functional urban area (FUA)
 MIN_FUA_POPU: 200000
 # Start and end dates of public transport services in GTFS data

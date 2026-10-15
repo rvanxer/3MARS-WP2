@@ -1,6 +1,9 @@
 """Use the OAG flight schedule data for air network construction."""
 
 #%% Imports
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -14,12 +17,12 @@ if sched is None:
         ("DEP_AIRPORT_CODE", "src", "category"),
         ("ARR_AIRPORT_CODE", "trg", "category"),
         ("AIRLINE_CODE", "carrier", "category"),
-        ("FLIGHT_NO", "flight", np.int16),
-        ("DEPARTURE_TIME", "dep", np.int16),
-        ("ARRIVAL_TIME", "arr", np.int16),
-        ("STOPS", "nstops", np.int8),
+        ("FLIGHT_NO", "flight", "int16"),
+        ("DEPARTURE_TIME", "dep", "int16"),
+        ("ARRIVAL_TIME", "arr", "int16"),
+        ("STOPS", "nstops", "int8"),
         ("LOCALDAYSOFOP", "op_days", "category"),
-        ("SEATS_ECO", "seats", np.int16),
+        ("SEATS_ECO", "seats", "int16"),
         ("EFFFROM", "start_date", "category"),
         ("EFFTO", "end_date", "category"),
     )
@@ -29,9 +32,6 @@ if sched is None:
         .rename(columns={c[0]: c[1] for c in cols})
         .astype({c[1]: c[2] for c in cols})
     )
-    # add 24 h for next-day schedule
-    sched.loc[sched["dep"] >= sched["arr"], "arr"] += 2400
-    # convert times to minutes since start of day
     for col in ["arr", "dep"]:
         sched[col] = np.int16((sched[col] // 100) * 60 + (sched[col] % 100))
     sched = sched.drop_duplicates(ignore_index=True)
@@ -72,7 +72,6 @@ airports2 = airports.merge(
     on="iata"
 )#.view()
 airports2["name"] = airports2["name"].str.replace(" Airport", "")
-
 C.save(airports2, "airports")
 
 #%% Timetable with flight count per flight [8s]
@@ -81,7 +80,7 @@ tt = (
           (sched["trg"].isin(airports2["iata"]))]
     .astype({"start_date": str, "end_date": str})
     .reset_index(drop=True).rename_axis("row")
-)
+)#.view()
 days = (
     tt.reset_index()
     .groupby(["start_date", "end_date", "op_days"])
@@ -95,7 +94,18 @@ days["nflights"] = days.apply(lambda r:
     .day_of_week.isin(r["op_days"]).sum(), axis=1
 )
 days = days[["row", "nflights"]].explode("row").astype({"row": int})
-tt = tt.merge(days, on="row").set_index("row")#.view(1)
+tt = tt.merge(days, on="row").set_index("row").view(1)
+
+#%% Travel times, adjusted for time zone differences
+ref_date = datetime.combine(C.PARAMS["AIR_TIMEZONE_DATE"], time(12))
+cntr_tz = C.load("countries").set_index("icc")["timezone"]
+airport_tz = airports.set_index("iata")["icc"].map(cntr_tz)
+offsets = airport_tz.map(lambda tz:
+    ref_date.replace(tzinfo=ZoneInfo(tz)).utcoffset().total_seconds() / 60
+).astype(np.int16)
+tt["dep_utc"] = (tt["dep"] - tt["src"].map(offsets)).astype(np.int16)
+tt["arr_utc"] = (tt["arr"] - tt["trg"].map(offsets)).astype(np.int16)
+tt["duration"] = (tt["arr_utc"] - tt["dep_utc"]).astype(np.int16)
 
 #%% Airlines/carriers
 carriers = dict(
@@ -133,7 +143,7 @@ carriers = dict(
 
 #%% Travel time & frequency by carrier
 links = (
-    tt.assign(time=(tt["arr"] - tt["dep"]) * tt["nflights"])
+    tt.assign(time=tt["duration"] * tt["nflights"])
     .groupby(["carrier", "src", "trg"], observed=True)
     .agg({"time": "sum", "nflights": "sum",
           "start_date": "min", "end_date": "max"})
@@ -146,6 +156,6 @@ links["time"] /= links["nflights"]
 links["freq"] = links["nflights"] / links["ndays"]
 links = links[["src", "trg", "carrier", "time", "freq",
                "nflights", "ndays"]]
-links = links.dropna()#.view()
+links = links.dropna().view()
 
 C.save(links, "air-links")
