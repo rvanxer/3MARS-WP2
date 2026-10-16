@@ -65,7 +65,7 @@ It has three types of links:
 
 3MG is a static supply graph in P-space representation, meaning all nodes that have a direct connection by a single service or route are connected by a direct link. The modal tables provide travel time, routed distance and service frequency, while the final graph currently retains travel time and frequency. These metrics provide the basis for later multi-class estimates of generalised travel cost (GTC), such as different perceived costs for travellers with different income levels or trip purposes. Fares and capacities are not yet included.
 
-The current development snapshot contains 1,371 nodes and 190,921 links; its validation results and remaining qualifications are described under [Limitations](#limitations).
+The current development snapshot contains 1,370 nodes and 246,823 links; its validation results and remaining qualifications are described under [Limitations](#limitations).
 
 The following map shows the included countries, FUAs and intercity bus and rail segments:
 

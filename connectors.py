@@ -28,19 +28,24 @@ popu = (
 )#.view()
 
 #%% Transport hubs (destinations)
-hubs = (
-    pd.concat([
-        C.load("airports")
-        .rename(columns={"iata": "hub"})
-        [["hub", "name", "geometry"]]
-        .assign(kind="Airport"),
-        
-        C.load("ic-stations")
-        .rename(columns={"stn": "hub"})
-        [["hub", "name", "geometry"]]
-        .assign(kind="Station")
-    ]).astype({"hub": str})
+stns = (
+    C.load("ic-stations")
+    .rename(columns={"stn": "hub"})
+    [["hub", "name", "geometry"]]
+    .to_crs(fuas.crs)
     .sjoin(fuas[["geometry"]])
+    .assign(kind="Station")
+)#.view()
+airpts = (
+    C.load("airports")
+    .rename(columns={"iata": "hub"})
+    [["hub", "name", "fua", "geometry"]]
+    .explode("fua").astype({"fua": int})
+    .assign(kind="Airport")
+)#.view()
+hubs = (
+    pd.concat([stns, airpts])
+    .astype({"hub": str})
     .set_index(["hub", "kind", "name", "fua"])
     .get_coordinates().astype(np.float32)
     .reset_index()

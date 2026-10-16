@@ -7,6 +7,7 @@ from typing import Union
 import geopandas as gpd
 from IPython.display import display
 import logging
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
@@ -150,3 +151,59 @@ def _view_gdf(df: gpd.GeoDataFrame, nrow: int = 0):
 # add the `disp` method to pandas and geopandas series & DF classes
 pd.DataFrame.view = _view_pdf
 gpd.GeoDataFrame.view = _view_gdf
+
+
+#%% Plotting
+plt.rcParams.update({
+    "axes.edgecolor": "k",
+    "axes.edgecolor": "k",
+    "axes.formatter.use_mathtext": True,
+    "axes.grid": True,
+    "axes.labelcolor": "k",
+    "axes.labelsize": 13,
+    "axes.linewidth": 0.5,
+    "axes.titlesize": 15,
+    "figure.dpi": 150,
+    "figure.titlesize": 15,
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "Noto Sans", "DejaVu Serif"],
+    "grid.alpha": 0.15,
+    "grid.color": "k",
+    "grid.linewidth": 0.5,
+    "legend.edgecolor": "none",
+    "legend.facecolor": ".9",
+    "legend.fontsize": 11,
+    "legend.framealpha": 0.5,
+    "legend.labelcolor": "k",
+    "legend.title_fontsize": 13,
+    "mathtext.fontset": "cm",
+    "text.color": "k",
+    "text.color": "k",
+    "xtick.bottom": True,
+    "xtick.color": "k",
+    "xtick.labelsize": 10,
+    "xtick.minor.visible": True,
+    "ytick.color": "k",
+    "ytick.labelsize": 10,
+    "ytick.left": True,
+    "ytick.minor.visible": True,
+})
+
+def imsave(title=None, fig=None, ax=None, dpi=300,
+           root="fig", ext="png", opaque=True):
+    """Save the current matplotlib figure to disk."""
+    fig = fig or plt.gcf()
+    ax = ax or fig.axes[0]
+    title = title or fig._suptitle or ax.get_title()
+    fig.savefig(
+        f"{mkdir(root)}/{title}.{ext}",
+        dpi=dpi,
+        bbox_inches="tight",
+        transparent=not opaque,
+        facecolor="white" if opaque else "auto",
+    )
+    
+# gpd.GeoDataFrame.map = (
+#     lambda gdf, *args, tiles="CartoDB.Voyager", **kwargs:
+#     gdf.explore(*args, tiles=tiles, **kwargs)
+# )
