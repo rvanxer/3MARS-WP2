@@ -74,8 +74,8 @@ car_links = (
         mode="Car",
         operator=pd.NA,
         freq=np.nan,
-    )
-    [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
+    ).astype({"dist": np.int16})
+    [["src", "trg", "kind", "mode", "operator", "dist", "time", "freq"]]
 )
 
 #%% Air links between airports
@@ -88,56 +88,59 @@ air_links = (
         mode="Air",
         operator=air["carrier"].astype(str),
     )
-    [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
+    [["src", "trg", "kind", "mode", "operator", "dist", "time", "freq"]]
 )
 
 #%% Bus and rail links between stations
 pt = C.load("pt-links")
 pt_links = (
-    pt.assign(
+    pt.query("intercity")
+    .assign(
         src=pt["src"].map(lambda x: f"STN_{x:04}"),
         trg=pt["trg"].map(lambda x: f"STN_{x:04}"),
-        kind=pt["intercity"].map({False: "Intraurban", True: "Intercity"}),
         mode=pt["rail"].map({False: "Bus", True: "Rail"}),
+        kind="Intercity",
     )
-    [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
+    [["src", "trg", "kind", "mode", "operator", "dist", "time", "freq"]]
 )
 
-#%% Directed car connectors between cities and transport hubs
-connectors = C.load("connectors")
-connectors["hub_id"] = [
-    f"AIR_{hub}" if kind == "Airport" else f"STN_{int(hub):04}"
-    for hub, kind in zip(connectors["hub"], connectors["kind"])
-]
-connectors = connectors[connectors["hub_id"].isin(nodes["node_id"])]
-connector_links = (
-    connectors.assign(
-        src=connectors["fua"].map(lambda x: f"FUA_{x:03}"),
-        trg=connectors["hub_id"],
-        kind="Connector",
-        mode="Car",
-        operator=pd.NA,
-        freq=np.nan,
-    )
-    [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
-)
-connector_links = pd.concat([
-    connector_links,
-    connector_links.rename(columns={"src": "trg", "trg": "src"})
-], ignore_index=True)
+#%% Directed car connectors within cities
+connectors = (
+    C.load("connectors")
+    .assign(mode="Car", operator=pd.NA, freq=np.nan)
+    .astype({"dist": np.int32})
+)#.view(1)
+# connectors = C.load("connectors")
+# connectors["hub_id"] = [
+#     f"AIR_{hub}" if kind == "Airport" else f"STN_{int(hub):04}"
+#     for hub, kind in zip(connectors["hub"], connectors["kind"])
+# ]
+# connectors = connectors[connectors["hub_id"].isin(nodes["node_id"])]
+# connector_links = (
+#     connectors.assign(
+#         src=connectors["fua"].map(lambda x: f"FUA_{x:03}"),
+#         trg=connectors["hub_id"],
+#         kind="Connector",
+#         mode="Car",
+#         operator=pd.NA,
+#         freq=np.nan,
+#     )
+#     [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
+# )
+# connector_links = pd.concat([
+#     connector_links,
+#     connector_links.rename(columns={"src": "trg", "trg": "src"})
+# ], ignore_index=True)
 
 #%% Combined graph edges
 edges = (
-    pd.concat(
-        [car_links, air_links, pt_links, connector_links],
-        ignore_index=True)
+    pd.concat([car_links, air_links, pt_links, connectors], ignore_index=True)
     .query("src != trg").reset_index(drop=True)
     .astype({"src": str, "trg": str, "kind": "category",
-             "mode": "category", "time": F32, "freq": F32})
+             "mode": "category", "dist": F32, "time": F32, "freq": F32})
+    .assign(operator=lambda df: (df["operator"].fillna("<NA>")
+                                 .astype(str).astype("category")))
 )#.view()
-edges["operator"] = (edges["operator"].fillna("<NA>")
-                     .astype(str).astype("category"))
-edges
 
 #%% Export
 C.save(nodes, "3m-nodes")

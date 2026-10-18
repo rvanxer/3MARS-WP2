@@ -1,4 +1,5 @@
 geopandas==1.1.2
+haversine==2.9.0
 igraph==1.0.0
 ipython==9.7.0
 ipykernel

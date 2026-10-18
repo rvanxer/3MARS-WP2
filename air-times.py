@@ -4,6 +4,7 @@
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
+import haversine
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -141,7 +142,7 @@ carriers = dict(
     W6 = "Wizz Air",
 )
 
-#%% Travel time & frequency by carrier
+#%% Link attributes: Distance, travel time & frequency by carrier
 links = (
     tt.assign(time=tt["duration"] * tt["nflights"])
     .groupby(["carrier", "src", "trg"], observed=True)
@@ -156,6 +157,14 @@ links["time"] /= links["nflights"]
 links["freq"] = links["nflights"] / links["ndays"]
 links = links[["src", "trg", "carrier", "time", "freq",
                "nflights", "ndays"]]
-links = links.dropna().view()
+
+ap_xy = airports.set_index("iata").get_coordinates().reset_index()
+links = links.merge(ap_xy.set_axis(["src", "x0", "y0"], axis=1))
+links = links.merge(ap_xy.set_axis(["trg", "x1", "y1"], axis=1))
+links["dist"] = np.int16(haversine.haversine_vector(
+    list(zip(links.pop("y0"), links.pop("x0"))),
+    list(zip(links.pop("y1"), links.pop("x1"))),
+))
+links = links.dropna(ignore_index=True).view()
 
 C.save(links, "air-links")
