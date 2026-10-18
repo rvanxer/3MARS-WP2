@@ -131,7 +131,7 @@ def normalise(x: Union[np.array, pd.Series], vmin=None, vmax=None):
     return (x - vmin) / (vmax - vmin)
 
 
-def _view_pdf(df: pd.DataFrame, nrow: int = 0):
+def _view_pdf(df: pd.DataFrame, nrow: int = 1):
     mem = df.memory_usage(deep=True).sum() / 1024 ** 2
     log("{:,} rows x {:,} cols [{:.1f} MiB]".format(*df.shape, mem))
     display(pd.concat([pd.DataFrame({
@@ -139,7 +139,7 @@ def _view_pdf(df: pd.DataFrame, nrow: int = 0):
     }).T, df.head(nrow)]))
     return df
 
-def _view_gdf(df: gpd.GeoDataFrame, nrow: int = 0):
+def _view_gdf(df: gpd.GeoDataFrame, nrow: int = 1):
     mem = df.memory_usage(deep=True).sum() / 1024 ** 2
     log("{:,} rows x {:,} cols [{:.1f} MiB] [CRS: EPSG:{}]".format(
         *df.shape, mem, df.crs.to_epsg()))

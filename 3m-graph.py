@@ -76,7 +76,7 @@ car_links = (
         freq=np.nan,
     ).astype({"dist": np.int16})
     [["src", "trg", "kind", "mode", "operator", "dist", "time", "freq"]]
-)
+)#.view()
 
 #%% Air links between airports
 air = C.load("air-links")
@@ -89,48 +89,26 @@ air_links = (
         operator=air["carrier"].astype(str),
     )
     [["src", "trg", "kind", "mode", "operator", "dist", "time", "freq"]]
-)
+)#.view()
 
 #%% Bus and rail links between stations
 pt = C.load("pt-links")
 pt_links = (
-    pt.query("intercity")
-    .assign(
+    pt.assign(
         src=pt["src"].map(lambda x: f"STN_{x:04}"),
         trg=pt["trg"].map(lambda x: f"STN_{x:04}"),
         mode=pt["rail"].map({False: "Bus", True: "Rail"}),
         kind="Intercity",
-    )
+    ).query("intercity")
     [["src", "trg", "kind", "mode", "operator", "dist", "time", "freq"]]
-)
+)#.view()
 
 #%% Directed car connectors within cities
 connectors = (
     C.load("connectors")
     .assign(mode="Car", operator=pd.NA, freq=np.nan)
     .astype({"dist": np.int32})
-)#.view(1)
-# connectors = C.load("connectors")
-# connectors["hub_id"] = [
-#     f"AIR_{hub}" if kind == "Airport" else f"STN_{int(hub):04}"
-#     for hub, kind in zip(connectors["hub"], connectors["kind"])
-# ]
-# connectors = connectors[connectors["hub_id"].isin(nodes["node_id"])]
-# connector_links = (
-#     connectors.assign(
-#         src=connectors["fua"].map(lambda x: f"FUA_{x:03}"),
-#         trg=connectors["hub_id"],
-#         kind="Connector",
-#         mode="Car",
-#         operator=pd.NA,
-#         freq=np.nan,
-#     )
-#     [["src", "trg", "kind", "mode", "operator", "time", "freq"]]
-# )
-# connector_links = pd.concat([
-#     connector_links,
-#     connector_links.rename(columns={"src": "trg", "trg": "src"})
-# ], ignore_index=True)
+)#.view()
 
 #%% Combined graph edges
 edges = (
