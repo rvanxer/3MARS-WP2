@@ -2,18 +2,23 @@
 
 #%%
 from itertools import product
+from contextlib import contextmanager
 import logging
 import os
 from pathlib import Path
 import requests
+import socket
 import subprocess
 from tempfile import TemporaryDirectory
 import time
 from typing import Any
+from uuid import uuid4
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+
+import config as C
 
 logging.getLogger("pyogrio").setLevel(logging.WARNING)
 
@@ -52,8 +57,10 @@ def _start_server(
     verbosity: str = "ERROR"
 ) -> subprocess.Popen:
     """Preprocess an OSM extract, start OSRM and await requests."""
-    run(["docker", "container", "rm", "--force", container],
-        quiet=True, check=False)
+    # Refuse an occupied port instead of probing somebody else's server.
+    with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("127.0.0.1", port))
     verb = f"--verbosity {verbosity}"
     steps = (
         f"osrm-extract {verb} -p /opt/{profile}.lua "
@@ -77,10 +84,12 @@ def _start_server(
                 raise RuntimeError("OSRM server exited with code {}"
                                    .format(process.returncode))
             try:
-                requests.get(probe_url, timeout=2)
-                return process
-            except requests.ConnectionError:
-                time.sleep(0.5)
+                response = requests.get(probe_url, timeout=2)
+                if response.ok and response.json().get("code") == "Ok":
+                    return process
+            except (requests.RequestException, ValueError):
+                pass
+            time.sleep(0.5)
         raise TimeoutError(f"OSRM server did not start in {start_timeout}s")
     except BaseException:
         _stop_server(process, container)
@@ -89,8 +98,11 @@ def _start_server(
 
 def _stop_server(process: subprocess.Popen, container: str) -> None:
     """Stop the OSRM Docker container and its attached process."""
-    run(["docker", "container", "stop", "--time", "10", container],
-        quiet=True, check=False)
+    stopped = run(["docker", "container", "stop", "--time", "10", container],
+                  quiet=True, check=False)
+    if stopped.returncode:
+        run(["docker", "container", "rm", "--force", container],
+            quiet=True, check=False)
     try:
         process.wait(timeout=15)
     except subprocess.TimeoutExpired:
@@ -110,6 +122,13 @@ def _get_table(
     max_table_size: int
 ) -> pd.DataFrame:
     """Request a full source-to-target matrix in bounded OSRM batches."""
+    if src.empty or trg.empty:
+        return pd.DataFrame({
+            "src_id": pd.Series(dtype=np.int32),
+            "trg_id": pd.Series(dtype=np.int32),
+            "time": pd.Series(dtype=np.float32),
+            "dist": pd.Series(dtype=np.float32),
+        })
     mode = {
         "car": "driving",
         "foot": "walking",
@@ -149,6 +168,90 @@ def _get_table(
     df = df.astype({"src_id": np.int32, "trg_id": np.int32,
                     "time": np.float32, "dist": np.float32})
     return df
+
+
+@contextmanager
+def routing_session(
+    osm_paths,
+    extent: gpd.GeoSeries,
+    probe_pt: tuple[float, float],
+    buffer_radius: float = C.PARAMS["OSM_BUFFER_RADIUS"],
+    profile: str = "car",
+    port: int = 5108,
+    threads: int = max(1, min(4, (os.cpu_count() or 2) // 2)),
+    max_table_size: int = 500,
+    server_start_timeout: float = 900,
+    workdir: str | Path = ".tmp",
+    osrm_img: str = "ghcr.io/project-osrm/osrm-backend:v5.27.1",
+):
+    """Clip once and reuse one temporary OSRM server for several matrices.
+
+    ``extent`` is an unbuffered geometry series with a CRS. Its convex hull
+    is buffered in metres. Country extracts must use the same OSM snapshot.
+    The yielded callable accepts WGS84 x/y tables and returns seconds and
+    metres, retaining null routes so callers can report coverage. IDs are
+    row positions. The owned container is stopped before temporary files
+    are removed, including on exceptions and keyboard interrupts.
+    """
+    if profile not in {"car", "foot", "bicycle"}:
+        raise ValueError(f"Unsupported OSRM profile: {profile}")
+    if max_table_size < 2 or not np.isfinite(buffer_radius) or buffer_radius < 0:
+        raise ValueError("Require max_table_size >= 2 and a non-negative buffer")
+    if isinstance(osm_paths, (str, Path)):
+        osm_paths = [osm_paths]
+    osm_paths = list(dict.fromkeys(Path(p).resolve() for p in osm_paths))
+    if not osm_paths:
+        raise ValueError("At least one OSM extract is required")
+    for path in osm_paths:
+        if not path.is_file():
+            raise FileNotFoundError(path)
+    boundary = gpd.GeoSeries([
+        extent.to_crs(CRS_M).union_all().convex_hull
+        .buffer(buffer_radius * 1000)
+    ], crs=CRS_M)
+    if boundary.is_empty.any() or not boundary.is_valid.all():
+        raise ValueError("The routing boundary must be a valid non-empty polygon")
+    tmp_root = Path(workdir).resolve()
+    tmp_root.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix="osrm-", dir=tmp_root) as tmp:
+        work = Path(tmp)
+        json_path = work / "boundary.geojson"
+        boundary.to_crs(CRS_DEG).to_file(json_path, driver="GeoJSON")
+        clips = []
+        for i, path in enumerate(osm_paths):
+            clip = work / ("tmp.osm.pbf" if len(osm_paths) == 1 else f"part-{i}.osm.pbf")
+            run([
+                "osmium", "extract", "--no-progress", "--strategy=complete_ways",
+                "--overwrite", "-p", str(json_path), "-o", str(clip), str(path)
+            ])
+            clips.append(clip)
+        if len(clips) > 1:
+            run(["osmium", "merge", "--no-progress", "--overwrite",
+                 "-o", str(work / "tmp.osm.pbf"), *map(str, clips)])
+            for clip in clips:
+                clip.unlink()
+        container = f"osrm-times-{uuid4().hex[:12]}"
+        server = None
+        try:
+            server = _start_server(
+                probe_pt, container, work, osrm_img, profile, threads,
+                port, max_table_size, server_start_timeout
+            )
+
+            def table(src, trg):
+                for points in (src, trg):
+                    if not np.isfinite(points[["x", "y"]].to_numpy()).all():
+                        raise ValueError("Routing coordinates must be finite")
+                return _get_table(
+                    src[["x", "y"]].reset_index(drop=True),
+                    trg[["x", "y"]].reset_index(drop=True),
+                    profile, port, max_table_size
+                )
+
+            yield table
+        finally:
+            if server is not None:
+                _stop_server(server, container)
 
 
 def get_travel_times(
@@ -210,44 +313,20 @@ def get_travel_times(
     geom = gpd.points_from_xy(pts["x"], pts["y"], crs=CRS_DEG)
     pts = gpd.GeoDataFrame(geometry=geom).rename_axis("pt_id")
     
-    ## Configure
-    container = "osrm-times"
-    tmp_root = Path(workdir).resolve()
-    tmp_root.mkdir(parents=True, exist_ok=True)
-    tmpdir = TemporaryDirectory(prefix="osrm-", dir=tmp_root)
-    workdir = Path(tmpdir.name)
-    server = None
-    try:
-        ## Clip the supplied OSM extract to the OD extent
-        extent = gpd.GeoDataFrame(geometry=[
-            pts.to_crs(CRS_M).union_all().convex_hull
-            .buffer(buffer_radius * 1000)
-        ], crs=CRS_M)
-        json_path = workdir / "boundary.geojson"
-        extent.to_crs(CRS_DEG).to_file(json_path, driver="GeoJSON")
-        run([
-            "osmium", "extract", "--no-progress", "--strategy=complete_ways",
-            "--overwrite", "-p", str(json_path),
-            "-o", str(workdir / "tmp.osm.pbf"), str(osm_path)
-        ])
-        ## Preprocess the extract and start OSRM server
-        probe_pt = tuple(pts.geometry.iloc[0].coords[0])
-        server = _start_server(
-            probe_pt, container, workdir, osrm_img, profile, threads, 
-            port, max_table_size, server_start_timeout
-        )
-        ## Request travel time matrix
-        ttm = _get_table(src, trg, profile, port, max_table_size)
+    with routing_session(
+        osm_path, pts.geometry, tuple(pts.geometry.iloc[0].coords[0]),
+        buffer_radius=buffer_radius, profile=profile, port=port,
+        threads=threads, max_table_size=max_table_size,
+        server_start_timeout=server_start_timeout, workdir=workdir,
+        osrm_img=osrm_img,
+    ) as table:
+        ttm = table(src, trg)
         if ttm is not None:
             ttm = ttm.loc[
                 np.isfinite(ttm["dist"]) & np.isfinite(ttm["time"]) &
                 ~np.isnan(ttm["dist"]) & ~np.isnan(ttm["time"])
             ].reset_index(drop=True)
         return ttm
-    finally:
-        if server is not None:
-            _stop_server(server, container)
-        tmpdir.cleanup()
         
 # x = get_travel_times(pts, pts, osm_path, workdir=C.DATA / "tmp"); x
 

@@ -256,6 +256,34 @@ python pt-links.py # prepare public transport interstation links
 python connectors.py # compute connector link travel times
 ```
 
+<!-- The connector workflow processes FUAs sequentially. It buffers the convex hull
+of each FUA boundary and its linked hubs by `OSM_BUFFER_RADIUS` kilometres
+(default 20), clips the intersecting study-country PBFs from the configured OSM
+snapshot and merges these clips before starting one temporary OSRM car server.
+Airport memberships come from `airports.parquet`, including airports outside
+the FUA. The same server computes grid-to-hub access and all directed
+hub-to-hub pairs except self-links, then stops before its temporary files are
+removed. Missing country PBFs fail that FUA; subsequent FUAs still run.
+
+Use `python connectors.py --fua 7` to process one FUA, `--buffer-km 30` to
+override the buffer or `--force` to recompute selected caches. Per-FUA outputs
+are `data/connectors/<fua>.parquet` and
+`data/interhub-times/<fua>.parquet`, in seconds and metres. A matching cache
+marker is required to reuse them, so old city-only caches are recomputed.
+Once every FUA has current caches, the script updates `connectors.parquet`
+and `interhub-times.parquet`, in minutes and metres. Partial runs leave the
+existing combined tables unchanged and report that they may be stale.
+
+Unavailable routes remain null. Access means weight both time and distance
+by reachable population within each FUA; `total_popu`, `routed_popu` and
+`coverage` expose missing population coverage. Interhub output retains FUA
+membership, so a shared hub pair may appear for several FUAs. The 20 km
+buffer does not guarantee that all road detours fit inside the extract,
+and country coverage is limited to the study countries. Check sensitivity
+to the buffer where appropriate. Reverse egress is not computed here:
+`3m-graph.py` currently mirrors access values and does not yet consume the
+new interhub car table. -->
+
 **Step 15**: Create the 3MG network files by combining air, PT and car intercity links with PT intrahub and connector links in a single graph stored in two files: [nodes.csv](nodes.csv) and [links.csv](links.csv) by running:
 ```bash
 python 3m-graph.py # generate the 3MG network
@@ -448,9 +476,10 @@ The generated CSVs are checked for unique node identifiers, valid coordinates, r
 - Public transport coverage depends on the selected GTFS route types and the curated agency-to-operator mapping. Unmapped agencies are excluded, so changes to these inputs can alter the retained services and operators.
 - Stations are synthetic spatial clusters rather than authoritative interchange facilities. The 400 m clustering and buffer rules do not account for pedestrian routes or physical barriers. Station reduction preserves mode-specific FUA-pair coverage, but not every source stop, station pair or service pattern.
 - Public transport uses a single winter timezone offset per agency across the service window, so daylight-saving changes are not represented. P-space aggregation further reduces detailed departures and calendars to median link time, variability and active-day frequency.
-- Aviation durations are derived from local timetable clocks without airport-specific timezone conversion. The proprietary OAG source also limits independent reproduction and redistribution of the aviation layer.
+- Egress times are computed as times from FUA grid cells to hubs, not hubs to grid cells.
+- Only car travel times are computed for all intraurban links. This includes cases like a traveller taking a car/taxi from Paris Charles de Gaulle airport to Paris Gare du Lyon instead of taking a metro or RER train.
 - Bus and rail geometries are shortest paths on simplified, undirected infrastructure graphs. They do not represent directionality, turn and access restrictions, rail gauge, electrification, operating rights, capacity or service-specific routing. In the current upstream table, 715 of 36,162 public transport links have no complete routed distance.
-- Connector links represent symmetric, population-weighted road access. They omit walking, local public transport, congestion and directional differences. Although the airport table records every FUA centre within the 150 km catchment, the connector stage currently links only hubs located inside the FUA polygon. The consolidated table contains connectors for 315 of 384 FUAs; an absent connector may mean that no retained hub lies within the FUA or that no route was returned.
+- Connector links represent symmetric, population-weighted road access. They omit walking, local public transport, congestion and directional differences. The consolidated table contains connectors for 315 of 384 FUAs; an absent connector may mean that no retained hub lies within the FUA or that no route was returned.
 - The final graph does not retain distance, geometry, fares, capacity, service dates, reliability, emissions or passenger flows. Airport–station transfers are represented indirectly through city nodes rather than as explicit interchange links.
 - The current graph is internally valid but not fully connected. It contains six weakly connected components and two isolated airport nodes, Quimper-Cornouaille (`AIR_UIP`) and Maribor Edvard Rusjan (`AIR_MBX`).
 

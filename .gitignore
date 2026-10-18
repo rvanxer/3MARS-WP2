@@ -1,10 +1,12 @@
 __pycache__
 _old
 .DS_Store
-data
-doc
-fig
-notebooks
+.tmp/
+data/
+fig/
+notebooks/
+overleaf/
+tests/
 .vscode
 *.ipynb
 env.yml

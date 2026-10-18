@@ -17,3 +17,5 @@ STN_BUFFER_RADIUS: 400
 MAX_STN_OSM_OFFSET: 5000
 # Catchment radius (km) of an airport for FUA centroid mapping
 AIRPORT_CATCH_RADIUS: 150
+# Buffer radius (km) for clipping OSM PBF extracts in OSRM routing
+OSM_BUFFER_RADIUS: 10
