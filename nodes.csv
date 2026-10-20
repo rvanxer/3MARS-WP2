@@ -1013,13 +1013,11 @@ STN_0837,Bus station,837,Montpellier (Sabines),3.8601873,43.583992
 STN_0839,Bus station,839,Strasbourg Etoile Bourse,7.753884,48.574585
 STN_0842,Bus station,842,Zagreb (Bus Station),15.992277,45.803417
 STN_0843,Bus station,843,"Budapest, Népliget autóbusz-pályaudvar",19.098597,47.47444
-STN_0844,Bus station,844,Budapest Airport,19.262108,47.43258
 STN_0845,Bus station,845,Turin (Vittorio Emanuele),7.658074,45.070053
 STN_0846,Bus station,846,Milano-Lampugnano,9.127542,45.48973
 STN_0848,Bus station,848,"Luxembourg, P+R Bouillon",6.1053834,49.60001
 STN_0849,Multimodal station,849,Groningen,6.5651765,53.211025
 STN_0850,Multimodal station,850,Amsterdam Sloterdijk (Flixbus),4.8382983,52.389736
-STN_0851,Multimodal station,851,Schiphol Airport,4.7612143,52.30794
 STN_0852,Multimodal station,852,Den Haag Centraal,4.3253746,52.08012
 STN_0854,Multimodal station,854,"Rzeszow, Bus Station",21.994398,50.043068
 STN_0855,Bus station,855,Bucharest (bus station Militari),26.006273,44.43294
@@ -1323,7 +1321,6 @@ STN_3917,Bus station,3917,Mons Av. Léo Collard,3.936132,50.459534
 STN_3918,Bus station,3918,Lecce,18.168364,40.363064
 STN_3920,Bus station,3920,Brașov (Autogara Bartolomeu),25.570017,45.659786
 STN_3921,Bus station,3921,Timișoara (Bus station Normandia),21.254255,45.744774
-STN_3924,Bus station,3924,Bergamo (Orio al Serio Airport - BGY),9.697448,45.665813
 STN_3926,Bus station,3926,Perugia (Piazza Partigiani),12.387827,43.10568
 STN_3928,Bus station,3928,Antwerp (P+R Luchtbal),4.419757,51.26269
 STN_3938,Multimodal station,3938,Friedrichshafen Flughafen,9.522541,47.671867
@@ -1331,24 +1328,11 @@ STN_3946,Bus station,3946,Seville (Airport),-5.901126,37.423595
 STN_3953,Bus station,3953,Timisoara (Autogara Super Imposer),21.207071,45.746006
 STN_3955,Bus station,3955,Rimini (Centro Studi),12.582369,44.04972
 STN_3969,Bus station,3969,Aéroport de PORTO,-8.68139,41.2481
-STN_3970,Bus station,3970,Aéroport de NAPLES,14.2908,40.886
 STN_3971,Bus station,3971,Aéroport de NICE,7.21587,43.6584
-STN_3974,Bus station,3974,Aéroport de COPENHAGUE,12.656,55.6179
-STN_3977,Bus station,3977,Aéroport de ALICANTE,-0.558156,38.2822
 STN_3979,Bus station,3979,Aéroport de VENISE,12.3519,45.5053
-STN_3980,Bus station,3980,Aéroport de LISBONNE,-9.13592,38.7813
 STN_3981,Bus station,3981,Aéroport de BERLIN,13.503333,52.36667
 STN_3982,Bus station,3982,Aéroport de BERGAME,9.70417,45.6739
-STN_3985,Bus station,3985,Aéroport de FRANCFORT,8.570556,50.033333
-STN_3987,Bus station,3987,Aéroport de LONDRES-STANSTED,0.235,51.885
-STN_3988,Bus station,3988,Aéroport de FLORENCE,11.2051,43.81
-STN_3989,Bus station,3989,Aéroport de SEVILLE,-5.89311,37.418
-STN_3990,Bus station,3990,Aéroport de SPLIT,16.298,43.5389
-STN_3993,Bus station,3993,Aéroport de HERAKLION,25.1803,35.3397
 STN_3994,Bus station,3994,Aéroport de PALERME,13.091,38.176
-STN_3995,Bus station,3995,Aéroport de PRAGUE,14.26,50.1008
-STN_3997,Bus station,3997,Aéroport de PALMA DE MAJORQUE,2.73881,39.5517
-STN_3998,Bus station,3998,Aéroport de ROME,12.238889,41.800278
 STN_4013,Bus station,4013,ANICHE - Delforge,3.2435567,50.333954
 STN_4040,Multimodal station,4040,ORCHIES - Gare SNCF (N.D Providence),3.2479851,50.47755
 STN_4048,Multimodal station,4048,SAINT AMAND LES EAUX - Gare SNCF,3.4192634,50.44353

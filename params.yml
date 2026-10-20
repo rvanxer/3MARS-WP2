@@ -9,13 +9,15 @@ MIN_FUA_POPU: 200000
 # Start and end dates of public transport services in GTFS data
 SERVICE_START: 2023-01-01
 SERVICE_END: 2026-12-31
-# Radius/bandwidth (metres) used in clustering of nearby stops
+# Radius/bandwidth (m) used in clustering of nearby stops
 STOP_CLUSTER_RADIUS: 400
-# Buffer radius (metres) of stops around stations for intracity trips
+# Buffer radius (m) of stops around stations for intracity trips
 STN_BUFFER_RADIUS: 400
-# Maximum distance (metres) of a station to its nearest OSM junction
+# Maximum distance (m) of a station to its nearest OSM junction
 MAX_STN_OSM_OFFSET: 5000
 # Catchment radius (km) of an airport for FUA centroid mapping
 AIRPORT_CATCH_RADIUS: 150
+# Minimum distance (m) between an airport & station to be distinct hubs
+AIRPT_STN_DIST: 400
 # Buffer radius (km) for clipping OSM PBF extracts in OSRM routing
 OSM_BUFFER_RADIUS: 10

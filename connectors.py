@@ -135,34 +135,12 @@ def get_connector_times(fua: int, hubs=hubs, cells=popu, osm_path=buf_file):
     return pd.concat(connectors, ignore_index=True)
 
 con = SimpleNamespace()
-# con.aberdeen = get_connector_times(2).view() # 13s
 # con.amsterdam = get_connector_times(7).view() # 43s
 # con.athens = get_connector_times(15).view() # 16s
 # con.paris = get_connector_times(254).view() # 50s
 
-#%%
-docker_raw = Path.home() /\
-    "/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw"
-
-def record_storage(title):
-    for label, command in [
-        ("Containers", ["docker", "ps", "-a", "--size"]),
-        ("data/osrm allocated KiB", ["du", "-sk", str(C.DATA / "osrm")]),
-        ("Docker.raw allocated KiB", ["du", "-sk", str(docker_raw)]),
-        ("Docker system usage", ["docker", "system", "df", "-v"]),
-        ("Host free space", ["df", "-h", str(C.DATA)]),
-    ]:
-        C.log(f"DOCKER STORAGE for '{title}'")
-        try:
-            C.log(label)
-            subprocess.run(command, text=True, check=False)
-        except:
-            pass
-
 #%% Process all cities [3:14:16 (3 tries)]
 #TODO: Improve performance, esp. disk usage in Docker
-i = 0 # counter of processed FUA
-record_storage("start")
 for fua, r in fuas.iterrows():
     fpath = C.mkdir(C.DATA / "connectors") / f"{fua}.csv"
     if fpath.exists():
@@ -171,16 +149,9 @@ for fua, r in fuas.iterrows():
         C.log(f"Processing {fua}: {r['name']}")
         ttm = get_connector_times(fua)
         ttm.to_csv(fpath, index=False)
-        i += 1
     except Exception as e:
         C.error(f"Couldn't process {fua}: {r['name']}: {e}")
-        try:
-            record_storage(f"failure: {fua}; completed={i}")
-        except:
-            pass
         continue
-    if i % 10 == 0:
-        record_storage(f"afer {i} cities; latest={fua}")
 
 #%% Combine connectors
 connectors = pd.concat([

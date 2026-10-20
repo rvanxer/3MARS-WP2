@@ -1,6 +1,7 @@
 """Combine the modal link tables into the 3MARS transport graph."""
 
 #%% Imports
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 
@@ -116,12 +117,31 @@ edges = (
     .query("src != trg").reset_index(drop=True)
     .astype({"src": str, "trg": str, "kind": "category",
              "mode": "category", "dist": F32, "time": F32, "freq": F32})
-    .assign(operator=lambda df: (df["operator"].fillna("<NA>")
-                                 .astype(str).astype("category")))
-)#.view()
+)
+edges["operator"] = edges["operator"].fillna("<NA>").astype("category")
+
+#%% Merge nearby airports & stations
+hubs = gpd.sjoin(
+    (nodes[nodes["kind"].str.contains("station")]
+     .pipe(C.pdf2gdf, crs=C.CRS_DEG).to_crs(C.CRS_EU)
+     [["node_id", "geometry"]]
+     .rename(columns={"node_id": "station"})),
+    (nodes[nodes["kind"] == "Airport"]
+     .pipe(C.pdf2gdf, crs=C.CRS_DEG).to_crs(C.CRS_EU)
+     [["node_id", "name", "geometry"]]),
+    predicate="dwithin",
+    distance=C.PARAMS["AIRPT_STN_DIST"],
+)
+nodes2 = nodes[~nodes["node_id"].isin(hubs["station"])].reset_index(drop=True)
+stn2hub = dict(zip(hubs["station"], hubs["node_id"]))
+edges2 = edges.copy()
+for col in ["src", "trg"]:
+    idx = edges2[edges2[col].isin(hubs["station"])].index
+    edges2.loc[idx, col] = edges2.loc[idx, col].map(stn2hub)
+edges2 = edges2.query("src != trg").reset_index(drop=True)#.view()
 
 #%% Export
-C.save(nodes, "3m-nodes")
-C.save(edges, "3m-edges")
-nodes.to_csv("nodes.csv", index=False)
-edges.to_csv("links.csv", index=False)
+C.save(nodes2, "3m-nodes")
+C.save(edges2, "3m-edges")
+nodes2.to_csv("nodes.csv", index=False)
+edges2.to_csv("links.csv", index=False)
