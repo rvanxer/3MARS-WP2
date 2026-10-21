@@ -2,6 +2,7 @@
 
 ## Table of contents
 - [Introduction](#introduction)
+- [Update history](#update-history)
 - [Network description](#network-description)
 - [How to use](#how-to-use)
 - [Data sources](#data-sources)
@@ -52,31 +53,50 @@ It is illustrated in the figure below:
 3MG consists of two types of nodes:
 
 - **Cities**: These serve as the demand producers and attractors. They are located by their population-weighted centroids over their boundary.
-- **Transport hubs**: These nodes serve as the supply providers for demand distribution. These consist of airports and public transport (PT) stations, i.e., bus and train stations, some of which have both bus and train connections ("intermodal stations").
+- **Transport hubs**: These consist of airports and public transport (PT) stations: bus, rail and multimodal stations. Stations within 400 m of an airport are merged into its `AIR_` node, which can therefore also carry bus and rail services.
 
-It has three types of links:
+The final graph has four link classes (`kind`):
 
-- **Intercity**: They connect a transport hub of a city to a hub of another city by a unique travel mode and agency/operator (directed). Four modes are considered:
-  - **Car** (driving between city centroids)
-  - **Bus and rail** (by different operators)
-  - **Air** (by different airlines)
-- **Intraurban**: They represent the connections among the transport hubs of a city (FUA), used mainly for network connectivity (directed). They are assumed to be used by agency-agnostic local public transportation.
-- **Connector**: These virtual access/egress links serve as the topological connection between the demand generators/attractors (i.e., population distribution of an FUA) and the supply nodes (i.e., the transport hubs of that FUA). They are assumed to be used by car and do not contain any service information. Note that an airport can be linked to multiple FUAs and may lie outside the FUA boundary.
+| Link class | Meaning | Current links |
+|---|---|---:|
+| `Intercity` | Car routes between city centroids, bus/rail P-space services between hubs in different FUAs and carrier-specific air services between airports | 190,100 |
+| `Access` | Population-weighted car access from an FUA's grid cells to an associated hub, represented as a city → hub link | 2,590 |
+| `Egress` | Separately routed, population-weighted car travel from a hub to an FUA's grid cells, represented as a hub → city link | 2,590 |
+| `Interhub` | Directed car routes between distinct hubs associated with the same FUA, including airport–station pairs | 18,288 |
 
-3MG is a static supply graph in P-space representation, meaning all nodes that have a direct connection by a single service or route are connected by a direct link. The modal tables provide travel time, routed distance and service frequency, while the final graph currently retains travel time and frequency. These metrics provide the basis for later multi-class estimates of generalised travel cost (GTC), such as different perceived costs for travellers with different income levels or trip purposes. Fares and capacities are not yet included.
+An airport can be associated with several FUAs and can lie outside their boundaries. Access, egress and interhub links have no operator or scheduled frequency. Local PT links remain available upstream but are excluded from the final graph.
 
-The current development snapshot contains 1,370 nodes and 246,823 links; its validation results and remaining qualifications are described under [Limitations](#limitations).
+3MG is a static supply graph whose scheduled bus and rail layer uses P-space: hubs served by the same line are connected without requiring a transfer at intermediate stops. Final links retain travel time in minutes, distance in kilometres and, for scheduled modes, service frequency in departures per day. Distances are routed road/infrastructure lengths for car, bus and rail and great-circle distances for air. These metrics support later multi-class estimates of generalised travel cost (GTC). Fares and capacities are not yet included.
+
+The current development snapshot (20 October 2026) contains **1,354 nodes and 213,568 links**: 384 cities, 297 airports and 673 remaining stations. It forms one strongly connected component with no isolated nodes or self-links; remaining qualifications are described under [Limitations](#limitations).
 
 The following map shows the included countries, FUAs and intercity bus and rail segments:
 
 ![3MG intercity PT map|1000](3MG-PT-map.png)
+
+## Update history
+This is a brief history of the udpates in the 3MG data ([nodes.csv](nodes.csv) and [links.csv](links.csv)) along with the commit IDs:
+
+> [!NOTE]
+> **20 October 2026 — Airport–station consolidation** ([f80ba41](https://github.com/rvanxer/3MARS-WP2/commit/f80ba41)): Merged 16 stations within 400 m of airports into airport nodes, redirected their links and removed resulting self-links. The snapshot now has 1,354 nodes and 213,568 links.
+
+> [!NOTE]
+> **18 October 2026 — Directed connectors and link distances** ([56949c2](https://github.com/rvanxer/3MARS-WP2/commit/56949c2), [5fe8b2c](https://github.com/rvanxer/3MARS-WP2/commit/5fe8b2c), [ca8849c](https://github.com/rvanxer/3MARS-WP2/commit/ca8849c)): Added separate access, egress and interhub car routing with multiple FUA–airport associations; replaced local PT links in the final graph and retained `dist` in kilometres for all modes, subject to missing PT routes.
+
+> [!NOTE]
+> **16 October 2026 — Airports outside FUA boundaries** ([e4a65bc](https://github.com/rvanxer/3MARS-WP2/commit/e4a65bc)): Extended city–airport connectors to airports outside the associated FUA boundary. This was followed by the directed connector workflow above.
+
+> [!NOTE]
+> **15 October 2026 — Timezone-adjusted flight durations** ([c03e6ee](https://github.com/rvanxer/3MARS-WP2/commit/c03e6ee)): Converted local flight clocks using country timezone offsets on a fixed reference date, changing 6,468 air-link durations. This remains a fixed-date approximation.
 
 ## How to use
 
 ### Use current graph
 The provided 3MG snapshot network is stored in two tables: [nodes.csv](nodes.csv) and [links.csv](links.csv).
 
-Load, inspect and validate the current network by running `python inspect-graph.py`. The graph loads well if the script passes all assertion checks and displays summary statistics.
+Load, inspect and validate the current network by running `python inspect-graph.py`. The script checks table integrity and lossless loading into a directed multigraph, then displays summary statistics.
+
+`nodes.csv` contains `node_id`, `kind`, `local_id`, `name`, `lon` and `lat`, with coordinates in WGS 84 (EPSG:4326). `links.csv` contains `src`, `trg`, `kind`, `mode`, `operator`, `dist`, `time`, `freq` and `fua`. The numeric `fua` field identifies the routing context for access, egress and interhub links and is empty for intercity links. Preserve parallel records: shared FUA memberships and airport–station consolidation can produce several links with the same endpoints, mode and operator. The `Airport` node kind does not imply that every incident service is by air.
 
 ### Build 3MG from scratch
 The 3MG can be built from scratch using open-source/publicly available geometry and public transport schedule data, though proprietary flight schedules data (purchased from OAG as part of the 3MARS project) must be used to prepare the aviation layer. The code workflow is shown below. Use the following steps to reproduce the graph.
@@ -139,6 +159,7 @@ flowchart LR
     tocs --> segGeometry
     tocs --> icGtfsFeed
     segGeometry --> icGtfsFeed
+    segGeometry --> ptLinks
 
     osrm --> carTimes
     osrm --> connectors
@@ -148,6 +169,8 @@ flowchart LR
     carTimes --> m3graph
     ptLinks --> m3graph
     connectors --> m3graph
+    countries --> connectors
+    osm --> connectors
 
     classDef module fill:#eee,stroke:#888,stroke-width:2px,color:#555;
     class countries,cities,gtfsSources,gtfsDb,intercity,tocs,osm,osrm,segGeometry,icGtfsFeed,carTimes,airTimes,ptLinks,connectors,m3graph module;
@@ -209,7 +232,7 @@ python air-times.py # prepare airports and inter-airport links
 ```bash
 python gtfs-mdb.py # download GTFS feeds from the MDB
 ```
-This first generates a catalogue of available datasets closest in date to a fixed snapshot date (currently 30 Aug 2026) and then downloads them in `{DATA}/gtfs/feeds` identified by their MDB feed ID. This may take about 40-50 minutes depending on the network speed.
+This first generates a catalogue of available datasets closest in date to a fixed snapshot date (currently 1 September 2026) and then downloads them in `{DATA}/gtfs/feeds` identified by their MDB feed ID. This may take about 40-50 minutes depending on the network speed.
 
 **Step 8**: Some GTFS feeds external to the MobilityDatabase need to be downloaded and/or processed differently by running:
    ```bash
@@ -246,45 +269,19 @@ python tocs.py # update intercity network for only major TOCs
 python seg-geometry.py # approximate modal interstation segment geometry
 ```
 
-**Step 13**: Prepare bus/rail network links and connector links, with median travel times and trip count-weighted frequencies by mode and operator:
+**Step 13**: Prepare bus/rail P-space links with median travel times and routed distances by mode and operator, plus median daily frequency over active service dates:
 ```bash
 python pt-links.py # prepare public transport interstation links
 ```
 
-**Step 14**: Generate virtual connector links between city centroids (demand centres) and all transport hubs (airports and stations) by identifying shortest car path travel times between all population grid cells of a city and all transport hubs and then computing a population-weighted average travel time value for each connector:
+**Step 14**: Route car access, egress and interhub links separately for every FUA. City–hub time and distance are population-weighted over reachable grid cells in each direction. Stations are assigned by FUA containment; airports use every FUA association from the 150 km catchment rule, including airports outside the FUA boundary:
 ```bash
-python connectors.py # compute connector link travel times
+python connectors.py # compute directed access, egress and interhub links
 ```
 
-<!-- The connector workflow processes FUAs sequentially. It buffers the convex hull
-of each FUA boundary and its linked hubs by `OSM_BUFFER_RADIUS` kilometres
-(default 20), clips the intersecting study-country PBFs from the configured OSM
-snapshot and merges these clips before starting one temporary OSRM car server.
-Airport memberships come from `airports.parquet`, including airports outside
-the FUA. The same server computes grid-to-hub access and all directed
-hub-to-hub pairs except self-links, then stops before its temporary files are
-removed. Missing country PBFs fail that FUA; subsequent FUAs still run.
+The workflow combines study-country OSM extracts covering the FUAs and buffered corridors to their linked hubs, then runs one temporary OSRM routing session per FUA. `OSM_BUFFER_RADIUS` is currently 10 km. Results are cached in `{DATA}/connectors/<fua>.csv` and combined into `{DATA}/connectors.parquet`, with distances in kilometres and times in minutes. Existing per-FUA CSVs and `{DATA}/osm/EU-FUA-buffers.osm.pbf` are reused by file existence, so affected caches must be regenerated when inputs, hub memberships, routing parameters or the OSM snapshot change. Individual FUA failures are logged and processing continues; check that the combined table covers the intended FUAs before graph assembly.
 
-Use `python connectors.py --fua 7` to process one FUA, `--buffer-km 30` to
-override the buffer or `--force` to recompute selected caches. Per-FUA outputs
-are `data/connectors/<fua>.parquet` and
-`data/interhub-times/<fua>.parquet`, in seconds and metres. A matching cache
-marker is required to reuse them, so old city-only caches are recomputed.
-Once every FUA has current caches, the script updates `connectors.parquet`
-and `interhub-times.parquet`, in minutes and metres. Partial runs leave the
-existing combined tables unchanged and report that they may be stale.
-
-Unavailable routes remain null. Access means weight both time and distance
-by reachable population within each FUA; `total_popu`, `routed_popu` and
-`coverage` expose missing population coverage. Interhub output retains FUA
-membership, so a shared hub pair may appear for several FUAs. The 20 km
-buffer does not guarantee that all road detours fit inside the extract,
-and country coverage is limited to the study countries. Check sensitivity
-to the buffer where appropriate. Reverse egress is not computed here:
-`3m-graph.py` currently mirrors access values and does not yet consume the
-new interhub car table. -->
-
-**Step 15**: Create the 3MG network files by combining air, PT and car intercity links with PT intrahub and connector links in a single graph stored in two files: [nodes.csv](nodes.csv) and [links.csv](links.csv) by running:
+**Step 15**: Combine air, bus/rail and car intercity links with the directed car connectors, merge stations within `AIRPT_STN_DIST` of airports and remove self-links. Export [nodes.csv](nodes.csv), [links.csv](links.csv) and the matching `{DATA}/3m-nodes.parquet` and `{DATA}/3m-edges.parquet` tables:
 ```bash
 python 3m-graph.py # generate the 3MG network
 ```
@@ -294,45 +291,9 @@ python 3m-graph.py # generate the 3MG network
 python inspect-graph.py # validate the 3MG network
 ```
 
-<!-- 16. Run the scripts from this directory in the following order:
-
-| Order | Script | Objective |
-|--|--|--|
-| 1 | [countries.py](countries.py) | Obtain boundaries for target countries from [NUTS](https://ec.europa.eu/eurostat/web/nuts) and [ITL](https://www.ons.gov.uk/methodology/geography/ukgeographies/eurostat) (for the UK). |
-| 2 | [cities.py](cities.py) | Obtain FUA boundaries and population grid from [JRC](https://commission.europa.eu/about/departments-and-executive-agencies/joint-research-centre_en) and [GISCO](https://ec.europa.eu/eurostat/web/gisco). |
-| 3 | [osm.py](osm.py) | Download national OSM geodatabase extracts from [GeoFabrik](https://www.geofabrik.de), extract railway and highway networks and filter OSM PBF files for FUA boundaries. |
-| 4 | [38:10] [mdb.py](mdb.py) | Download GTFS feeds from [Mobility Database](https://mobilitydatabase.org) for the study countries. |
-| 4 | [0:32] [trenitalia.py](trenitalia.py) | Convert Trenitalia timetable data from [NeTEx](https://transmodel-cen.eu/index.php/netex) format to GTFS. |
-| 4 | [3:18] [uk-rail.sh](uk-rail.sh) | Prepare the R environment and convert the UK rail timetable from legacy ATOC format to GTFS. |
-| 5 | [35:21] [gtfs-db.py](gtfs-db.py) | Harmonise and clean the obtained GTFS ZIP files into a compact GTFS database. |
-| 6 | [intercity.py](intercity.py) | Filter intercity network and timetable from GTFS database. |
-| 7 | [tocs.py](tocs.py) | Map GTFS agencies to major public transport operators. |
-| 8 | [seg-geometry.py](seg-geometry.py) | Approximate interstation segment geometry by routing along modal OSM network. |
-| - | [ic-gtfs-feed.py](ic-gtfs-feed.py) | [Optional] Export the prepared intercity network to a GTFS feed. |
-| 9 | [pt-links.py](pt-links.py) | Obtain public transport (PT) inter- and intracity links for 3MG. |
-| 10 | [air-times.py](air-times.py) | Identify airports and air links for 3MG using the [OAG](https://www.oag.com) data. |
-| 11 | [car-times.py](car-times.py) | Compute intercity car travel times using [OSRM](https://project-osrm.org) routing. |
-| 12 | [connectors.py](connectors.py) | Compute population-weighted connector car travel times using OSRM routing. |
-| 13 | [3m-graph.py](3m-graph.py) | Prepare the 3MG using air, car and PT links. | -->
-
-<!-- 1. Verify the final graph stored in `{C.DATA}/3m-{table}.parquet` for table ∈ {`nodes`, `edges`}.
-```python
-import config as C
-
-# C.load(table) is equivalent to `pandas.read_parquet(f"{C.DATA}/{table}.parquet")`
-nodes = C.load("3m-nodes")
-edges = C.load("3m-edges")
-
-assert nodes["node_id"].is_unique
-assert edges["src"].isin(nodes["node_id"]).all()
-assert edges["trg"].isin(nodes["node_id"]).all()
-assert edges["time"].ge(0).all()
-assert edges["src"].ne(edges["trg"]).all()
-``` -->
-
 ## Data sources
 
-3MG combines administrative geography and population with road and rail infrastructure, public transport timetables, flight schedules and airport metadata. These inputs are maintained by different publishers and do not share a common reference date. The current configuration uses 30 August 2026 as the acquisition cut-off for OpenStreetMap and MobilityDatabase data, while each GTFS and OAG source retains its own validity period. Consequently, every rebuild constitutes a new data version unless the raw source files, curated inputs and parameter values are preserved.
+3MG combines administrative geography and population with road and rail infrastructure, public transport timetables, flight schedules and airport metadata. These inputs are maintained by different publishers and do not share a common reference date. The current configuration uses 1 September 2026 as the acquisition cut-off for OpenStreetMap and MobilityDatabase data, while each GTFS and OAG source retains its own validity period. Consequently, every rebuild constitutes a new data version unless the raw source files, curated inputs and parameter values are preserved.
 
 ### Countries and urban areas
 
@@ -342,7 +303,7 @@ Functional Urban Area (FUA) boundaries are drawn primarily from the JRC [LUISA R
 
 ### Highway and railway network
 
-Road and rail infrastructure is derived from dated country extracts supplied by [Geofabrik](https://download.geofabrik.de/europe.html) from [OpenStreetMap](https://www.openstreetmap.org/copyright). The active configuration requests the 30 August 2026 extract for each study country. The road-routing layer retains `motorway`, `motorway_link`, `trunk`, `trunk_link`, `primary` and `primary_link` ways. The rail-routing layer retains `railway=rail`; light rail, metro and tram infrastructure are excluded. These layers are routing substrates rather than observations of the paths followed by individual services.
+Road and rail infrastructure is derived from dated country extracts supplied by [Geofabrik](https://download.geofabrik.de/europe.html) from [OpenStreetMap](https://www.openstreetmap.org/copyright). The active configuration requests the 1 September 2026 extract for each study country. The road-routing layer retains `motorway`, `motorway_link`, `trunk`, `trunk_link`, `primary` and `primary_link` ways. The rail-routing layer retains `railway=rail`; light rail, metro and tram infrastructure are excluded. These layers are routing substrates rather than observations of the paths followed by individual services.
 
 ### Public transport schedule
 
@@ -410,7 +371,10 @@ The important model parameters influential in the resulting 3MG are listed in [p
 | `STOP_CLUSTER_RADIUS` | 400 m | DBSCAN radius for combining intercity terminal stops into stations | [intercity.py](intercity.py) |
 | `STN_BUFFER_RADIUS` | 400 m | Radius for associating nearby stops with a station when recovering local services | [intercity.py](intercity.py) |
 | `MAX_STN_OSM_OFFSET` | 5 km | Maximum station-to-network snapping distance for OSM routing | [seg-geometry.py](seg-geometry.py) |
-| `AIRPORT_CATCH_RADIUS` | 150 km | Maximum distance between an airport and an associated FUA centre | [air-times.py](air-times.py) |
+| `AIRPORT_CATCH_RADIUS` | 150 km | Maximum projected distance between an airport and each associated FUA centre | [air-times.py](air-times.py) |
+| `AIR_TIMEZONE_DATE` | 1/1/2026 | Reference date for country timezone offsets applied to local flight clocks | [air-times.py](air-times.py) |
+| `AIRPT_STN_DIST` | 400 m | Maximum projected distance for merging a station into an airport node | [3m-graph.py](3m-graph.py) |
+| `OSM_BUFFER_RADIUS` | 10 km | Buffer for hub–FUA corridors and per-FUA OSRM routing extracts | [connectors.py](connectors.py), [osrm.py](osrm.py) |
 
 ## Methods
 
@@ -434,13 +398,13 @@ The two non-GTFS rail sources also require deterministic conversion rules. The T
 
 ### Public transport network extraction
 
-Stops are spatially joined to retained FUAs and route types are classified as bus or rail using the lists in `params.yml`. A stop sequence qualifies as intercity when it serves at least two retained FUAs. Terminal stops from qualifying sequences are clustered across feeds with DBSCAN at a 400 m radius. Each cluster becomes a station at the mean stop location. Stops within a separate 400 m station buffer are then considered when recovering local services between retained hubs.
+Stops are spatially joined to retained FUAs and route types are classified as bus or rail using the lists in `intercity.py`. A stop sequence qualifies as intercity when it serves at least two retained FUAs. Terminal stops from qualifying sequences are clustered across feeds with DBSCAN at a 400 m radius. Each cluster becomes a station at the mean stop location. Stops within a separate 400 m station buffer are then considered when recovering local services between retained hubs.
 
 Candidate stations are reduced while preserving the set of mode-specific FUA pairs observed in the schedules. Stations with the smallest contribution are considered first and removed only if every affected bus or rail FUA pair retains another station-pair witness. Lines are defined by agency, mode, fixed timezone offset and ordered station sequence. The offset is evaluated for each agency timezone on 15 January 2025 and applied throughout the dataset to express timetable values in GMT minutes. Service calendars are subsequently restricted to 1 January 2023–31 December 2026.
 
 ### Operator selection and routed segment geometry
 
-Candidate intercity agencies are ranked by the additional FUA pairs they contribute. The project-curated `agency2toc.csv` then assigns heterogeneous agency names to the major operator labels used in 3MG. Intercity lines without a mapping are excluded. Local lines that serve at least two retained major stations remain in the graph under the common `.Local` operator label.
+Candidate intercity agencies are ranked by the additional FUA pairs they contribute. The project-curated `agency2toc.csv` then assigns heterogeneous agency names to the major operator labels used in 3MG. Intercity lines without a mapping are excluded. Local lines that serve at least two retained major stations are retained upstream under the common `.Local` operator label. Final graph assembly keeps only PT links marked `intercity`; local movement between hubs is represented by car routing.
 
 Consecutive station pairs are routed separately on bus and rail infrastructure graphs. Both graphs are undirected and weighted by length. Degree-two chains are contracted for computational efficiency. The largest connected components are retained separately for the mainland, Ireland and Sardinia so the two island systems are not discarded by a mainland-only filter. Stations are then snapped to the nearest node of the relevant graph within 5 km and shortest paths are calculated within connected components. This produces an inferred infrastructure path and distance rather than an observed vehicle trajectory or a timetable-specific track assignment.
 
@@ -448,9 +412,9 @@ Four explicit infrastructure connections are added during network preparation. B
 
 ### Mode-specific link construction
 
-For bus and rail, every ordered downstream pair of stations on the same line is expanded into a P-space candidate. Travel time is the elapsed time from departure at the origin to arrival at the destination. Candidate values are aggregated by station pair, mode and operator using the median, with the population standard deviation retained as a variability indicator. Distance is accumulated over consecutive routed segments and remains missing if any constituent segment could not be routed. Daily frequency is derived from the line–journey–dateset incidence matrices and reported as the median positive frequency over dates on which the link is active.
+For bus and rail, every ordered downstream pair of stations on the same line is expanded into a P-space candidate. Travel time is the elapsed time from departure at the origin to arrival at the destination. Candidate values are aggregated by station pair, mode and operator using the median, with the population standard deviation retained as a variability indicator. Candidate distance is accumulated over consecutive routed segments and is missing if any constituent segment could not be routed; the link median uses the available candidate distances. Daily frequency is derived from the line–journey–dateset incidence matrices and reported as the median positive frequency over dates on which the link is active.
 
-Air services are limited to retained airports and their operating weekdays and effective-date ranges are expanded to flight counts. Flight durations are calculated by adjusting to standard time zone differences using the [IANA time-zone database](https://data.iana.org/time-zones/tzdb/zone1970.tab). A fixed code-to-name mapping harmonises selected OAG carrier codes; records with unmapped carriers are excluded. Each carrier-specific airport link stores the flight-count-weighted mean scheduled duration and the mean number of flights per day across its combined effective period.
+Air services are limited to retained airports and their operating weekdays and effective-date ranges are expanded to flight counts. Local departure and arrival clocks are converted to UTC using the country timezone assigned to each airport and its offset on `AIR_TIMEZONE_DATE` (currently 1 January 2026). Duration is arrival minus departure after this conversion; the current implementation does not apply flight-date-specific daylight-saving offsets or explicitly resolve overnight arrival dates. A fixed code-to-name mapping harmonises selected OAG carrier codes; records with unmapped carriers are excluded. Each carrier-specific airport link stores the flight-count-weighted mean scheduled duration and the mean number of flights per day across its combined effective period. Air distance is the great-circle (haversine) distance between airport coordinates.
 
 Intercity car links are the fastest OSRM routes between reachable ordered pairs of FUA centres. Because the base OSM routing matrix does not span the three cross-water discontinuities, it is augmented with the following fixed directional connections:
 
@@ -462,9 +426,15 @@ Intercity car links are the fastest OSRM routes between reachable ordered pairs 
 
 Routes between other FUAs on either side combine the applicable fixed connection with their corresponding OSRM legs.
 
-Connector links are estimated from every populated grid cell in an FUA to each retained airport or public transport station located within the same FUA. OSRM supplies road distance and time, which are aggregated to a population-weighted mean for each city–hub pair. The connectors are duplicated in both directions, then combined with the intercity car, air and public transport links. Node identifiers use the prefixes `FUA_`, `AIR_` and `STN_`; final links retain link class, mode, operator, travel time and frequency.
+### Directed connectors and graph assembly
 
-The generated CSVs are checked for unique node identifiers, valid coordinates, resolved link endpoints, positive finite travel times, positive non-car frequencies and lossless loading into a directed NetworkX multigraph. The current snapshot passes these checks. The bundled [schema.json](schema.json) records physical data types, field definitions, units, row counts and coordinate reference systems for an audited pipeline snapshot. It should be regenerated or revalidated for each release because both schemas and row counts may change.
+Stations are assigned to FUAs by spatial containment, while each airport retains all FUAs whose population-weighted centres lie within its configured catchment radius. OSRM routes grid cell → hub, hub → grid cell and ordered hub → hub pairs separately. For access and egress, unreachable cell–hub routes are discarded and time and distance are averaged using the reachable cells' populations. Interhub routes retain their FUA context, so a shared hub pair can occur in several FUAs. The consolidated connector table currently covers all 384 FUAs.
+
+Final assembly combines these car links with intercity car, air and PT links. It then merges stations within 400 m of an airport into that airport node using projected distance in EPSG:3035. The airport's identifier, name and coordinates are retained, incident station links are redirected and resulting self-links are removed. In the current snapshot, 16 station nodes are absorbed. No separate transfer-time or access-control penalty is introduced by this merge and parallel links are retained.
+
+Node identifiers use `FUA_`, `AIR_` and `STN_`. Links retain `kind`, `mode`, `operator`, `dist` (km), `time` (minutes), `freq` (departures/day) and connector `fua` context. Car operator and frequency values are absent. Although exported as floating-point values, car distances are truncated to integer kilometres during graph assembly and air distances during aviation-layer preparation; PT distances retain fractional kilometres.
+
+The generated CSVs are checked for unique node identifiers, valid coordinates, resolved link endpoints, positive finite travel times, positive non-car frequencies and lossless loading into a directed NetworkX multigraph. The current snapshot passes these checks. The bundled [schema.json](schema.json) describes an older pipeline snapshot dated 3 September 2026. Its schemas and row counts predate these October changes and require regeneration before use as a catalogue of the current release.
 
 ## Limitations and next steps
 
@@ -475,21 +445,21 @@ The generated CSVs are checked for unique node identifiers, valid coordinates, r
 - Source coverage is uneven. GTFS validity periods, completeness and licences vary by publisher and the fixed MobilityDatabase cut-off does not create a synchronised European operating day. Manually acquired feeds are not yet governed by a complete, versioned manifest of retrieval dates and checksums.
 - Public transport coverage depends on the selected GTFS route types and the curated agency-to-operator mapping. Unmapped agencies are excluded, so changes to these inputs can alter the retained services and operators.
 - Stations are synthetic spatial clusters rather than authoritative interchange facilities. The 400 m clustering and buffer rules do not account for pedestrian routes or physical barriers. Station reduction preserves mode-specific FUA-pair coverage, but not every source stop, station pair or service pattern.
-- Public transport uses a single winter timezone offset per agency across the service window, so daylight-saving changes are not represented. P-space aggregation further reduces detailed departures and calendars to median link time, variability and active-day frequency.
-- Egress times are computed as times from FUA grid cells to hubs, not hubs to grid cells.
-- Only car travel times are computed for all intraurban links. This includes cases like a traveller taking a car/taxi from Paris Charles de Gaulle airport to Paris Gare du Lyon instead of taking a metro or RER train.
-- Bus and rail geometries are shortest paths on simplified, undirected infrastructure graphs. They do not represent directionality, turn and access restrictions, rail gauge, electrification, operating rights, capacity or service-specific routing. In the current upstream table, 715 of 36,162 public transport links have no complete routed distance.
-- Connector links represent symmetric, population-weighted road access. They omit walking, local public transport, congestion and directional differences. The consolidated table contains connectors for 315 of 384 FUAs; an absent connector may mean that no retained hub lies within the FUA or that no route was returned.
-- The final graph does not retain distance, geometry, fares, capacity, service dates, reliability, emissions or passenger flows. Airport–station transfers are represented indirectly through city nodes rather than as explicit interchange links.
-- The current graph is internally valid but not fully connected. It contains six weakly connected components and two isolated airport nodes, Quimper-Cornouaille (`AIR_UIP`) and Maribor Edvard Rusjan (`AIR_MBX`).
+- Public transport uses a single winter timezone offset per agency across the service window. Aviation uses one country timezone offset per airport on 1 January 2026 and does not explicitly resolve overnight arrival dates. Neither treatment represents flight- or service-date-specific daylight-saving changes. P-space aggregation reduces detailed departures and calendars to summary link attributes; variability remains upstream.
+- Access, egress and interhub links use car routing. They omit walking, local public transport, congestion and transfer processing times; for example, an airport–station transfer uses a road route rather than a metro or regional train journey.
+- Bus and rail geometries are shortest paths on simplified, undirected infrastructure graphs. They do not represent directionality, turn and access restrictions, rail gauge, electrification, operating rights, capacity or service-specific routing. The current upstream PT table has 724 missing distances among 36,064 links; 694 remain missing among the 34,537 bus/rail links in the final graph.
+- Access and egress are directed population-weighted means over reachable cells, not journeys starting or ending at the displayed city centroid. Coverage of all 384 FUAs does not imply complete population coverage: unreachable routes are dropped and the consolidated table does not retain routed-population coverage indicators. Buffered extracts and study-country boundaries can also exclude valid road detours.
+- Connector and buffered OSM caches are reused by existence without checking input or parameter changes. A rebuild can mix stale or incomplete per-FUA outputs unless these caches and processing failures are reviewed.
+- Airport–station consolidation is based only on proximity, without pedestrian access, terminal layout or security checks. A merged node allows interchange without a separate transfer penalty. Redirected links keep their original routed attributes rather than being rerouted from the airport coordinate and can become parallel records.
+- Car and air distances lose sub-kilometre precision through integer truncation; some short car links consequently have zero exported distance despite positive travel time. Air distance is a great-circle estimate rather than a flown trajectory. The final graph does not retain geometry, fares, capacity, service dates, reliability, emissions or passenger flows.
 
 ### Next steps
 
 1. Publish a versioned provenance manifest containing the code revision, parameters, raw-file hashes, retrieval dates, source URLs and source-specific licences.
 2. Quantify the sensitivity of coverage and network indicators to feed selection, route-type classification, operator filtering, station clustering and station reduction.
 3. Introduce date-aware timezone conversion for public transport and aviation, then retain representative service calendars or construct an event-based temporal layer.
-4. Classify unresolved connector and routing cases, add explicit airport–station transfers and represent access, egress and interchange using the relevant modes.
-5. Carry routed distance and geometry into the final graph and add fares, capacity, reliability, emissions and demand-class attributes where defensible sources are available.
+4. Audit missing population and routing coverage, validate airport–station consolidation and represent access, egress and interchange using the relevant modes and transfer penalties.
+5. Preserve fractional distances, resolve missing PT routes, retain geometry and add fares, capacity, reliability, emissions and demand-class attributes where defensible sources are available.
 6. Use the resulting temporal multilayer graph to generate pathsets, load multi-class demand and implement the congestion-agnostic mode–route choice and assignment stages planned for WP2.
 
 ## Licensing and attribution
