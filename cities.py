@@ -78,4 +78,5 @@ fuas2 = (
     .astype({"id": np.int16, "popu": np.int32})
     [["id", "name", "icc", "popu", "centre", "geometry"]]
 )#.view()
+fuas2.insert(1, "node_id", fuas2["id"].map(lambda x: f"FUA_{x:03}"))
 C.save(fuas2, "fuas")

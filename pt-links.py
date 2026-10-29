@@ -14,7 +14,7 @@ import config as C
 UI16, F32 = np.uint16, np.float32
 
 #%% Load data
-stns = C.load("ic-stations")[["stn", "fua"]]
+stns = C.load("ic-stations")[["stn", "node_id", "fua"]]
 lines = C.load("ic-lines", columns=["line", "operator", "rail", "stn"])
 jrn = C.load("ic-journeys", columns=["jrn", "line", "dateset"])
 tt = C.load("ic-timetable", columns=["jrn", "stn", "arr", "dep"])
@@ -41,7 +41,7 @@ for stn_seq, mode in zip(line_od["stn"], line_od["mode"]):
 line_od = lines.assign(od=stn_pairs).explode("od", ignore_index=True)
 line_od[["src", "trg", "dist"]] = pd.DataFrame(line_od.pop("od").tolist())
 line_od = line_od.drop_duplicates(["line", "src", "trg"], ignore_index=True)
-# line_od.view(1);
+line_od = line_od.query("operator != '.Local'").reset_index(drop=True)#.view()
 
 #%% Links from line station pairs
 links = (
@@ -60,97 +60,85 @@ link2line = (
     [["link", "line", "src", "trg"]]
 )#.view()
 
-#%% P-space link travel time
+#%% P-space timetable [8s]
+C.log("Creating P-space links")
 @njit
-def get_timetable_pairs(jrn_id, stn, arr, dep):
+def get_timetable_pairs(trip, stn, arr, dep):
     """Expand ordered journey stops into P-space timetable rows."""
     n_pairs = 0
     start = 0
-    while start < len(jrn_id):
+    while start < len(trip):
         end = start + 1
-        while end < len(jrn_id) and jrn_id[end] == jrn_id[start]:
+        while end < len(trip) and trip[end] == trip[start]:
             end += 1
         n_stn = end - start
         n_pairs += n_stn * (n_stn - 1) // 2
         start = end
-    out_jrn = np.empty(n_pairs, dtype=jrn_id.dtype)
-    out_src = np.empty(n_pairs, dtype=stn.dtype)
-    out_trg = np.empty(n_pairs, dtype=stn.dtype)
-    out_time = np.empty(n_pairs, dtype=np.int32)
+    _trip = np.empty(n_pairs, dtype=trip.dtype)
+    _src = np.empty(n_pairs, dtype=stn.dtype)
+    _trg = np.empty(n_pairs, dtype=stn.dtype)
+    _dep = np.empty(n_pairs, dtype=dep.dtype)
+    _arr = np.empty(n_pairs, dtype=arr.dtype)
     k = 0
     start = 0
-    while start < len(jrn_id):
+    while start < len(trip):
         end = start + 1
-        while end < len(jrn_id) and jrn_id[end] == jrn_id[start]:
+        while end < len(trip) and trip[end] == trip[start]:
             end += 1
         for i in range(start, end - 1):
             for j in range(i + 1, end):
-                out_jrn[k] = jrn_id[start]
-                out_src[k] = stn[i]
-                out_trg[k] = stn[j]
-                out_time[k] = arr[j] - dep[i]
+                _trip[k] = trip[start]
+                _src[k], _trg[k] = stn[i], stn[j]
+                _dep[k], _arr[k] = dep[i], arr[j]
                 k += 1
         start = end
-    return out_jrn, out_src, out_trg, out_time
+    return _trip, _src, _trg, _dep, _arr
 
 tt2 = tt.sort_values(["jrn", "arr"], ignore_index=True)
-tt_pairs = get_timetable_pairs(
-    tt2["jrn"].to_numpy(), tt2["stn"].to_numpy(),
-    tt2["arr"].to_numpy(), tt2["dep"].to_numpy(),
-)
-tt2 = pd.DataFrame(dict(zip(["jrn", "src", "trg", "time"], tt_pairs)))
-links2 = (
-    tt2.merge(jrn[["jrn", "line"]], on="jrn")
-    .merge(link2line, on=["line", "src", "trg"])
-    .groupby("link")
-    ["time"].agg(time="median", sd_time=lambda x: x.std(ddof=0))
-    .merge(links, on="link")
-)#.view()
+tt2 = pd.DataFrame(dict(zip(
+    ["jrn", "src", "trg", "dep", "arr"],
+    get_timetable_pairs(
+        tt2["jrn"].values, tt2["stn"].values,
+        tt2["arr"].values, tt2["dep"].values)
+))).merge(jrn, on="jrn")
+tt2 = tt2.merge(
+    lines.query("operator != '.Local'")
+    [["line", "operator", "rail"]]
+    .astype({"operator": "category"}), on="line"
+).drop(columns="line")
+for col in ["src", "trg"]:
+    tt2[col] = (pd.Categorical(tt2[col], categories=stns["stn"])
+                .rename_categories(dict(zip(stns["stn"], stns["node_id"]))))
+tt2["mode"] = tt2.pop("rail").map(
+    {True: "R", False: "B"}).astype("category")
 
-#%% Link frequency
-# median daily frequency over the link's active service dates
-# matrix multiplication gives journeys per link and date:
-# link-line incidence x line-dateset journey counts x dateset-date activity
-line_ids = pd.Index(lines["line"].drop_duplicates())
-date_path = C.DATA / "ic-datesets.parquet"
-dateset_ids = pd.Index(C.load(
-    "ic-datesets", columns=["dateset"])["dateset"])
-date_cols = [x for x in pq.ParquetFile(date_path).schema.names
-             if x != "dateset"]
-line2dateset = (
-    jrn.groupby(["line", "dateset"])
-    .size().rename("n_jrn").reset_index()
-)
-line_dateset_mat = sparse.coo_matrix(
-    (UI16(line2dateset["n_jrn"]), (
-        line_ids.get_indexer(line2dateset["line"]),
-        dateset_ids.get_indexer(line2dateset["dateset"]),
-    )), shape=(len(line_ids), len(dateset_ids)), dtype=UI16
-).tocsr()
-link_ids = pd.Index(links2.index)
-active_link2line = link2line[link2line["link"].isin(link_ids)]
-link_line_mat = sparse.coo_matrix(
-    (np.ones(len(active_link2line), dtype=UI16), (
-        link_ids.get_indexer(active_link2line["link"]),
-        line_ids.get_indexer(active_link2line["line"]),
-    )), shape=(len(links2), len(line_ids)), dtype=UI16
-).tocsr()
-link_dateset_mat = link_line_mat @ line_dateset_mat
-freq = np.empty((len(links2), len(date_cols)), dtype=UI16)
-for i in range(0, len(date_cols), 100):
-    cols = date_cols[i: i + 100]
-    freq[:, i: i + len(cols)] = link_dateset_mat @ UI16((
-        C.load("ic-datesets", columns=["dateset"] + cols, quiet=True)
-        .set_index("dateset").reindex(dateset_ids)
-    )[cols])
-links2["freq"] = F32([np.median(x[x > 0]) for x in freq])
+## Assign dates
+dates = C.load("ic-datesets").set_index("dateset")
+offsets = (pd.to_datetime(dates.columns, format="%Y%m%d") 
+           - pd.Timestamp(C.PARAMS["SERVICE_START"])).days.values
+rows, cols = np.nonzero(dates.values)
+dates = pd.DataFrame({"dateset": dates.index[rows], "date": cols})
+dates["date"] = np.int16(offsets[cols])
+tt2 = tt2.merge(dates, on="dateset")[[
+    "mode", "operator", "src", "trg", "dep", "arr", "date"
+]].view()
+del dates
 
-#%% Export
-links3 = (
-    links2.reset_index(drop=True)
-    [["src", "trg", "intercity", "rail", "operator", "n_lines",
-      "dist", "time", "sd_time", "freq"]]
-    .astype({"n_lines": UI16, "dist": F32, "time": F32,
-             "sd_time": F32, "freq": F32})
-)#.view(1)
-C.save(links3, "pt-links")
+C.save(tt2, "ic-pt-timetable")
+
+#%% Graph links [7s]
+links = (
+    tt2.assign(time=tt2["arr"] - tt2["dep"])
+    .groupby(["mode", "operator", "src", "trg"], observed=True)
+    ["time"].agg(["count", "mean", "median", "std"])
+    .set_axis(["nservices", "avg_time", "median_time", "std_time"], axis=1)
+    .astype(np.float32).astype({"nservices": np.int32})
+    .reset_index()
+)
+total_days = (C.PARAMS["SERVICE_END"] - C.PARAMS["SERVICE_START"]).days + 1
+links["avg_freq"] = np.float32(links["nservices"] / total_days)
+links.view();
+
+C.save(links, "ic-pt-links")
+
+#%%

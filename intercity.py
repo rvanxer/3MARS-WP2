@@ -393,6 +393,9 @@ imp_agencies.to_csv(C.DATA / "gtfs/ic-agencies.csv", index=False)
 
 #%% Update other tables [3s]
 C.log("Updating other tables")
+stns2.insert(0, "node_id", [f"STN_{i:04d}" for i in stns2.index])
+stns2 = stns2.reset_index().astype({"stn": UI16})
+
 jrn2 = (
     lines2[["line", "jrn"]]
     .explode("jrn").astype({"jrn": I32})
@@ -403,7 +406,7 @@ jrn2 = (
     .astype({"jrn": I32})
 )#.view()
 tt2 = (
-    tt[(tt["stn"].isin(stns2.index)) &
+    tt[(tt["stn"].isin(stns2["stn"])) &
        (tt["jrn"].isin(jrn2["jrn"]))]
 )#.view()
 datesets2 = datesets.loc[jrn2["dateset"].unique()].sort_index()
@@ -413,7 +416,7 @@ datesets2 = datesets2.reset_index().astype({"dateset": I32})#.view()
 #%% Export [3s]
 C.log("Saving intercity data tables")
 for df, table in [
-    (stns2.reset_index().astype({"stn": UI16}), "ic-stations"),
+    (stns2, "ic-stations"),
     (lines2.drop(columns="jrn"), "ic-lines"),
     (jrn2, "ic-journeys"),
     (datesets2, "ic-datesets"),
@@ -421,5 +424,4 @@ for df, table in [
     (seg, "ic-segments"),
 ]:
     C.log(f"Table `{table}`: {len(df):,} rows")
-    # print("Previously", table, len(C.load(table)))
     C.save(df, table)
