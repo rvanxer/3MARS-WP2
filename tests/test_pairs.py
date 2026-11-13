@@ -170,6 +170,9 @@ def test_end_to_end_with_move_and_air():
     assert (got[(0, 3)].basis, got[(0, 3)].ft_mean, got[(0, 3)].n_days,
             got[(0, 3)].freq) == ("T", 120, 7, 1)
     assert PR.exists(tr, P["MIN_ACTIVE_DATES"]).all()
+    # days counted: every date on basis 'D' (daily links), the week on 'T'
+    days = dict(zip(zip(tr["link_in"], tr["link_out"]), PR.days_counted(tr, cal)))
+    assert days == {(0, 1): D.N_DAYS, (0, 2): D.N_DAYS, (0, 3): 7}
 
     # a pair without an opportunity is not kept: the coach leaves too early
     # for the move (09:05 < 09:00 + 5 + 10)
@@ -248,6 +251,97 @@ def test_ftrans_key_unique_and_rows_without_released_id_left_out():
     assert int(ft["n_rows"].sum()) == int(keep.sum())
     assert ft[S.FTRANS[:4]].values.tolist() == [["STN_A", "STN_B", "STN_B", "STN_C"]]
     assert ft["in_ops"].iloc[0] == "a;b" and ft["out_ops"].iloc[0] == "c"
+
+
+def calendars(*day_ranges):
+    """Link calendars (L, N_WORDS) from one range of day indices per link."""
+    rows = np.zeros((len(day_ranges), D.N_DAYS), dtype=bool)
+    for l, r in enumerate(day_ranges):
+        rows[l, list(r)] = True
+    return D.pack_bool(rows)
+
+
+def test_ftrans_weight_is_opportunities_per_counted_day(monkeypatch):
+    """Contract of 13 Nov: ft_mean weighted by freq x n_days / days counted.
+    Link 0 (STN_A -> STN_B) feeds link 2 (STN_B -> STN_C) on basis 'D':
+    links 0 and 2 share 200 dates, opportunities on 100 of them, 2 a day,
+    ft 10 -> weight 2 x 100 / 200 = 1. Link 1 (from the other hub of STN_A)
+    shares no date with link 2 and feeds it on basis 'T': 7 weekdays, 3 a
+    day, ft 40 -> weight 3. Both rows have one key, so ft_mean = (1 x 10 +
+    3 x 40) / 4 = 32.5, where freq x n_days alone gives (200 x 10 + 21 x 40)
+    / 221 = 12.9."""
+    hubs = hub_table(["STN_A", "STN_A", "STN_B", "STN_C"])
+    links = link_table([(0, 2, "R"), (1, 2, "R"), (2, 3, "R")])
+    members = pd.DataFrame({"link": [0, 1, 2], "agency": ["NS", "NS", "DB"]})
+    tr = pd.DataFrame({
+        "link_in": np.array([0, 1], dtype=np.int32),
+        "link_out": np.array([2, 2], dtype=np.int32),
+        "move": np.zeros(2, dtype=np.float32), "basis": ["D", "T"],
+        "n_days": np.array([100, 7], dtype=np.int32),
+        "freq": np.array([2, 3], dtype=np.float32),
+        "ft_mean": np.array([10, 40], dtype=np.float32),
+        "ft_min": np.array([5, 30], dtype=np.float32)})
+    cal = calendars(range(0, 200), range(500, 510), range(0, 300))
+    days = PR.days_counted(tr, cal)
+    assert days.tolist() == [200, 7] and days.dtype == np.int32
+    monkeypatch.setattr(PR, "ROWS_PER_CHUNK", 1)          # chunks give the same days
+    assert PR.days_counted(tr, cal).tolist() == [200, 7]
+    ft = PR.ftrans_table(tr, links, hubs, members, days)
+    assert len(ft) == 1 and ft["n_rows"].iloc[0] == 2
+    assert ft["ft_mean"].iloc[0] == pytest.approx(32.5, rel=1e-6)
+    assert ft["share_T"].iloc[0] == pytest.approx(0.5)
+    old = PR.ftrans_table(tr, links, hubs, members)
+    assert old["ft_mean"].iloc[0] == pytest.approx((200 * 10 + 21 * 40) / 221, rel=1e-6)
+    # equal days counted on every row leave the old weight's mean unchanged
+    same = PR.ftrans_table(tr, links, hubs, members, np.array([7, 7]))
+    assert same["ft_mean"].iloc[0] == pytest.approx(old["ft_mean"].iloc[0], rel=1e-6)
+    with pytest.raises(ValueError):
+        PR.ftrans_table(tr, links, hubs, members, days[:1])
+    with pytest.raises(ValueError):
+        PR.ftrans_table(tr, links, hubs, members, np.array([0, 7]))
+
+
+def test_ftrans_only_rebuilds_ftrans_and_leaves_transfers(tmp_path, monkeypatch):
+    """pathset-transfers.py --ftrans-only on a synthetic PATHSET_DIR: ps-ftrans
+    is rebuilt with the weight of the contract from ps-transfers and the link
+    calendars of ps-event-masks; ps-transfers is not rewritten."""
+    import importlib.util
+    import os
+    from pathset import io
+
+    monkeypatch.setattr(io, "OUT", tmp_path.resolve())
+    hubs = hub_table(["STN_A", "STN_A", "STN_B", "STN_C"])
+    links = link_table([(0, 2, "R"), (1, 2, "R"), (2, 3, "R")])
+    links["ev0"] = np.arange(3, dtype=np.int32)          # one event per link
+    links["ev1"] = links["ev0"] + 1
+    masks = calendars(range(0, 200), range(500, 510), range(0, 300))
+    tr = pd.DataFrame({
+        "link_in": np.array([0, 1], dtype=np.int32),
+        "link_out": np.array([2, 2], dtype=np.int32),
+        "move": np.zeros(2, dtype=np.float32), "basis": ["D", "T"],
+        "n_days": np.array([100, 7], dtype=np.int32),
+        "freq": np.array([2, 3], dtype=np.float32),
+        "ft_mean": np.array([10, 40], dtype=np.float32),
+        "ft_min": np.array([5, 30], dtype=np.float32)})
+    io.save(hubs, "ps-hubs")
+    io.save(links, "ps-links")
+    io.save_npy(masks, "ps-event-masks")
+    io.save(tr, "ps-transfers")
+    io.save(pd.DataFrame({"link": [0, 1, 2], "agency": ["NS", "NS", "DB"]}),
+            "ps-link-members")
+    stamp = os.stat(tmp_path / "ps-transfers.parquet").st_mtime_ns
+    path = Path(__file__).resolve().parent.parent / "pathset-transfers.py"
+    spec = importlib.util.spec_from_file_location("pathset_transfers", path)
+    script = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(script)
+    assert script.parse_args(["--ftrans-only"]).ftrans_only
+    assert not script.parse_args([]).ftrans_only
+    script.ftrans_only()
+    ft = io.load_out("ps-ftrans")
+    assert list(ft.columns) == S.FTRANS and len(ft) == 1
+    assert ft["ft_mean"].iloc[0] == pytest.approx(32.5, rel=1e-6)
+    assert os.stat(tmp_path / "ps-transfers.parquet").st_mtime_ns == stamp
+    assert (tmp_path / "ps-manifest.jsonl").exists()
 
 
 def test_ftrans_without_released_rows_is_empty():

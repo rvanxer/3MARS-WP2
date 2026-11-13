@@ -12,6 +12,11 @@ ps-event-masks.npy, ps-transfers, ps-connectors, ps-car.
 --origins   all | stagec (STAGE_C_ORIGINS) | comma-separated FUA ids
 --workers   worker processes (default WORKERS); each builds the network once
 --mu        R3 margin (default MU; "inf" switches R3 off)
+--passed-share  share of a link's dated departures that must pass a city for
+            the link to pass it (R0; search.passed_cities). Default
+            PASSED_SHARE of pathset-params.yml; without that key 1 (every
+            run, search.passed_share). The value is hashed and recorded in
+            the manifest (info "passed_share").
 --named     trace the NAMED_PAIRS whose origin is run (ps-trace)
 --resume    skip origins whose shards carry the hash of this run
 --combine   concatenate the shards into the ps-* path tables and write
@@ -48,7 +53,8 @@ COMBINED = {
     "trace": ("ps-trace", ["o", "d", "cand"]),
 }
 # parameters that cannot change a shard
-UNHASHED = ("WORKERS", "MEM_CAND_GB", "STAGE_C_ORIGINS")
+UNHASHED = ("WORKERS", "MEM_CAND_GB", "STAGE_C_ORIGINS", "STAGE_B_EPS_T_ABS",
+            "STAGE_B_MU", "STAGE_B_RHO_F", "DECK_TOP_K")
 
 
 #%% Command line
@@ -58,6 +64,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     ap.add_argument("--workers", type=int, default=int(io.P["WORKERS"]))
     ap.add_argument("--mu", type=float, default=float(io.P["MU"]),
                     help='R3 margin; "inf" switches R3 off')
+    ap.add_argument("--passed-share", type=float, default=io.P.get("PASSED_SHARE"),
+                    help="PASSED_SHARE (default: pathset-params.yml, else 1)")
     ap.add_argument("--named", action="store_true", help="trace the NAMED_PAIRS")
     ap.add_argument("--resume", action="store_true", help="skip finished origins")
     ap.add_argument("--combine", action="store_true", help="write the ps-* path tables")
@@ -163,11 +171,14 @@ def combine() -> dict:
 
 #%% Run
 def origin_line(o: int, tables: dict) -> str:
-    """One log line: candidates per pass, triple_stats calls, seconds."""
+    """One log line: candidates per pass, triple_stats calls, seconds, memory
+    of the worker."""
     st = tables["funnel"].attrs["search"]
     f = tables["funnel"]
-    parts = [f"o {o}: r0 {int(f['n_r0'].sum()):,} r3 {int(f['n_r3'].sum()):,} "
-             f"kept {int(f['n_kept'].sum()):,}"]
+    parts = [f"o {o}: r0 {int(f['n_r0'].sum()):,} (by bounds "
+             f"{int(f['n_r0_bound'].sum()):,}) r3 {int(f['n_r3'].sum()):,} "
+             f"kept {int(f['n_kept'].sum()):,} in {int((f['n_kept'] > 0).sum())} "
+             f"destinations"]
     for name in ("pass1", "pass2", "trace_pass2"):
         if name in st:
             p = st[name]
@@ -176,7 +187,8 @@ def origin_line(o: int, tables: dict) -> str:
                          f"triple {p['triple_calls']:,} cache {p['cache_entries']:,}/"
                          f"{p['cache_cleared']} r0_by_bounds {p['r0_by_bounds']:,}")
     parts.append(f"rules {st['rules_s']:.1f}s total {st['total_s']:.1f}s blocks {st['blocks']} "
-                 f"buffer {st['buffer_mb']} MB")
+                 f"buffer {st['buffer_mb']} MB; memory at start {st['rss_start_mb']} MB, "
+                 f"peak {st['peak_mb']} MB")
     return "; ".join(parts)
 
 
@@ -184,7 +196,11 @@ def run(args: argparse.Namespace) -> dict:
     """Run the origins of ``args`` and/or combine; returns what was done."""
     params = dict(io.P)
     params["MU"] = args.mu
-    done, skipped, totals = [], [], {"r0": 0, "r3": 0, "kept": 0, "triple_calls": 0}
+    if args.passed_share is not None:
+        params["PASSED_SHARE"] = float(args.passed_share)
+    share = search.passed_share(params)
+    done, skipped = [], []
+    totals = {"r0": 0, "r0_bound": 0, "r3": 0, "kept": 0, "triple_calls": 0, "peak_mb": {}}
     started = time.time()
     if args.origins:
         origins = select_origins(args.origins, params)
@@ -192,20 +208,23 @@ def run(args: argparse.Namespace) -> dict:
         todo = [o for o in origins if not (args.resume and shard_hash(o) == h)]
         skipped = sorted(set(origins) - set(todo))
         io.log(f"enumerate: {len(todo)} origins to run, {len(skipped)} finished, "
-               f"{args.workers} workers, MU {params['MU']}, hash {h}")
+               f"{args.workers} workers, MU {params['MU']}, PASSED_SHARE {share}, hash {h}")
         for o, tables in search.run_pool(todo, params, args.workers, named=args.named):
             save_shards(o, tables, h)
             io.log(origin_line(o, tables))
             f, st = tables["funnel"], tables["funnel"].attrs["search"]
             totals["r0"] += int(f["n_r0"].sum())
+            totals["r0_bound"] += int(f["n_r0_bound"].sum())
             totals["r3"] += int(f["n_r3"].sum())
+            totals["peak_mb"][o] = st["peak_mb"]
             totals["kept"] += int(f["n_kept"].sum())
             totals["triple_calls"] += sum(v["triple_calls"] for v in st.values()
                                           if isinstance(v, dict))
             done.append(o)
     sizes = combine() if args.combine else {}
     info = {"origins_run": done, "origins_skipped": skipped, "workers": args.workers,
-            "mu": args.mu if math.isfinite(args.mu) else "inf", "named": args.named,
+            "mu": args.mu if math.isfinite(args.mu) else "inf", "passed_share": share,
+            "named": args.named,
             "totals": totals, "combined": sizes, "seconds": round(time.time() - started, 1)}
     io.write_manifest("enumerate", [p for p in input_files() if p.exists()], info)
     return info

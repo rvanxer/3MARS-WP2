@@ -8,9 +8,16 @@ in pathset/pairs.py, the counting in pathset/transfer.py (its "Consumers"
 section gives the call sequence used here).
 
 Run:  python -X utf8 pathset-transfers.py
+      python -X utf8 pathset-transfers.py --ftrans-only
+
+--ftrans-only   rebuild ps-ftrans from the existing ps-transfers (the link
+                calendars come from ps-event-masks.npy and ps-links); ps-transfers
+                is read, never rewritten
 """
 
 #%% Imports
+import argparse
+import sys
 import time
 
 import numpy as np
@@ -24,6 +31,8 @@ P = io.P
 INPUTS = ["ps-hubs.parquet", "ps-links.parquet", "ps-events.parquet",
           "ps-event-masks.npy", "ps-link-members.parquet", "ps-moves.parquet",
           "ps-connectors.parquet"]
+FTRANS_INPUTS = ["ps-transfers.parquet", "ps-hubs.parquet", "ps-links.parquet",
+                 "ps-event-masks.npy", "ps-link-members.parquet"]
 
 
 #%% Inputs
@@ -56,6 +65,8 @@ def step_pairs(x: dict):
 
 #%% b. Statistics
 def step_stats(x: dict, pairs):
+    """Statistics of every pair; also returns the link calendars (the days
+    counted of ps-ftrans need them)."""
     l, e = x["links"], x["events"]
     ev = (e["dep"].to_numpy(), e["ride"].to_numpy(), x["masks"],
           l["ev0"].to_numpy(), l["ev1"].to_numpy(), l["tz_shift"].to_numpy())
@@ -77,7 +88,27 @@ def step_stats(x: dict, pairs):
     t_pairs = time.time() - t1
     io.log(f"b. transfer statistics of {len(pairs):,} pairs in {t_pairs:.1f} s "
            f"({len(pairs) / max(t_pairs, 1e-9) / 1e6:.2f} M pairs/s)")
-    return stats, {"build_s": round(t_build, 1), "pairs_s": round(t_pairs, 1)}
+    return stats, cal, {"build_s": round(t_build, 1), "pairs_s": round(t_pairs, 1)}
+
+
+#%% c. ps-ftrans
+def step_ftrans(transfers, links, hubs, members, cal):
+    """ps-ftrans from ps-transfers, each row weighted by freq x n_days / days
+    counted (pairs.days_counted)."""
+    t = time.time()
+    days = PR.days_counted(transfers, cal)
+    ftrans = PR.ftrans_table(transfers, links, hubs, members, days)
+    pooled = int(ftrans["n_rows"].sum())
+    sec = round(time.time() - t, 1)
+    io.log(f"c. ps-ftrans: {len(ftrans):,} keys from {pooled:,} of "
+           f"{len(transfers):,} rows ({len(transfers) - pooled:,} left out: a hub "
+           f"without a released id); {sec:.1f} s")
+    info = {"rows": len(ftrans), "transfers_pooled": pooled,
+            "transfers_left_out": len(transfers) - pooled,
+            "weight": "freq x n_days / days counted",
+            "days_counted_D_median": float(np.median(days[transfers["basis"].to_numpy() == "D"]))
+            if (transfers["basis"] == "D").any() else None}
+    return ftrans, info, sec
 
 
 #%% Run
@@ -90,7 +121,7 @@ def main() -> None:
     pairs, dropped, table = step_pairs(x)
     clock["pairs_build_s"] = round(time.time() - t, 1)
 
-    stats, sec = step_stats(x, pairs)
+    stats, cal, sec = step_stats(x, pairs)
     clock |= sec
 
     t = time.time()
@@ -103,13 +134,10 @@ def main() -> None:
            + "); existing under the consumer's rule "
            + ", ".join(f"{k} {v:,}" for k, v in ok_basis.items()))
     del stats
-
-    ftrans = PR.ftrans_table(transfers, x["links"], x["hubs"], x["members"])
-    pooled = int(ftrans["n_rows"].sum())
     clock["tables_s"] = round(time.time() - t, 1)
-    io.log(f"c. ps-ftrans: {len(ftrans):,} keys from {pooled:,} of "
-           f"{len(transfers):,} rows ({len(transfers) - pooled:,} left out: a hub "
-           f"without a released id); {clock['tables_s']:.1f} s")
+
+    ftrans, ftrans_info, clock["ftrans_s"] = step_ftrans(
+        transfers, x["links"], x["hubs"], x["members"], cal)
 
     io.save(transfers, "ps-transfers")
     io.save(ftrans, "ps-ftrans")
@@ -122,12 +150,42 @@ def main() -> None:
         "transfers": {"rows": len(transfers),
                       "by_basis": {k: int(v) for k, v in by_basis.items()},
                       "existing_by_basis": {k: int(v) for k, v in ok_basis.items()}},
-        "ftrans": {"rows": len(ftrans), "transfers_pooled": pooled,
-                   "transfers_left_out": len(transfers) - pooled},
+        "ftrans": ftrans_info,
         "seconds": clock,
     })
     io.log(f"done in {clock['total_s']:.0f} s")
 
 
+def ftrans_only() -> None:
+    """ps-ftrans rebuilt from the existing ps-transfers; ps-transfers is not
+    written."""
+    t0 = time.time()
+    links = io.load_out("ps-links", ["link", "src", "trg", "mode", "ev0", "ev1"])
+    masks = io.load_npy("ps-event-masks")
+    cal = T.link_calendars(np.ascontiguousarray(masks, dtype=np.uint64),
+                           links["ev0"].to_numpy(np.int32), links["ev1"].to_numpy(np.int32))
+    del masks
+    transfers = io.load_out("ps-transfers")
+    io.log(f"--ftrans-only: {len(transfers):,} ps-transfers rows, {len(links):,} links; "
+           f"{time.time() - t0:.1f} s")
+    ftrans, info, sec = step_ftrans(transfers, links, io.load_out("ps-hubs"),
+                                    io.load_out("ps-link-members", ["link", "agency"]), cal)
+    io.save(ftrans, "ps-ftrans")
+    io.write_manifest("ftrans", [io.out_path(n) for n in FTRANS_INPUTS],
+                      {"ftrans": info, "seconds": {"ftrans_s": sec,
+                                                   "total_s": round(time.time() - t0, 1)}})
+    io.log(f"done in {time.time() - t0:.0f} s")
+
+
+def parse_args(argv=None) -> argparse.Namespace:
+    ap = argparse.ArgumentParser(description="ps-transfers and ps-ftrans")
+    ap.add_argument("--ftrans-only", action="store_true",
+                    help="rebuild ps-ftrans from the existing ps-transfers")
+    return ap.parse_args(argv)
+
+
 if __name__ == "__main__":
-    main()
+    if parse_args(sys.argv[1:]).ftrans_only:
+        ftrans_only()
+    else:
+        main()

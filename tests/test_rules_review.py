@@ -21,8 +21,9 @@ from test_rules import BASE, make, random_cands, run, status  # noqa: E402
 KEPT = ("kept", "kept_guarantee")
 
 
-def removes(p, q, eps_T, eps_M, rho, x):
-    """R2 for one pair; money compared when the band is on and both known."""
+def removes(p, q, eps_T, eps_M, rho, x, gate="pooled"):
+    """R2 for one pair; money compared when the band is on and both known;
+    ``gate`` is R2_GATE (q's pooled or path frequency in the gate)."""
     if p["n"] > q["n"] or p[x] > q[x] + eps_T:
         return False
     better = p["n"] < q["n"] or p[x] < q[x] - eps_T
@@ -30,7 +31,8 @@ def removes(p, q, eps_T, eps_M, rho, x):
         if p["M"] > q["M"] + eps_M:
             return False
         better = better or p["M"] < q["M"] - eps_M
-    return better and (rho == 0 or p["freq"] >= rho * q["pooled"])
+    other = q["pooled"] if gate == "pooled" else q["freq"]
+    return better and (rho == 0 or p["freq"] >= rho * other)
 
 
 def stable(ids, dom):
@@ -93,19 +95,21 @@ def brute(cands, P, order, guarantee):
         alts[rep] = {**rows[rep], "pooled": sum(per_link.values())}
         st.update({m: f"variant_of:{rep}" for m in g if m != rep})
     x = rules.R2_TIMES[P["R2_TIME"]]
+    gate = P["R2_GATE"]
     okey = lambda a: (alts[a]["gtc"], rank[alts[a]["key"]], a)  # noqa: E731
     state, by = {}, {}
     for k in classes:
         ids = [a for a in alts if alts[a]["cls"] == k]
         band = None if any(math.isnan(alts[a]["M"]) for a in ids) else eps_M
-        kept, rem = stable(ids, lambda p, q: removes(alts[p], alts[q], eps[k], band, rho, x))
+        kept, rem = stable(ids, lambda p, q: removes(alts[p], alts[q], eps[k], band,
+                                                     rho, x, gate))
         state.update({a: "kept" if a in kept else "removed_by" for a in ids})
         by.update(rem)
     if P["CROSS_CLASS"]:
         ids = [a for a in alts if state[a] == "kept"]
         zero = None if eps_M is None else 0
         kept, rem = stable(ids, lambda p, q: alts[p]["cls"] != alts[q]["cls"]
-                           and removes(alts[p], alts[q], 0, zero, rho, x))
+                           and removes(alts[p], alts[q], 0, zero, rho, x, gate))
         state.update({a: "removed_by" for a in rem})
         by.update(rem)
         if guarantee:
@@ -140,6 +144,8 @@ SETTINGS = [
     dict(CROSS_CLASS=False, R1_KEY="class", RHO_F=1.0),
     dict(CROSS_CLASS=True, R2_TIME="weighted", EPS_M=10),
     dict(CROSS_CLASS=True, MU=0.1),
+    dict(CROSS_CLASS=True, K_CAP=4, K_EXTRA=1, EPS_M=5, R2_GATE="path"),
+    dict(CROSS_CLASS=False, R2_GATE="path", RHO_F=1.0),
 ]
 
 

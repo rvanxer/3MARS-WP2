@@ -50,12 +50,13 @@ def params(**changes):
 # --- Synthetic networks --------------------------------------------------------
 class Toy:
     """A synthetic network in the tables of the contract. Hubs are numbered in
-    order of creation, links too; every event is its own trip."""
+    order of creation, links too; every event is its own trip unless a trip
+    key is given."""
 
     def __init__(self, days=DAYS):
         self.days = tuple(days)
         self.hubs, self.links, self.conn, self.car = [], [], [], []
-        self.moves = {}
+        self.moves, self.kinds = {}, {}
         self._trip = 0
 
     def hub(self, fua=-1, iata=""):
@@ -64,16 +65,32 @@ class Toy:
         return len(self.hubs) - 1
 
     def link(self, src, trg, mode, *events):
-        """A service link; an event is (dep, ride) or (dep, ride, days)."""
+        """A service link; an event is (dep, ride), (dep, ride, days) or
+        (dep, ride, days, trip key) (days None: the toy's dates)."""
         evs = []
         for e in events:
             self._trip += 1
-            evs.append((e[0], e[1], self._trip, tuple(e[2] if len(e) > 2 else self.days)))
+            days = e[2] if len(e) > 2 and e[2] is not None else self.days
+            evs.append((e[0], e[1], e[3] if len(e) > 3 else 10 ** 6 + self._trip,
+                        tuple(days)))
         self.links.append((src, trg, mode, evs))
         return len(self.links) - 1
 
-    def move(self, a, b, minutes):
+    def run(self, mode, dep, stops, days=None):
+        """One vehicle run: a link between every two of its stops [(hub,
+        minutes after the first departure), ...], all with one trip key;
+        returns {(hub_a, hub_b): link}."""
+        self._trip += 1
+        key = self._trip
+        out = {}
+        for i, (a, ta) in enumerate(stops):
+            for b, tb in stops[i + 1:]:
+                out[(a, b)] = self.link(a, b, mode, ((dep + ta) % 1440, tb - ta, days, key))
+        return out
+
+    def move(self, a, b, minutes, kind="fitted"):
         self.moves[(a, b)] = self.moves[(b, a)] = float(minutes)
+        self.kinds[(a, b)] = self.kinds[(b, a)] = kind
 
     def connect(self, fua, hub, acc, egr=None):
         self.conn.append((fua, hub, acc, acc if egr is None else egr))
@@ -141,9 +158,14 @@ class Toy:
             {"o": "int16", "d": "int16", "minutes": "float32"})
         car["km"] = np.float32(100)
         car["fixed"] = False
+        mv = sorted(self.moves)
+        moves = pd.DataFrame({"hub_a": np.array([m[0] for m in mv], dtype=np.int32),
+                              "hub_b": np.array([m[1] for m in mv], dtype=np.int32),
+                              "minutes": np.array([self.moves[m] for m in mv], dtype=np.float32),
+                              "kind": [self.kinds[m] for m in mv]})
         return dict(hubs=hubs, links=links, events=events, masks=masks,
                     transfers=self.transfer_rows(links, inst, typ, cal, trip),
-                    connectors=connectors, car=car,
+                    connectors=connectors, car=car, moves=moves,
                     inst=inst, typ=typ, cal=cal, trip=trip)
 
     def transfer_rows(self, links, inst, typ, cal, trip) -> pd.DataFrame:
@@ -177,7 +199,8 @@ class Toy:
 
 def net_of(tb: dict, prm=P) -> SR.Net:
     return SR.build_network(tb["hubs"], tb["links"], tb["events"], tb["masks"],
-                            tb["transfers"], tb["connectors"], tb["car"], prm)
+                            tb["transfers"], tb["connectors"], tb["car"], prm,
+                            moves=tb["moves"])
 
 
 def random_toy(seed: int, n_fua=6, n_ground=40, n_air=6) -> Toy:
@@ -225,6 +248,19 @@ def random_toy(seed: int, n_fua=6, n_ground=40, n_air=6) -> Toy:
         for d in fuas:
             if o != d and rng.random() < 0.6:
                 t.drive(o, d, float(rng.integers(60, 600)))
+    # vehicles that call at three or four stations (a link between every two
+    # stops, one trip key per run), so that riders pass stops on board; and
+    # an airport with a station inside it (drawn apart from the rest, so the
+    # network above stays as it was)
+    extra = np.random.default_rng(seed + 100)
+    for _ in range(5):
+        k = int(extra.integers(3, 5))
+        stops = [int(s) for s in extra.choice(stations, k, replace=False)]
+        times = np.cumsum([0] + [int(extra.integers(6, 25)) * 5 for _ in range(k - 1)]).tolist()
+        mode = "RB"[int(extra.integers(0, 2))]
+        for start in sorted(set(int(extra.integers(6 * 12, 14 * 12)) * 5 for _ in range(3))):
+            t.run(mode, start, list(zip(stops, times)), DAYS)
+    t.move(airports[2], stations[1], 0, "colocated")
     return t
 
 
@@ -253,10 +289,49 @@ def ref_cities(tb: dict) -> dict:
     return city
 
 
+def ref_places(tb: dict) -> dict:
+    """Place of every hub: hubs joined by 'colocated' moves share one."""
+    place = {int(h): {int(h)} for h in tb["hubs"]["hub"]}
+    for a, b, kind in zip(tb["moves"]["hub_a"], tb["moves"]["hub_b"], tb["moves"]["kind"]):
+        if kind == "colocated":
+            joined = place[int(a)] | place[int(b)]
+            for h in joined:
+                place[h] = joined
+    return {h: min(s) for h, s in place.items()}
+
+
+def ref_passed(tb: dict, city: dict, share: float = 1.0) -> dict:
+    """Cities a link passes on board, other than the cities of its own hubs:
+    a run passes the alight hubs of the legs of the same run (trip key, board
+    hub, departure) with a shorter ride; the link passes a city when the
+    runs that pass it carry at least ``share`` of its dated departures
+    (ps-events.n_dates), and at least one does (share 1: every run)."""
+    links, ev = tb["links"], tb["events"]
+    src, trg = links["src"].tolist(), links["trg"].tolist()
+    legs = [(int(l), int(dep), int(ride), int(trip), int(nd)) for l, dep, ride, trip, nd in
+            zip(ev["link"], ev["dep"], ev["ride"], ev["trip"], ev["n_dates"])]
+    out = {}
+    for l in range(len(src)):
+        weight, total = defaultdict(int), 0
+        for (k, dep, ride, trip, nd) in legs:
+            if k != l:
+                continue
+            total += nd
+            hubs = {trg[k2] for (k2, d2, r2, t2, _) in legs
+                    if t2 == trip and src[k2] == src[l] and d2 == dep and r2 < ride}
+            for c in {city[h] for h in hubs} - {city[src[l]], city[trg[l]]}:
+                weight[c] += nd
+        out[l] = {c for c, w in weight.items() if w > 0 and w >= share * total}
+    return out
+
+
 def brute(tb: dict, o: int, prm=P) -> dict:
-    """Every R0 candidate of origin o: {(d, l1, l2, l3): values}."""
+    """Every R0 candidate of origin o: {(d, l1, l2, l3): values}. PASSED_SHARE
+    of ``prm``, 1 without the key (search.passed_share)."""
     links, conn = tb["links"], tb["connectors"]
     city = ref_cities(tb)
+    place = ref_places(tb)
+    passed = ref_passed(tb, city, float(prm.get("PASSED_SHARE", 1.0)))
     labels = {int(h): (str(int(f)) if k == "S" else i) for h, k, f, i in zip(
         tb["hubs"]["hub"], tb["hubs"]["kind"], tb["hubs"]["fua"], tb["hubs"]["iata"])}
     access = {int(h): float(a) for f, h, a in zip(conn["fua"], conn["hub"], conn["acc_min"])
@@ -308,25 +383,37 @@ def brute(tb: dict, o: int, prm=P) -> dict:
             basis, n_days, counted, ft = chr(res[0]), res[1], res[2], [res[3], res[5]]
         if not (n_days >= min_active if basis == "D" else n_days >= 1):
             continue
-        # hubs in order and the cities of each transfer
+        # hubs in order, the stops (a transfer is one stop) and the cities
+        # of each transfer
         seq = [src[chain[0]], trg[chain[0]]]
+        stops = [{src[chain[0]]}]
         tcity = []
         for k in range(1, n):
             a, b = trg[chain[k - 1]], src[chain[k]]
             if b != a:
                 seq.append(b)
             seq.append(trg[chain[k]])
+            stops.append({a, b})
             tcity.append({city[a], city[b]})
+        stops.append({trg[chain[-1]]})
         if len(set(seq)) != len(seq):
             continue
+        at = [{place[h] for h in s} for s in stops]
+        if any(at[i] & at[j] for i in range(len(at)) for j in range(i)):
+            continue                                    # back at a place
         cf, cl = city[seq[0]], city[seq[-1]]
         if n == 3 and tcity[0] & tcity[1]:
             continue
+        on_board = set().union(*(passed[l] for l in chain))
+        if on_board & ({o} | {city[h] for h in seq}):
+            continue                                    # rides through a city of the path
         acc = access[seq[0]]
         for d, egr in egress[seq[-1]]:
             if o == d or cf == cl or cf == d or cl == o:
                 continue
             if any(tc & {o, d, cf, cl} for tc in tcity):
+                continue
+            if d in on_board:
                 continue
             pad = list(chain) + [-1] * (3 - n)
             capped = C.capped_frequency([n], [counted], [[fmax[l] if l >= 0 else 0 for l in pad]])
@@ -540,6 +627,184 @@ def test_existence_thresholds():
     assert (5, a, air) not in present(net_of(tb), 1)
 
 
+def test_passed_cities_every_run_and_not_own_cities():
+    """Cities a link passes on board: the alight hubs of the legs of the same
+    run (trip key, board hub, departure minute) with a shorter ride; at share
+    1 only those every run passes; never the city of the link's own hubs."""
+    city = np.array([10, 11, 12, 13, 10], dtype=np.int64)
+    src = np.array([0, 0, 0, 0, 0])
+    trg = np.array([3, 1, 2, 4, 1])
+    # (link, dep, ride, trip) in link order; runs: trip 1 at 600, trip 2 at 700
+    ev = [(0, 600, 100, 1), (0, 700, 100, 2),        # link 0: 0 -> 3, two runs
+          (1, 600, 30, 1),                          # run 1 calls at hub 1 first
+          (2, 600, 50, 1), (2, 700, 50, 2),         # both runs call at hub 2 first
+          (3, 600, 20, 1),                          # hub 4: city 10, the board city
+          (4, 650, 10, 2)]                          # trip 2 at another minute: not run 2
+    link = np.array([e[0] for e in ev])
+    ev0 = np.searchsorted(link, np.arange(5))
+    ev1 = np.searchsorted(link, np.arange(5), side="right")
+
+    def passed(dates, share):
+        ptr, cities = SR.passed_cities(src, trg, ev0, ev1, [e[1] for e in ev],
+                                       [e[2] for e in ev], [e[3] for e in ev], city,
+                                       dates, share)
+        return {l: cities[ptr[l]:ptr[l + 1]].tolist() for l in range(5)}
+
+    ones = np.ones(len(ev), dtype=np.int64)
+    assert passed(ones, 1.0) == {0: [12], 1: [], 2: [], 3: [], 4: []}
+    # run 1 of links 0 and 2 also passes city 11; it is half their runs
+    assert passed(ones, 0.5) == {0: [11, 12], 1: [], 2: [11], 3: [], 4: []}
+    assert passed(ones, 0.0) == passed(ones, 0.5)
+    # by dates: run 1 on 1 date, run 2 on 9 dates -> city 11 on 10% of them
+    dates = np.array([1, 9, 1, 1, 9, 1, 9])
+    assert passed(dates, 0.5) == {0: [12], 1: [], 2: [], 3: [], 4: []}
+    assert passed(dates, 0.1) == {0: [11, 12], 1: [], 2: [11], 3: [], 4: []}
+    assert passed(dates, 0.0) == passed(dates, 0.1) and passed(dates, 1.0) == passed(ones, 1.0)
+    with pytest.raises(ValueError):
+        passed(ones, 1.5)
+
+
+def test_passed_share_parameter_and_event_dates():
+    """PASSED_SHARE is read from the parameters, 1 (every run) without the
+    key; event_dates counts the set bits of ps-event-masks (= n_dates)."""
+    assert SR.passed_share({"PASSED_SHARE": 0.5}) == 0.5
+    assert SR.passed_share({}) == 1.0
+    with pytest.raises(ValueError):
+        SR.passed_share({"PASSED_SHARE": -0.1})
+    tb = random_toy(3).tables()
+    assert (SR.event_dates(tb["masks"]) == tb["events"]["n_dates"].to_numpy()).all()
+
+
+def ride_through_toy():
+    """Helsinki -> Tallinn with a coach of two runs: O = 1, Turku T = 2, D = 5.
+    Train O -> T, then the coach T -> D; its run k1 (30 dates, 12:20) calls
+    at O on the way, its run k2 (5 dates, 13:00) does not. By runs O is
+    passed on 1 of 2 (50%); by dated departures on 30 of 35 (86%)."""
+    t = Toy()
+    o1, t1, d1 = t.hub(1), t.hub(2), t.hub(5)
+    for fua, h in ((1, o1), (2, t1), (5, d1)):
+        t.connect(fua, h, 10)
+    L = {"train": t.link(o1, t1, "R", (hm(10), 120), (hm(10, 40), 120)),
+         "TD": t.link(t1, d1, "B", (hm(12, 20), 330, DAYS, 501), (hm(13), 300, DAYS[:5], 502)),
+         "TO": t.link(t1, o1, "B", (hm(12, 20), 160, DAYS, 501))}
+    return t, L
+
+
+@pytest.mark.parametrize("share, rides_back", [(1.0, False), (0.9, False), (0.6, True),
+                                                (0.5, True), (0.0, True)])
+def test_ride_through_a_city_on_most_dated_departures(share, rides_back):
+    """Finding of 13 Nov: a link counts as passing a city when the runs that
+    pass it carry at least PASSED_SHARE of its dated departures. At 0.6 the
+    coach passes O (86% of the dates, though only 50% of the runs), so the
+    train + coach path that rides back through the origin is no candidate;
+    at 0.9 and 1 it is."""
+    t, L = ride_through_toy()
+    tb = t.tables()
+    prm = params(PASSED_SHARE=share)
+    net = net_of(tb, prm)
+    got = present(net, 1, prm)
+    assert ((5, L["train"], L["TD"]) in got) == (not rides_back)
+    assert got == {(k[0], *[x for x in k[1:] if x >= 0]) for k in brute(tb, 1, prm)}
+
+
+@pytest.mark.parametrize("share", [0.0, 0.5])
+def test_candidates_equal_brute_force_at_a_share(share):
+    """The random networks at PASSED_SHARE 0.5 and 0 (any run): keys and
+    values equal the brute force at the same share."""
+    prm = params(PASSED_SHARE=share)
+    t = random_toy(1)
+    # a second, rarer run (6 of 36 dates) that calls at no stop on the way,
+    # on every other link of the toy's vehicles that passes a city, so that
+    # their runs disagree
+    tb0 = t.tables()
+    p0 = ref_passed(tb0, ref_cities(tb0))
+    multi = [l for l in sorted(p0) if p0[l]]
+    assert len(multi) >= 4
+    for l in multi[::2]:
+        src, trg, mode, evs = t.links[l]
+        dep, ride, trip, days = evs[0]
+        t._trip += 1
+        evs.append(((dep + 7) % 1440, ride, 10 ** 6 + t._trip, tuple(days[:6])))
+    tb = t.tables()
+    city = ref_cities(tb)
+    assert ref_passed(tb, city, share) != ref_passed(tb, city, 1.0)
+    net, every = net_of(tb, prm), net_of(tb, params(PASSED_SHARE=1.0))
+    differ = False
+    for o in (10, 11, 12):
+        got = present(net, o, prm)
+        same_rows(as_dict(service(SR.candidates(net, o, None, prm))), brute(tb, o, prm))
+        differ |= got != present(every, o, params(PASSED_SHARE=1.0))
+    assert differ
+
+
+def test_no_ride_through_a_city_of_the_path():
+    """Helsinki -> Tallinn on real data: train Helsinki -> Turku, then the
+    Turku -> Tallinn coach, which calls at Helsinki. Here O = 1, Turku = 2,
+    D = 5, X = 3: one coach run T -> O -> D -> X. Train O -> T + coach T -> D
+    rides back through O, coach O -> X + train X -> D rides through D: no
+    candidates. With every leg its own run (no shared trip key) both are."""
+    def toy(shared):
+        t = Toy()
+        o1, t1, d1, x1 = t.hub(1), t.hub(2), t.hub(5), t.hub(3)
+        for fua, h in ((1, o1), (2, t1), (5, d1), (3, x1)):
+            t.connect(fua, h, 10)
+        L = {"train": t.link(o1, t1, "R", *[(hm(h), 120) for h in range(6, 11)]),
+             "back": t.link(x1, d1, "R", *[(hm(h), 60) for h in range(20, 23)])}
+        stops = [(t1, 0), (o1, 160), (d1, 330), (x1, 450)]
+        if shared:
+            legs = t.run("B", hm(12, 20), stops)
+        else:
+            legs = {(a, b): t.link(a, b, "B", ((hm(12, 20) + ta) % 1440, tb - ta))
+                    for i, (a, ta) in enumerate(stops) for b, tb in stops[i + 1:]}
+        L["TD"], L["OX"], L["OD"] = legs[(t1, d1)], legs[(o1, x1)], legs[(o1, d1)]
+        return t, L
+
+    for shared in (True, False):
+        t, L = toy(shared)
+        tb = t.tables()
+        got = present(net_of(tb), 1)
+        assert (5, L["OD"]) in got
+        assert ((5, L["train"], L["TD"]) in got) == (not shared)
+        assert ((5, L["OX"], L["back"]) in got) == (not shared)
+        assert got == {(k[0], *[x for x in k[1:] if x >= 0]) for k in brute(tb, 1)}
+
+
+def test_colocated_airport_and_station_are_one_place():
+    """Brussels on real data: AMS -> BRU, a road move to Leuven (BRU's city is
+    Leuven, its shortest access), the coach Leuven -> the station inside
+    BRU, a move to Brussels-Midi, the train to Paris: back at the airport.
+    Here aO (city 1) -> aB (city 4) ~ l1 (4) -> b1 (3, inside aB) ~ m1 (3)
+    -> p1 (5): no candidate when the move aB ~ b1 is 'colocated', a
+    candidate when nothing says so; aO -> aB ~ m1 -> p1 always."""
+    def toy(kind):
+        t = Toy()
+        aO, aB = t.hub(iata="OOO"), t.hub(iata="BBB")
+        l1, b1, m1, p1 = t.hub(4), t.hub(3), t.hub(3), t.hub(5)
+        t.connect(1, aO, 20)
+        t.connect(4, aB, 24)
+        t.connect(3, aB, 26)
+        t.connect(5, p1, 10)
+        t.move(aB, l1, 22, "road")
+        t.move(aB, b1, 0, kind)
+        t.move(b1, m1, 20)
+        t.move(aB, m1, 21, "road")
+        L = dict(fly=t.link(aO, aB, "A", (hm(8), 60)),
+                 coach=t.link(l1, b1, "B", (hm(10, 30), 30)),
+                 train=t.link(m1, p1, "R", *[(hm(10, 30) + 30 * k, 80) for k in range(18)]))
+        return t, L
+
+    for kind, back in (("colocated", False), ("fitted", True)):
+        t, L = toy(kind)
+        tb = t.tables()
+        got = present(net_of(tb), 1)
+        assert (5, L["fly"], L["train"]) in got
+        assert ((5, L["fly"], L["coach"], L["train"]) in got) == back, kind
+        assert got == {(k[0], *[x for x in k[1:] if x >= 0]) for k in brute(tb, 1)}
+    assert SR.hub_places(4, pd.DataFrame({"hub_a": [3, 2, 1], "hub_b": [2, 1, 0],
+                                          "kind": ["colocated", "colocated", "road"]})
+                         ).tolist() == [0, 1, 1, 1]
+
+
 # --- 2, 3. Values and pass-1 minima against the brute force --------------------
 def test_candidates_equal_brute_force(rand):
     """Every R0 candidate with its values: T, gtt, ... as cost.path_costs gives
@@ -697,7 +962,7 @@ def test_violated_bound_stops_the_shard(rand, monkeypatch, shift):
 # --- 7. Determinism ------------------------------------------------------------
 def shuffled(tb: dict, seed: int) -> dict:
     out = dict(tb)
-    for k in ("hubs", "links", "transfers", "connectors", "car"):
+    for k in ("hubs", "links", "transfers", "connectors", "car", "moves"):
         out[k] = tb[k].sample(frac=1, random_state=seed).reset_index(drop=True)
     return out
 
@@ -742,10 +1007,11 @@ CONTRACT = {
                  **{k: v for k, v in PATH_TYPES.items() if k not in ("o", "d")}},
     "best": PATH_TYPES,
     "funnel": {"o": "int16", "d": "int16",
-               **{k: "int64" for k in ("n_r0", "n_r3", "n_r1", "n_r2", "n_kept", "n_capped")},
+               **{k: "int64" for k in ("n_r0", "n_r0_bound", "n_r3", "n_r1", "n_r2",
+                                       "n_kept", "n_capped")},
                "n_classes": "int8", "best_T": F32, "best_gtt": F32, "car_min": F32, "pt": "bool"},
-    "seq_counts": {"o": "int16", "seq": "str", "n_r0": "int64", "n_r3": "int64",
-                   "n_kept": "int64"},
+    "seq_counts": {"o": "int16", "seq": "str", "n_r0": "int64", "n_r0_bound": "int64",
+                   "n_r3": "int64", "n_kept": "int64"},
     "unserved": {"o": "int16", "d": "int16", "reason": "str"},
     "trace": {**PATH_TYPES, "cand": "int64", "cls": "str", "alt": "int64", "status": "str",
               "rule": "str", "by": "int64", "detail": "str"},
@@ -805,7 +1071,7 @@ def test_script_shards_combine_and_resume(rand, tmp_path, monkeypatch):
     tb, _ = rand[0]
     monkeypatch.setattr(io, "OUT", tmp_path.resolve())
     monkeypatch.setitem(io.P, "NAMED_PAIRS", [[10, 13]])
-    for name in ("hubs", "links", "events", "transfers", "connectors", "car"):
+    for name in ("hubs", "links", "events", "transfers", "connectors", "car", "moves"):
         io.save(tb[name], f"ps-{name}")
     io.save_npy(tb["masks"], "ps-event-masks")
     script = load_script()
@@ -844,7 +1110,7 @@ def test_script_shards_combine_and_resume(rand, tmp_path, monkeypatch):
 def script_inputs(tb: dict, tmp_path, monkeypatch):
     """The input tables of ``tb`` in a synthetic PATHSET_DIR (tmp_path)."""
     monkeypatch.setattr(io, "OUT", tmp_path.resolve())
-    for name in ("hubs", "links", "events", "transfers", "connectors", "car"):
+    for name in ("hubs", "links", "events", "transfers", "connectors", "car", "moves"):
         io.save(tb[name], f"ps-{name}")
     io.save_npy(tb["masks"], "ps-event-masks")
     return load_script()
@@ -948,23 +1214,78 @@ def test_candidates_from_a_buffer_of_small_chunks(rand, monkeypatch):
 
 def test_r0_counted_by_bounds_is_logged(rand):
     """n_r0 is exact at MU = inf; at a finite MU the part counted by bounds is
-    in the log, and the exact count lies between n_r0 less that part and
-    n_r0 (module docstring, "Counting convention")."""
+    n_r0_bound (ps-funnel per d, ps-seq-counts per word, the shard's arrays
+    per (d, word)) and in the log, and the exact count lies between n_r0 less
+    that part and n_r0 per (d, seq) (module docstring, "Counting
+    convention"); n_r0_bound is 0 at MU = inf."""
     tb, net = rand[0]
     counted = 0
     for o in (10, 11, 12):
-        exact = len(service(SR.candidates(net, o, None, P)))
+        full = SR.candidates(net, o, None, P)            # MU = inf: exact, car included
+        exact = len(service(full))
+        # per (d, word) in the shard's arrays after pass 2
+        sh = SR.Shard(net, o, P)
+        want = sh.want()
+        sh.minima(want)
+        sh.margins(P["MU"])
+        sh.collect(want)
+        ex = np.zeros_like(sh.st.n_r0)
+        for (d, seq), k in service(full).groupby(["d", "seq"]).size().items():
+            ex[np.searchsorted(net.fuas, d), SR.WORD_OF[seq]] = k
+        r0, r0b = sh.st.n_r0, sh.st.n_r0b
+        assert (r0b >= 0).all() and (r0b <= r0).all()
+        assert (r0 - r0b <= ex).all() and (ex <= r0).all()
+        # the tables
         out = SR.run_origin(net, o, P)
-        sc = out["seq_counts"]
-        n_r0 = int(sc.loc[sc["seq"] != "C", "n_r0"].sum())
+        f, sc = out["funnel"].set_index("d"), out["seq_counts"].set_index("seq")
         by_bounds = out["funnel"].attrs["search"]["pass2"]["r0_by_bounds"]
         counted += by_bounds
+        assert by_bounds == r0b.sum() == f["n_r0_bound"].sum() == sc["n_r0_bound"].sum()
+        assert (f["n_r0_bound"].to_numpy() == r0b[np.searchsorted(net.fuas, f.index)].sum(axis=1)).all()
+        assert sc.loc["C", "n_r0_bound"] == 0
+        per_d = full.groupby("d").size().reindex(f.index, fill_value=0)
+        assert ((f["n_r0"] - f["n_r0_bound"] <= per_d) & (per_d <= f["n_r0"])).all()
+        per_seq = full.groupby("seq").size().reindex(sc.index, fill_value=0)
+        assert ((sc["n_r0"] - sc["n_r0_bound"] <= per_seq) & (per_seq <= sc["n_r0"])).all()
+        n_r0 = int(sc.loc[sc.index != "C", "n_r0"].sum())
         assert n_r0 - by_bounds <= exact <= n_r0
+        # MU = inf: nothing counted by bounds, every count exact
         inf = SR.run_origin(net, o, params(MU=math.inf))
-        sc = inf["seq_counts"]
+        f, sc = inf["funnel"].set_index("d"), inf["seq_counts"].set_index("seq")
         assert inf["funnel"].attrs["search"]["pass2"]["r0_by_bounds"] == 0
-        assert int(sc.loc[sc["seq"] != "C", "n_r0"].sum()) == exact
+        assert (f["n_r0_bound"] == 0).all() and (sc["n_r0_bound"] == 0).all()
+        assert (f["n_r0"] == per_d).all() and (sc["n_r0"] == per_seq).all()
+        assert int(sc.loc[sc.index != "C", "n_r0"].sum()) == exact
     assert counted > 0
+
+
+def test_named_pairs_count_r0_exactly(rand):
+    """Minor finding of 13 Nov: for the named pairs n_r0 comes from the trace
+    run at MU = inf (exact, n_r0_bound 0) in ps-funnel and ps-seq-counts;
+    the other pairs keep the bounded count."""
+    tb, net = rand[0]
+    loose = 0
+    for o in (10, 11, 12):
+        named = [int(d) for d in net.fuas if d != o]
+        out = SR.run_origin(net, o, P, named_dests=named)
+        plain = SR.run_origin(net, o, P)
+        exact = SR.candidates(net, o, named, P)               # MU = inf, car included
+        f, f0 = out["funnel"].set_index("d"), plain["funnel"].set_index("d")
+        loose += int(f0["n_r0_bound"].sum())
+        assert (f["n_r0"] == exact.groupby("d").size().reindex(f.index, fill_value=0)).all()
+        assert (f["n_r0_bound"] == 0).all()
+        assert (out["trace"].groupby("d").size().reindex(f.index, fill_value=0) == f["n_r0"]).all()
+        assert ((f0["n_r0"] - f0["n_r0_bound"] <= f["n_r0"]) & (f["n_r0"] <= f0["n_r0"])).all()
+        sc = out["seq_counts"].set_index("seq")
+        assert (sc["n_r0"] == exact.groupby("seq").size().reindex(sc.index, fill_value=0)).all()
+        assert (sc["n_r0_bound"] == 0).all()
+        for col in ("n_r3", "n_r1", "n_r2", "n_kept", "n_capped", "best_T", "best_gtt"):
+            assert f[col].equals(f0[col]), col
+        # one named destination: the others keep the bounded count
+        one = SR.run_origin(net, o, P, named_dests=named[:1])["funnel"].set_index("d")
+        rest = f.index.difference(named[:1])
+        assert one.loc[rest, ["n_r0", "n_r0_bound"]].equals(f0.loc[rest, ["n_r0", "n_r0_bound"]])
+    assert loose > 0
 
 
 # --- Smaller rules -------------------------------------------------------------

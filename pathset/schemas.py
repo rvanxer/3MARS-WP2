@@ -107,12 +107,16 @@ ps-transfers keeps every admissible pair with at least one opportunity
 (n_days >= 1); whether a chain EXISTS is decided by the consumer: basis 'D'
 needs n_days >= MIN_ACTIVE_DATES, basis 'T' needs n_days >= 1.
 
-ps-ftrans               f_trans at the key of the released 3MG graph: ps-transfers
-                        mapped to released node ids and pooled over riding-time
-                        classes (operators listed, not split)
-    in_src, in_trg, out_src, out_trg  str  released node ids ('' if none)
+ps-ftrans               f_trans at the key of the released 3MG graph: the
+                        ps-transfers rows whose four hubs all have a released
+                        id, mapped to those ids and pooled over riding-time
+                        classes (operators listed, not split); the key of the
+                        first six columns is unique
+    in_src, in_trg, out_src, out_trg  str  released node ids
     mode_in, mode_out  str
-    ft_mean     float32 mean of the rows' ft_mean weighted by n_days * freq
+    ft_mean     float32 mean of the rows' ft_mean weighted by freq x n_days /
+                        days counted (the two links' common active dates on
+                        basis 'D', 7 on basis 'T'), so that both bases weigh alike
     ft_min      float32
     n_rows      int32   ps-transfers rows pooled
     share_T     float32 share of those rows counted on typical days
@@ -153,10 +157,13 @@ ps-best-by-sequence     per (o, d, seq) the R0 candidate with the least gtt
                         (before R3); the input of the CASPT accessibility curves
     PATH
 ps-funnel               per FUA pair
-    o, d; n_r0, n_r3, n_r1, n_r2, n_kept, n_capped int64; n_classes int8;
-    best_T, best_gtt, car_min float32; pt bool (a service alternative is kept)
+    o, d; n_r0, n_r0_bound, n_r3, n_r1, n_r2, n_kept, n_capped int64;
+    n_classes int8; best_T, best_gtt, car_min float32; pt bool (a service
+    alternative is kept). n_r0_bound = three-link R0 candidates counted
+    without evaluating their existence because the bound cut them, so that
+    n_r0 - n_r0_bound <= exact R0 count <= n_r0 (0 at MU = inf)
 ps-seq-counts           per origin and mode sequence, summed over destinations
-    o int16, seq str, n_r0, n_r3, n_kept int64
+    o int16, seq str, n_r0, n_r0_bound, n_r3, n_kept int64
 ps-unserved             pairs without a service alternative
     o, d int16; reason str ('no_service_path' | 'nothing')
 ps-trace                named pairs only: every R0 candidate with its fate
@@ -189,9 +196,9 @@ PATH = ["o", "d", "seq", "n", "h_first", "h_last", "l1", "l2", "l3", "cities",
 ALTERNATIVES = PATH + ["rank", "cls", "freq_pooled", "n_variants", "status"]
 VARIANTS = ["o", "d", "rank", "member"] + PATH[2:]
 BEST_BY_SEQUENCE = PATH
-FUNNEL = ["o", "d", "n_r0", "n_r3", "n_r1", "n_r2", "n_kept", "n_capped",
-          "n_classes", "best_T", "best_gtt", "car_min", "pt"]
-SEQ_COUNTS = ["o", "seq", "n_r0", "n_r3", "n_kept"]
+FUNNEL = ["o", "d", "n_r0", "n_r0_bound", "n_r3", "n_r1", "n_r2", "n_kept",
+          "n_capped", "n_classes", "best_T", "best_gtt", "car_min", "pt"]
+SEQ_COUNTS = ["o", "seq", "n_r0", "n_r0_bound", "n_r3", "n_kept"]
 UNSERVED = ["o", "d", "reason"]
 TRACE = PATH + ["cand", "cls", "alt", "status", "rule", "by", "detail"]
 

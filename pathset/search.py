@@ -15,9 +15,18 @@ City    of a station hub: its ps-hubs.fua. Of an airport: the fua of its
         "Hub"). c_first, c_last: the cities of the first and the last hub; the
         cities of transfer k: {city(alight hub of k), city(board hub of k+1)}.
 R0      every clause holds: o != d; c_first != c_last; c_first != d;
-        c_last != o; the hubs of the path pairwise distinct; no city of a
-        transfer is o, d, c_first or c_last; the cities of transfers 1 and 2
-        are disjoint; the mode sequence is a word of MODE_WORDS
+        c_last != o; the stops of the path (first hub, each transfer with
+        its one or two hubs, last hub) lie at pairwise distinct places, a
+        place being a hub or a set of co-located hubs (``hub_places``: an
+        airport and the station inside it); no city of a transfer is o, d,
+        c_first or c_last; the cities of transfers 1 and 2 are disjoint; no
+        link passes on board (``passed_cities``: a city that the runs making
+        at least PASSED_SHARE of the link's dated departures call at between
+        its two hubs) o, d or the city of a hub of the path (plan, "Method in
+        brief": no city revisited; a link joins any two stops of a run, so a
+        rider can ride back through the origin, e.g. Helsinki -> Turku by
+        train, then the Turku -> Tallinn coach that calls at Helsinki); the
+        mode sequence is a word of MODE_WORDS
         (``word_allowed``); the chain exists (one link: always, ps-links holds
         only links active on >= MIN_ACTIVE_DATES dates; two links: the
         ps-transfers row has n_days >= MIN_ACTIVE_DATES on basis 'D' or >= 1
@@ -25,7 +34,8 @@ R0      every clause holds: o != d; c_first != c_last; c_first != d;
         the same test, on typical days when a transfer joins air and ground);
         T <= T_MAX_MIN. Plan step 3, "Generation". Distinct hubs follow from
         the city clauses (a hub repeated in two places of a path repeats a
-        city those clauses keep apart); the search checks them anyway.
+        city those clauses keep apart); the search checks them anyway, as
+        places.
 Values  rides from ps-links; transfer minutes ft (f_trans) and the counted
         chain frequency from ps-links.freq (one link), the ps-transfers row
         (two) or triple_stats (three). freq = cost.k_capped_frequency of the
@@ -79,8 +89,19 @@ evaluated, so its existence and its T are unknown. It counts as an R0
 candidate of every destination for which it passes the other clauses and the
 lower bound of its T is at most T_MAX_MIN. n_r0 is therefore an upper bound
 of the true count; the trace of a named pair (MU = inf) is exact, and so is
-n_r0 of a run at MU = inf. The search log (funnel attrs["search"], counter
-r0_by_bounds) holds how many of a shard's n_r0 were counted by bounds.
+n_r0 of a run at MU = inf. The candidates counted that way are n_r0_bound of
+ps-funnel (per d) and of ps-seq-counts (per word), so that n_r0 - n_r0_bound
+<= exact count <= n_r0 per (d, word); n_r0_bound is 0 at MU = inf. The bound
+can be loose (up to 2.7 times the exact count on Amsterdam's pairs). For the
+named pairs of a run with traces (``run_origin``, ``named_dests``) n_r0 is
+taken from the trace run at MU = inf, so it is exact there and n_r0_bound is
+0. Counts of stage C must therefore use the interval [n_r0 - n_r0_bound,
+n_r0], or come from origins run at MU = inf. The search
+log (funnel attrs["search"], counter r0_by_bounds) holds the shard's total
+of the bounded pass 2 (before the named pairs are replaced).
+The log also holds the peak memory of the process (``peak_mb``, after the
+shard) and its resident memory when the shard started (``rss_start_mb``,
+mostly the network).
 
 The car (INCLUDE_CAR) is one more candidate of every pair with a ps-car row:
 seq 'C', n 0, T = minutes, gtt = gtc = BETA_IVT['C'] x minutes, hwt 0, freq
@@ -190,8 +211,8 @@ TYPES = {"o": "int16", "d": "int16", "seq": "str", "n": "int8",
          "n_days": "int32", **{c: "float32" for c in FLOATS},
          "rank": "int16", "member": "int16", "cls": "str",
          "freq_pooled": "float32", "n_variants": "int32", "status": "str",
-         **{c: "int64" for c in ("n_r0", "n_r3", "n_r1", "n_r2", "n_kept",
-                                 "n_capped", "cand", "alt", "by")},
+         **{c: "int64" for c in ("n_r0", "n_r0_bound", "n_r3", "n_r1", "n_r2",
+                                 "n_kept", "n_capped", "cand", "alt", "by")},
          "n_classes": "int8", "best_T": "float32", "best_gtt": "float32",
          "car_min": "float32", "pt": "bool", "reason": "str", "rule": "str",
          "detail": "str"}
@@ -291,6 +312,10 @@ class Arrays(NamedTuple):
     e_dest: np.ndarray    # int32 destination as position in Net.fuas
     e_min: np.ndarray     # float32 egr_min
     fua: np.ndarray       # int64 (ND) = Net.fuas
+    p_ptr: np.ndarray     # int64 (L + 1) cities passed on board by link l:
+    p_city: np.ndarray    # int64   p_city[p_ptr[l]:p_ptr[l + 1]] (``passed_cities``
+                          #         at PASSED_SHARE)
+    place: np.ndarray     # int64 (H) place of every hub (``hub_places``)
 
 
 class Net(NamedTuple):
@@ -339,6 +364,37 @@ def hub_cities(hubs: pd.DataFrame, connectors: pd.DataFrame) -> np.ndarray:
     return city
 
 
+COLOCATED = "colocated"     # ps-moves kind of an airport and its own station
+
+
+def hub_places(n_hubs: int, moves: pd.DataFrame | None) -> np.ndarray:
+    """Place of every hub: hubs joined by a ps-moves row of kind 'colocated'
+    (an airport and the station inside it, a 0-minute move) are one place,
+    labelled by its lowest hub; every other hub is a place of its own.
+    Without ``moves`` every hub is its own place.
+
+    R0 keeps the stops of a path at distinct places (module docstring): a
+    path that lands at an airport and later boards at the station inside it
+    returns to where it was, although the two hubs differ and, because an
+    airport's city is the FUA with its shortest access, may lie in different
+    cities (Brussels airport is in the city of Leuven, its station in
+    Brussels)."""
+    place = np.arange(n_hubs, dtype=np.int64)
+    if moves is None or not len(moves):
+        return place
+    co = moves[moves["kind"].astype(str).to_numpy() == COLOCATED]
+    a = co["hub_a"].to_numpy(np.int64)
+    b = co["hub_b"].to_numpy(np.int64)
+    changed = True
+    while changed:                      # labels shrink to the lowest hub of a component
+        low = np.minimum(place[a], place[b])
+        changed = bool((place[a] != low).any() or (place[b] != low).any())
+        np.minimum.at(place, a, low)
+        np.minimum.at(place, b, low)
+        place = place[place]
+    return place
+
+
 def _csr(keys: np.ndarray, size: int) -> np.ndarray:
     """Pointer array of rows sorted by ``keys`` in 0..size-1."""
     ptr = np.zeros(size + 1, dtype=np.int64)
@@ -346,16 +402,140 @@ def _csr(keys: np.ndarray, size: int) -> np.ndarray:
     return ptr
 
 
+@njit
+def _srch_earlier_legs(trip, src, dep, ride, order):
+    """Pairs (i, j) of event rows of one run: same trip key, same board hub
+    and departure minute, ride[j] < ride[i], so that the vehicle of i calls
+    at the alight hub of j before its own. ``order`` sorts the rows by (trip,
+    src, dep, ride). Two sweeps: count, then fill."""
+    n = order.shape[0]
+    out_i = np.empty(0, np.int64)
+    out_j = np.empty(0, np.int64)
+    for sweep in range(2):
+        k = 0
+        s = 0
+        while s < n:
+            a = order[s]
+            e = s + 1
+            while (e < n and trip[order[e]] == trip[a] and src[order[e]] == src[a]
+                   and dep[order[e]] == dep[a]):
+                e += 1
+            for p in range(s + 1, e):
+                for q in range(s, p):
+                    if ride[order[q]] < ride[order[p]]:
+                        if sweep == 1:
+                            out_i[k] = order[p]
+                            out_j[k] = order[q]
+                        k += 1
+            s = e
+        if sweep == 0:
+            out_i = np.empty(k, np.int64)
+            out_j = np.empty(k, np.int64)
+    return out_i, out_j
+
+
+def passed_share(params: dict) -> float:
+    """PASSED_SHARE of the parameters, in [0, 1]: the share of a link's dated
+    departures whose runs must pass a city for the link to count as passing
+    it (``passed_cities``). 1 means every run (the R0 clause of the first
+    search); 0 means any run. Without the key the value is 1, so that callers
+    whose parameter file predates the key get the old clause unchanged.
+    The verification of 13 Nov proposed 0.5 (a placeholder until set in
+    pathset-params.yml)."""
+    share = float(params.get("PASSED_SHARE", 1.0))
+    if not 0.0 <= share <= 1.0:
+        raise ValueError("PASSED_SHARE must lie in [0, 1]")
+    return share
+
+
+def event_dates(masks: np.ndarray) -> np.ndarray:
+    """Number of dates of every event: set bits of its row of ps-event-masks
+    (the ps-events.n_dates of the contract), int64. Counted in blocks of
+    rows to bound the memory."""
+    masks = np.asarray(masks)
+    out = np.empty(len(masks), dtype=np.int64)
+    step = 1 << 18
+    for s in range(0, len(masks), step):
+        out[s:s + step] = np.bitwise_count(masks[s:s + step]).sum(axis=1, dtype=np.int64)
+    return out
+
+
+def passed_cities(src: np.ndarray, trg: np.ndarray, ev0: np.ndarray,
+                  ev1: np.ndarray, dep: np.ndarray, ride: np.ndarray,
+                  trip: np.ndarray, city: np.ndarray, dates: np.ndarray,
+                  share: float):
+    """Cities a link passes on board, other than the cities of its own hubs:
+    (ptr (L + 1), cities), link l's in cities[ptr[l]:ptr[l + 1]], ascending.
+
+    A service link joins any two hubs one vehicle serves (ps-links pools the
+    legs of all stop pairs), so a rider passes the stops in between. A run's
+    stops between src and trg are the alight hubs of its other legs from the
+    same board hub at the same departure minute (same trip key) with a
+    shorter ride. Plan, "Method in brief": no city is revisited, including
+    on board (R0 in the module docstring).
+
+    Link l passes city c when the runs (events) of l that call at c carry at
+    least ``share`` of l's dated departures, a run weighing its number of
+    dates (``dates``, ps-events.n_dates), and at least one does: share 1 is
+    every run, share 0 any run. Weighing by dates follows the plan's
+    frequency over active dates: a run on 1 date and one on 200 dates differ
+    (Geneve -> Chambery passes Annecy on 8 of 17 runs, on 98% of the dated
+    departures). A link is not split by stop pattern, so its runs that do not
+    pass c are lost to chains that the clause rejects, and the runs that
+    pass c stay in chains it keeps. With share 1, 67 of 6,335 kept
+    alternatives of origins 7 and 133 rode through o, d or a city of their
+    own path, on a median 57% of the link's runs (verification of 13 Nov).
+    Stops that have no leg of their own in ps-links (sparse or dropped legs)
+    are not seen.
+    """
+    if not 0.0 <= share <= 1.0:
+        raise ValueError("share must lie in [0, 1]")
+    src = np.asarray(src, dtype=np.int64)
+    trg = np.asarray(trg, dtype=np.int64)
+    n_links = len(src)
+    n_ev = (np.asarray(ev1, dtype=np.int64) - np.asarray(ev0, dtype=np.int64))
+    link = np.repeat(np.arange(n_links, dtype=np.int64), n_ev)
+    dates = np.asarray(dates, dtype=np.int64)
+    if len(link) != len(dep) or len(dates) != len(dep):
+        raise ValueError("events must be the rows ps-links.ev0, ev1 point into, in order")
+    e_src, e_trg = src[link], trg[link]
+    trip = np.asarray(trip, dtype=np.int64)
+    dep = np.asarray(dep, dtype=np.int64)
+    ride = np.asarray(ride, dtype=np.int64)
+    order = np.lexsort((ride, dep, e_src, trip))
+    i, j = _srch_earlier_legs(trip, e_src, dep, ride, order)
+    c = city[e_trg[j]]
+    own = (c == city[e_src[i]]) | (c == city[e_trg[i]])
+    i, c = i[~own], c[~own]
+    lo = int(city.min())
+    base = int(city.max()) - lo + 1
+    ec = np.unique(i * base + (c - lo))                  # distinct (event, city)
+    ev_of = ec // base
+    lc = link[ev_of] * base + ec % base                  # (link, city) per event
+    key, inv = np.unique(lc, return_inverse=True)
+    passing = np.bincount(inv, weights=dates[ev_of], minlength=len(key))
+    total = np.bincount(link, weights=dates, minlength=n_links)
+    l_of = key // base
+    keep = (passing > 0) & (passing >= share * total[l_of])
+    l_of, c_of = l_of[keep], key[keep] % base + lo
+    return _csr(l_of, n_links), c_of.astype(np.int64)
+
+
 def build_network(hubs: pd.DataFrame, links: pd.DataFrame, events: pd.DataFrame,
                   masks: np.ndarray, transfers: pd.DataFrame,
                   connectors: pd.DataFrame, car: pd.DataFrame,
-                  params: dict | None = None) -> Net:
+                  params: dict | None = None,
+                  moves: pd.DataFrame | None = None) -> Net:
     """The network of the search from the tables of the contract.
 
     Pure: reads only its arguments. Rows of hubs, links, transfers,
     connectors and car may come in any order (they are sorted here); events
     and masks must be the ps-events / ps-event-masks pair that ps-links.ev0,
-    ev1 point into. Of the parameters, WINDOWS is read here (it belongs to the
+    ev1 point into; ``moves`` (ps-moves: hub_a, hub_b, kind) gives the
+    co-located hubs (``hub_places``; None: none). The cities each link passes
+    on board come from the events, each weighing its dates in ``masks``
+    (``passed_cities`` at ``passed_share``). Of the parameters,
+    PASSED_SHARE and WINDOWS are read here (WINDOWS belongs to the
     network: ps-transfers was counted with it); TYPICAL_SHARE must equal the
     value of ``pathset.io.P``, which ``transfer.build_typical`` reads.
     """
@@ -404,6 +584,10 @@ def build_network(hubs: pd.DataFrame, links: pd.DataFrame, events: pd.DataFrame,
     car_m = np.full((len(fuas), len(fuas)), np.nan, dtype=np.float32)
     car_m[np.searchsorted(fuas, car["o"].to_numpy()),
           np.searchsorted(fuas, car["d"].to_numpy())] = car["minutes"].to_numpy(np.float32)
+    p_ptr, p_city = passed_cities(
+        src, links["trg"].to_numpy(), links["ev0"].to_numpy(), links["ev1"].to_numpy(),
+        events["dep"].to_numpy(), events["ride"].to_numpy(), events["trip"].to_numpy(),
+        city, event_dates(masks), passed_share(params))
 
     arrays = Arrays(
         city=city, tok=tok.astype(np.int64),
@@ -423,7 +607,7 @@ def build_network(hubs: pd.DataFrame, links: pd.DataFrame, events: pd.DataFrame,
         e_ptr=_csr(eg["hub"].to_numpy(np.int64), n_hubs),
         e_dest=np.searchsorted(fuas, eg["fua"].to_numpy()).astype(np.int32),
         e_min=eg["egr_min"].to_numpy(np.float32),
-        fua=fuas)
+        fua=fuas, p_ptr=p_ptr, p_city=p_city, place=hub_places(n_hubs, moves))
 
     # instances of the links for triple_stats
     ev = (events["dep"].to_numpy(), events["ride"].to_numpy(),
@@ -441,7 +625,8 @@ def build_network(hubs: pd.DataFrame, links: pd.DataFrame, events: pd.DataFrame,
         win_lo=win_lo, win_hi=win_hi)
 
 
-INPUTS = ("ps-hubs", "ps-links", "ps-events", "ps-transfers", "ps-connectors", "ps-car")
+INPUTS = ("ps-hubs", "ps-links", "ps-events", "ps-transfers", "ps-connectors", "ps-car",
+          "ps-moves")
 
 
 def load_network(params: dict | None = None) -> Net:
@@ -457,7 +642,8 @@ def load_network(params: dict | None = None) -> Net:
                                      "n_days", "freq", "ft_mean"]),
         io.load_out("ps-connectors", ["fua", "hub", "acc_min", "egr_min"]),
         io.load_out("ps-car", ["o", "d", "minutes"]),
-        params)
+        params,
+        io.load_out("ps-moves", ["hub_a", "hub_b", "kind"]))
 
 
 # --- Compiled search -----------------------------------------------------------
@@ -483,6 +669,7 @@ class State(NamedTuple):
     mg_gtt: np.ndarray    # float64 (ND, N_CLASSES) R3 margin of gtt
     mg_gtc: np.ndarray    # float64 (ND, N_CLASSES)
     n_r0: np.ndarray      # int64 (ND, N_WORDS)
+    n_r0b: np.ndarray     # int64 (ND, N_WORDS) the part of n_r0 counted by bounds
     n_r3: np.ndarray      # int64 (ND, N_WORDS)
     buf: List             # chunks int32 (CHUNK, ID_COLS): kept identities
     tvs: List             # chunks float64 (CHUNK, TV_COLS): their triple values
@@ -502,6 +689,36 @@ def _srch_exists(basis, n_days, min_active):
     if basis == BASIS_D:
         return n_days >= min_active
     return n_days >= 1
+
+
+@njit
+def _srch_passes(a, l, c):
+    """Link l passes city c on board (``passed_cities``: runs carrying at
+    least PASSED_SHARE of its dated departures call at c)."""
+    for i in range(a.p_ptr[l], a.p_ptr[l + 1]):
+        if a.p_city[i] == c:
+            return True
+    return False
+
+
+@njit
+def _srch_passes_any(a, l, c1, c2, c3, c4, c5):
+    """Link l passes one of the cities c1 .. c5 on board."""
+    for i in range(a.p_ptr[l], a.p_ptr[l + 1]):
+        x = a.p_city[i]
+        if x == c1 or x == c2 or x == c3 or x == c4 or x == c5:
+            return True
+    return False
+
+
+@njit
+def _srch_chain_passes(a, n, l1, l2, l3, c):
+    """One of the n links of the chain passes city c on board."""
+    if _srch_passes(a, l1, c):
+        return True
+    if n >= 2 and _srch_passes(a, l2, c):
+        return True
+    return n >= 3 and _srch_passes(a, l3, c)
 
 
 @njit
@@ -656,7 +873,8 @@ def _srch_ends(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, o_fua,
             if not want[d]:
                 continue
             df = a.fua[d]
-            if df == cf or df == t1a or df == t1b or df == t2a or df == t2b:
+            if (df == cf or df == t1a or df == t1b or df == t2a or df == t2b
+                    or _srch_chain_passes(a, 3, l1, l2, l3, df)):
                 continue
             low = C.k_bounds(3, acc, m1, m2, m3, r1, r2, r3, g1, g2,
                              np.float64(a.e_min[e]), f1, f2, f3, par)
@@ -671,12 +889,14 @@ def _srch_ends(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, o_fua,
                     if not want[d]:
                         continue
                     df = a.fua[d]
-                    if df == cf or df == t1a or df == t1b or df == t2a or df == t2b:
+                    if (df == cf or df == t1a or df == t1b or df == t2a or df == t2b
+                            or _srch_chain_passes(a, 3, l1, l2, l3, df)):
                         continue
                     low = C.k_bounds(3, acc, m1, m2, m3, r1, r2, r3, g1, g2,
                                      np.float64(a.e_min[e]), f1, f2, f3, par)
                     if low[0] <= t_max:
                         st.n_r0[d, w] += 1
+                        st.n_r0b[d, w] += 1
                         st.stats[ST_R0B] += 1
             return
         v = _srch_triple(a, inst, typ, cal, trip, work, cache, fx, st,
@@ -693,7 +913,8 @@ def _srch_ends(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, o_fua,
         if not want[d]:
             continue
         df = a.fua[d]
-        if df == cf or df == t1a or df == t1b or df == t2a or df == t2b:
+        if (df == cf or df == t1a or df == t1b or df == t2a or df == t2b
+                or _srch_chain_passes(a, n, l1, l2, l3, df)):
             continue
         T, gtt, hwt, gtc = C.k_costs(n, acc, m1, m2, m3, r1, r2, r3, ft1, ft2,
                                      np.float64(a.e_min[e]), freq, par)
@@ -706,11 +927,15 @@ def _srch_walk(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, serves,
                o_fua, h0s, accs):
     """Every chain of the origin: first link from an access hub, then rows of
     ps-transfers. Prefix clauses of R0 are tested as soon as their hubs are
-    known: hubs pairwise distinct; the cities of a transfer are neither o nor
+    known: stops at pairwise distinct places (``Arrays.place``; the two hubs
+    of one transfer may share one); the cities of a transfer are neither o nor
     c_first; the cities of transfer 2 are not those of transfer 1; some
-    allowed word begins with the modes so far. ``serves[h]``: hub h has an
-    egress row to a wanted destination."""
+    allowed word begins with the modes so far; no link passes on board o or
+    a city of another hub of the chain (``passed_cities``; d is tested in
+    ``_srch_ends``). ``serves[h]``: hub h has an egress row to a wanted
+    destination."""
     max_tr = np.int64(fx.prm[P_MAXTR])
+    pl = a.place
     for k in range(h0s.shape[0]):
         h0 = h0s[k]
         acc = accs[k]
@@ -719,7 +944,7 @@ def _srch_walk(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, serves,
             l1 = np.int64(a.out_link[p])
             h1 = a.trg[l1]
             m1 = np.int64(a.mode[l1])
-            if h1 == h0 or not fx.prefix[m1]:
+            if pl[h1] == pl[h0] or not fx.prefix[m1] or _srch_passes(a, l1, o_fua):
                 continue
             st.stats[ST_CH1] += 1
             if fx.allowed[m1] and serves[h1]:
@@ -733,12 +958,16 @@ def _srch_walk(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, serves,
                 l2 = np.int64(a.t_out[q1])
                 h1b = a.src[l2]
                 h2 = a.trg[l2]
-                if h1b == h0 or h2 == h0 or h2 == h1 or h2 == h1b:
+                if (pl[h1b] == pl[h0] or pl[h2] == pl[h0] or pl[h2] == pl[h1]
+                        or pl[h2] == pl[h1b]):
                     continue
                 c1b = a.city[h1b]
+                c2 = a.city[h2]
                 m2 = np.int64(a.mode[l2])
                 w2 = 3 + 3 * m1 + m2
-                if c1b == o_fua or c1b == cf or not fx.prefix[w2]:
+                if (c1b == o_fua or c1b == cf or not fx.prefix[w2]
+                        or _srch_passes_any(a, l1, c1b, c2, NO_CITY, NO_CITY, NO_CITY)
+                        or _srch_passes_any(a, l2, o_fua, cf, c1, NO_CITY, NO_CITY)):
                     continue
                 st.stats[ST_CH2] += 1
                 if (fx.allowed[w2] and serves[h2]
@@ -746,21 +975,25 @@ def _srch_walk(mode, a, inst, typ, cal, trip, work, cache, st, fx, want, serves,
                     _srch_ends(mode, a, inst, typ, cal, trip, work, cache, st, fx,
                                want, o_fua, 2, acc, cf, c1, c1b, NO_CITY, NO_CITY,
                                h2, l1, l2, -1, q1, -1, m1, m2, 0, w2)
-                c2 = a.city[h2]
                 if max_tr < 2 or c2 == o_fua or c2 == cf or c2 == c1 or c2 == c1b:
                     continue
                 for q2 in range(a.t_ptr[l2], a.t_ptr[l2 + 1]):
                     l3 = np.int64(a.t_out[q2])
                     h2b = a.src[l3]
                     h3 = a.trg[l3]
-                    if (h2b == h0 or h2b == h1 or h2b == h1b or h3 == h0 or h3 == h1
-                            or h3 == h1b or h3 == h2 or h3 == h2b or not serves[h3]):
+                    if (pl[h2b] == pl[h0] or pl[h2b] == pl[h1] or pl[h2b] == pl[h1b]
+                            or pl[h3] == pl[h0] or pl[h3] == pl[h1] or pl[h3] == pl[h1b]
+                            or pl[h3] == pl[h2] or pl[h3] == pl[h2b] or not serves[h3]):
                         continue
                     c2b = a.city[h2b]
+                    c3 = a.city[h3]
                     m3 = np.int64(a.mode[l3])
                     w3 = 12 + 9 * m1 + 3 * m2 + m3
                     if (c2b == o_fua or c2b == cf or c2b == c1 or c2b == c1b
-                            or not fx.allowed[w3]):
+                            or not fx.allowed[w3]
+                            or _srch_passes_any(a, l1, c2b, c3, NO_CITY, NO_CITY, NO_CITY)
+                            or _srch_passes_any(a, l2, c2b, c3, NO_CITY, NO_CITY, NO_CITY)
+                            or _srch_passes_any(a, l3, o_fua, cf, c1, c1b, c2)):
                         continue
                     st.stats[ST_CH3] += 1
                     _srch_ends(mode, a, inst, typ, cal, trip, work, cache, st, fx,
@@ -957,6 +1190,7 @@ class Shard:
             mg_gtt=np.full((nd, N_CLASSES), np.inf),
             mg_gtc=np.full((nd, N_CLASSES), np.inf),
             n_r0=np.zeros((nd, N_WORDS), dtype=np.int64),
+            n_r0b=np.zeros((nd, N_WORDS), dtype=np.int64),
             n_r3=np.zeros((nd, N_WORDS), dtype=np.int64),
             buf=_chunks(np.int32, ID_COLS), tvs=_chunks(np.float64, TV_COLS),
             stats=np.zeros(N_STATS, dtype=np.int64))
@@ -1014,9 +1248,11 @@ class Shard:
             st.mg_gtc[...] = (1 + mu) * st.min_gtc
 
     def collect(self, want: np.ndarray) -> None:
-        """Pass 2: R0 candidates and those R3 keeps, per (d, word), and the
-        buffer of the kept ones (identities and triple values)."""
+        """Pass 2: R0 candidates (with the part counted by bounds) and those
+        R3 keeps, per (d, word), and the buffer of the kept ones (identities
+        and triple values)."""
         self.st.n_r0[...] = 0
+        self.st.n_r0b[...] = 0
         self.st.n_r3[...] = 0
         self.free_buffer()
         self._walk(COLLECT, want, "pass2")
@@ -1194,6 +1430,36 @@ def _nan_inf(x: np.ndarray) -> np.ndarray:
     return np.where(np.isfinite(x), x, np.nan)
 
 
+def _memory_info():
+    """psutil's memory_info of this process, or None without psutil."""
+    try:
+        import psutil
+    except ImportError:
+        return None
+    return psutil.Process().memory_info()
+
+
+def rss_mb() -> float:
+    """Resident memory (working set) of this process in MB; NaN when it
+    cannot be read."""
+    mi = _memory_info()
+    return round(mi.rss / 2 ** 20, 1) if mi is not None else math.nan
+
+
+def peak_mb() -> float:
+    """Peak resident memory of this process so far, in MB: the peak working
+    set on Windows, ru_maxrss elsewhere; NaN when it cannot be read. In a
+    worker of ``run_pool`` it covers the network and every shard run so far."""
+    mi = _memory_info()
+    if mi is not None and hasattr(mi, "peak_wset"):
+        return round(mi.peak_wset / 2 ** 20, 1)
+    try:
+        import resource
+    except ImportError:
+        return math.nan
+    return round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
+
+
 # --- Public API ----------------------------------------------------------------
 def candidates(net: Net, o: int, dests, params: dict | None = None,
                mu: float = math.inf) -> pd.DataFrame:
@@ -1242,7 +1508,9 @@ def run_origin(net: Net, o: int, params: dict | None = None,
     holds the counters and seconds of the passes.
 
     Funnel (car included): n_r0 R0 candidates (module docstring, "Counting
-    convention"), n_r3 kept by R3, n_r1 alternatives entering R2, n_r2 after
+    convention"; for d in ``named_dests`` the exact count of the trace run),
+    n_r0_bound the part of n_r0 counted by bounds (the car never is; 0 for
+    d in ``named_dests``), n_r3 kept by R3, n_r1 alternatives entering R2, n_r2 after
     R2 and the comparison across classes, n_capped dropped by R5, n_kept
     alternatives, n_classes their mode classes, best_T and best_gtt the least
     T and gtt of the R0 service candidates, car_min the car minutes (NaN
@@ -1251,6 +1519,7 @@ def run_origin(net: Net, o: int, params: dict | None = None,
     params = io.P if params is None else params
     rules.check_params(params)
     started = time.perf_counter()
+    rss_start = rss_mb()
     sh = Shard(net, o, params)
     st, fuas = sh.st, net.fuas
     want = sh.want()
@@ -1258,7 +1527,7 @@ def run_origin(net: Net, o: int, params: dict | None = None,
     sh.margins(float(params["MU"]))
     sh.collect(want)
     sh.release_cache()
-    n_r0, n_r3 = st.n_r0.copy(), st.n_r3.copy()
+    n_r0, n_r0b, n_r3 = st.n_r0.copy(), st.n_r0b.copy(), st.n_r3.copy()
     kept = n_r3.sum(axis=1)
     car_min = np.where(want, net.car[sh.oi], np.nan) if params["INCLUDE_CAR"] \
         else np.full(len(fuas), np.nan)
@@ -1298,12 +1567,29 @@ def run_origin(net: Net, o: int, params: dict | None = None,
     best = _concat([sh.rows(best_ids, st.best_tv[d_pos, w]), sh.car_rows(want)], "best")
     best = best.sort_values(["d", "seq"], kind="stable").reset_index(drop=True)
 
+    # trace of the named pairs: every R0 candidate (MU = inf) with its fate;
+    # this run's counts replace the bounded n_r0 of those pairs (exact)
+    traces = []
+    named = sh.want([d for d in named_dests if int(d) != sh.o])
+    if named.any():
+        sh.tag = "trace_"
+        full = sh.candidates(named, math.inf)
+        if sh.st.n_r0b[named].any():
+            raise RuntimeError(f"origin {o}: R0 candidates counted by bounds at MU = inf")
+        n_r0[named] = sh.st.n_r0[named]
+        n_r0b[named] = 0
+        for _, grp in full.groupby("d", sort=True):
+            c, _, tr = decide(grp, params)
+            traces.append(trace_table(c, tr))
+    trace = _concat(traces, "trace")
+
     # funnel and counts per sequence
     dd = np.flatnonzero(want)
     stats = np.array([counts.get(int(fuas[d]), (0, 0, 0, 0, 0, False)) for d in dd],
                      dtype=object).reshape(len(dd), 6)
     funnel = as_table(pd.DataFrame({
         "o": sh.o, "d": fuas[dd], "n_r0": n_r0[dd].sum(axis=1) + has_car[dd],
+        "n_r0_bound": n_r0b[dd].sum(axis=1),
         "n_r3": kept[dd] + has_car[dd], "n_r1": stats[:, 0].astype(np.int64),
         "n_r2": stats[:, 1].astype(np.int64), "n_kept": stats[:, 2].astype(np.int64),
         "n_capped": stats[:, 3].astype(np.int64), "n_classes": stats[:, 4].astype(np.int64),
@@ -1311,30 +1597,20 @@ def run_origin(net: Net, o: int, params: dict | None = None,
         "car_min": car_min[dd], "pt": stats[:, 5].astype(bool)}), "funnel")
     n_kept = alternatives.groupby("seq").size()
     words = [w for w, ok in zip(WORDS, sh.fx.allowed) if ok]
-    rows = [(w, int(n_r0[want, WORD_OF[w]].sum()), int(n_r3[want, WORD_OF[w]].sum()))
-            for w in words]
+    rows = [(w, int(n_r0[want, WORD_OF[w]].sum()), int(n_r0b[want, WORD_OF[w]].sum()),
+             int(n_r3[want, WORD_OF[w]].sum())) for w in words]
     if params["INCLUDE_CAR"]:
-        rows.append(("C", int(has_car.sum()), int(has_car.sum())))
+        rows.append(("C", int(has_car.sum()), 0, int(has_car.sum())))
     seq_counts = as_table(pd.DataFrame({
         "o": sh.o, "seq": [r[0] for r in rows], "n_r0": [r[1] for r in rows],
-        "n_r3": [r[2] for r in rows],
+        "n_r0_bound": [r[2] for r in rows], "n_r3": [r[3] for r in rows],
         "n_kept": [int(n_kept.get(r[0], 0)) for r in rows]}), "seq_counts")
-
-    # trace of the named pairs: every R0 candidate (MU = inf) with its fate
-    traces = []
-    named = sh.want([d for d in named_dests if int(d) != sh.o])
-    if named.any():
-        sh.tag = "trace_"
-        full = sh.candidates(named, math.inf)
-        for _, grp in full.groupby("d", sort=True):
-            c, _, tr = decide(grp, params)
-            traces.append(trace_table(c, tr))
-    trace = _concat(traces, "trace")
 
     funnel.attrs["search"] = {
         "origin": sh.o, "blocks": len(blocks), "buffer_mb": buffer_mb,
         "rules_s": round(rules_s, 3),
-        "total_s": round(time.perf_counter() - started, 3), **sh.log}
+        "total_s": round(time.perf_counter() - started, 3),
+        "rss_start_mb": rss_start, "peak_mb": peak_mb(), **sh.log}
     return {"alternatives": alternatives, "variants": _concat(variants, "variants"),
             "best": best, "funnel": funnel, "seq_counts": seq_counts, "trace": trace}
 

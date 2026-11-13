@@ -9,7 +9,13 @@ R3  margin, applied first: a candidate is cut only if it is outside the margin
 R1  identity: candidates of one mode sequence whose clock time T lies within
     the band of a leader are one alternative; the rest are its variants.
 R2  keep: banded dominance on (transfers, time[, money]) within a mode class,
-    with a frequency gate; the kept set is the stable set.
+    with a frequency gate; the kept set is the stable set. The gate compares
+    the remover's path frequency with RHO_F x the removed alternative's path
+    frequency (R2_GATE = "path") or with RHO_F x the pooled frequency of the
+    removed group (R2_GATE = "pooled", the plan's wording). On the named pairs
+    of stage B the pooled form blocked nearly every removal, because a group
+    of many variants with distinct first links pools far more departures than
+    any of its paths runs, so the cap R5 chose the set.
 R4  no mode class loses its last alternative to the comparison across classes
     (guarantee) or to the cap.
 R5  cap on the number of alternatives, by gtc.
@@ -46,8 +52,9 @@ ALTERNATIVES = ["alt", "seq", "cls", "n", "T", "gtt", "gtc", "freq",
 TRACE = ["cand", "seq", "cls", "alt", "status", "rule", "by", "detail"]
 
 BANDS = ("EPS_T_ABS", "EPS_T_REL", "EPS_M")       # the only bands allowed
-R1_KEYS = ("sequence", "class")
+R1_KEYS = ("sequence", "class", "pattern")
 R2_TIMES = {"clock": "T", "weighted": "gtt"}      # compared time of R2
+R2_GATES = ("path", "pooled")                     # frequency of q in the gate
 ORDERS = ("r3_first", "october")
 KEPT = ("kept", "kept_guarantee")
 
@@ -77,6 +84,8 @@ def check_params(params: dict) -> None:
         raise ValueError(f"R1_KEY must be one of {R1_KEYS}")
     if params["R2_TIME"] not in R2_TIMES:
         raise ValueError(f"R2_TIME must be one of {tuple(R2_TIMES)}")
+    if params["R2_GATE"] not in R2_GATES:
+        raise ValueError(f"R2_GATE must be one of {R2_GATES}")
     if not 0 <= params["RHO_F"] <= 1:
         raise ValueError("RHO_F must lie in [0, 1]")
     if min(params["EPS_T_ABS"], params["EPS_T_REL"], params["EPS_M"] or 0,
@@ -181,8 +190,12 @@ def r1_merge(c: dict, rows: np.ndarray, eps: np.ndarray, params: dict):
     The key is the mode sequence; with R1_KEY = "class" it is the mode class
     together with the transfer count, so that "RB" and "BR" merge while a
     direct path never merges with a one-transfer path (the count carries no
-    band). When the money band is on, a candidate joins a leader only if
-    their money also lies within EPS_M where both are known (October R1).
+    band). With R1_KEY = "pattern" it is the mode sequence together with the
+    route pattern (``cities``), so that near-ties through different transfer
+    cities stay apart as in the thesis example (Cats 2011 pp. 232-233; plan,
+    "Open with Oded and Rajat": corridor merge off). When the money band is
+    on, a candidate joins a leader only if their money also lies within
+    EPS_M where both are known (October R1).
 
     The representative of a group is its fastest member whose freq is at
     least RHO_F x the group's largest freq (ties: lower gtt, then key), so a
@@ -195,6 +208,10 @@ def r1_merge(c: dict, rows: np.ndarray, eps: np.ndarray, params: dict):
     """
     if params["R1_KEY"] == "sequence":
         grp = c["seq_code"]
+    elif params["R1_KEY"] == "pattern":
+        grp = pd.factorize(pd.Series(c["seq"], dtype=object) + "|"
+                           + pd.Series(c["cities"], dtype=object).astype(str),
+                           sort=True)[0].astype(np.int64)
     else:
         grp = c["code"] * (int(c["n"].max()) + 1) + c["n"]
     sweep = rows[np.lexsort((c["cand"][rows], c["key_rank"][rows],
@@ -233,14 +250,19 @@ def pooled_freq(alt: np.ndarray, first_link: np.ndarray, freq: np.ndarray,
 
 
 # --- R2 ----------------------------------------------------------------------
-def dominance(n, X, M, freq, pooled, eps_T: float, eps_M, rho: float) -> np.ndarray:
+def dominance(n, X, M, freq, freq_q, eps_T: float, eps_M,
+              rho: float) -> np.ndarray:
     """R2 relation: ``adj[p, q]`` is True when p removes q.
 
     p removes q iff n_p <= n_q, X_p <= X_q + eps_T, [M_p <= M_q + eps_M],
     p is noticeably better on at least one attribute (n_p < n_q, or
     X_p < X_q - eps_T, or M_p < M_q - eps_M) and freq_p >= RHO_F x
-    pooled_q. The band sits on the dominated side (Delling et al. 2013 slack;
-    16 Oct note, section 3.3 kind (ii)); the transfer count has no band.
+    freq_q[q]. ``freq_q`` is what the gate compares on the removed side: the
+    path frequency (R2_GATE "path") or the pooled frequency of the group
+    (R2_GATE "pooled"). The gate only deletes arcs, so the relation stays
+    acyclic either way. The band sits on the dominated side (Delling et al.
+    2013 slack; 16 Oct note, section 3.3 kind (ii)); the transfer count has
+    no band.
     The money terms apply to a pair when ``eps_M`` is not None and both M are
     known. The caller restricts the arrays to one mode class (banded), or
     passes zero bands for the comparison across classes.
@@ -253,7 +275,7 @@ def dominance(n, X, M, freq, pooled, eps_T: float, eps_M, rho: float) -> np.ndar
         weak &= ~both | (M[:, None] <= M[None, :] + eps_M)
         notice |= both & (M[:, None] < M[None, :] - eps_M)
     return weak & notice & gate(np.asarray(freq, float)[:, None],
-                                np.asarray(pooled, float)[None, :], rho)
+                                np.asarray(freq_q, float)[None, :], rho)
 
 
 def stable_set(adj: np.ndarray):
@@ -284,9 +306,10 @@ def stable_set(adj: np.ndarray):
 
 def _relation(a: dict, idx: np.ndarray, x: str, eps_T: float, eps_M,
               rho: float) -> np.ndarray:
-    """R2 relation among the alternatives ``idx``."""
+    """R2 relation among the alternatives ``idx``; ``a["gate_q"]`` holds the
+    frequency the gate compares on the removed side (R2_GATE)."""
     return dominance(a["n"][idx], a[x][idx], a["M"][idx], a["freq"][idx],
-                     a["pooled"][idx], eps_T, eps_M, rho)
+                     a["gate_q"][idx], eps_T, eps_M, rho)
 
 
 def _explain(a: dict, p: int, q: int, x: str, eps_T: float, eps_M,
@@ -297,7 +320,7 @@ def _explain(a: dict, p: int, q: int, x: str, eps_T: float, eps_M,
     if eps_M is not None and not np.isnan(a["M"][[p, q]]).any():
         parts.append(f"M {a['M'][p]:g} <= {a['M'][q]:g} + {eps_M:g}")
     if rho > 0:
-        parts.append(f"freq {a['freq'][p]:g} >= {rho:g} x {a['pooled'][q]:g}")
+        parts.append(f"freq {a['freq'][p]:g} >= {rho:g} x {a['gate_q'][q]:g}")
     return "; ".join(parts)
 
 
@@ -442,6 +465,7 @@ def apply_rules(cands: pd.DataFrame, params: dict | None = None,
     a = {k: c[k][reps] for k in ("n", "T", "gtt", "gtc", "M", "freq", "code")}
     a["pooled"] = pooled_freq(alt[rows], c["first_link"][rows], freq[rows],
                               size)[reps]
+    a["gate_q"] = a["freq"] if params["R2_GATE"] == "path" else a["pooled"]
     state = np.full(len(reps), "kept", dtype=object)
     why = np.full(len(reps), "", dtype=object)
     numbers = np.full(len(reps), "", dtype=object)

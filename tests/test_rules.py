@@ -18,7 +18,7 @@ from pathset import io, rules  # noqa: E402
 # parameter file
 BASE = {**io.P, "EPS_T_ABS": 15, "EPS_T_REL": 0.05, "EPS_M": None, "MU": 0.5,
         "K_CAP": 8, "K_EXTRA": 3, "RHO_F": 0.5, "CROSS_CLASS": False,
-        "R1_KEY": "sequence", "R2_TIME": "clock"}
+        "R1_KEY": "sequence", "R2_TIME": "clock", "R2_GATE": "pooled"}
 
 
 def make(rows):
@@ -199,7 +199,7 @@ def test_params_accepted_and_refused():
     rules.check_params(io.P)
     rules.check_params({**BASE, "EPS_N": 0, "EPS_M": 5})
     for bad in ({"R1_KEY": "chain"}, {"R2_TIME": "gtc"}, {"RHO_F": 2},
-                {"EPS_T_ABS": -1}):
+                {"EPS_T_ABS": -1}, {"R2_GATE": "group"}):
         with pytest.raises(ValueError):
             rules.check_params({**BASE, **bad})
 
@@ -249,6 +249,31 @@ def test_pooled_frequency_counts_a_first_link_once():
     rows[-1]["freq"] = 4
     alts, _ = run(rows)
     assert set(alts["alt"]) == {4}
+
+
+def test_gate_on_path_frequency_ignores_the_pool():
+    """R2_GATE = path: the remover's freq is compared with the removed
+    representative's own path frequency, not with its group's pool. A group of
+    three variants on two first links (pooled 8, representative 4) is removed
+    by a direct path running 3 a day (3 >= 0.5 x 4), which the pooled gate
+    forbids (3 < 0.5 x 8); a direct path running once a day still cannot
+    remove it (1 < 0.5 x 4), and the trace states the numbers compared."""
+    rows = [{"cand": 1, "seq": "RR", "T": 300, "freq": 4, "first_link": 10},
+            {"cand": 2, "seq": "RR", "T": 305, "freq": 6, "first_link": 10},
+            {"cand": 3, "seq": "RR", "T": 310, "freq": 2, "first_link": 11},
+            {"cand": 4, "seq": "R", "T": 300, "freq": 3}]
+    alts, _ = run(rows, R2_GATE="pooled")
+    assert set(alts["alt"]) == {1, 4}
+    alts, trace = run(rows, R2_GATE="path")
+    assert set(alts["alt"]) == {4}
+    row = trace.set_index("cand").loc[1]
+    assert row["status"] == "removed_by:4" and row["rule"] == "R2"
+    assert row["detail"].endswith("freq 3 >= 0.5 x 4")
+    rows[-1]["freq"] = 1
+    alts, _ = run(rows, R2_GATE="path")
+    assert set(alts["alt"]) == {1, 4}
+    # the pooled value is still reported, whichever gate decides
+    assert alts.set_index("alt").loc[1, "freq_pooled"] == 8
 
 
 # --- 6. R3 on both quantities -------------------------------------------------
@@ -351,9 +376,9 @@ def random_cands(rng, money):
     return make(rows)
 
 
-def removes(p, q, eps_T, eps_M, rho, x):
+def removes(p, q, eps_T, eps_M, rho, x, gate="pooled"):
     """R2 as the task states it, one pair at a time (independent of the
-    vectorised relation)."""
+    vectorised relation); ``gate`` is R2_GATE."""
     if p["n"] > q["n"] or p[x] > q[x] + eps_T:
         return False
     better = p["n"] < q["n"] or p[x] < q[x] - eps_T
@@ -361,7 +386,8 @@ def removes(p, q, eps_T, eps_M, rho, x):
         if p["M"] > q["M"] + eps_M:
             return False
         better = better or p["M"] < q["M"] - eps_M
-    return better and (rho == 0 or p["freq"] >= rho * q["pooled"])
+    other = q["pooled"] if gate == "pooled" else q["freq"]
+    return better and (rho == 0 or p["freq"] >= rho * other)
 
 
 def slow_r3_r1(cands, params):
@@ -417,6 +443,8 @@ SETTINGS = [
     dict(EPS_M=10, R2_TIME="weighted"),
     dict(R1_KEY="class", EPS_M=5),
     dict(RHO_F=0.0, EPS_M=5),
+    dict(R2_GATE="path"),
+    dict(R2_GATE="path", RHO_F=1.0, EPS_M=5),
 ]
 
 
@@ -456,7 +484,8 @@ def test_properties_of_the_kept_set(money, setting):
         eps_M = {k: params["EPS_M"] if not any(
             math.isnan(v["M"]) for v in built.values() if v["cls"] == k) else None
             for k in eps_T}
-        args = lambda k: (eps_T[k], eps_M[k], params["RHO_F"], x)  # noqa: E731
+        args = lambda k: (eps_T[k], eps_M[k], params["RHO_F"], x,  # noqa: E731
+                          params["R2_GATE"])
         # no kept alternative is removed by a kept one
         for p, q in itertools.permutations(kept, 2):
             if built[p]["cls"] == built[q]["cls"]:

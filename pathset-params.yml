@@ -71,8 +71,12 @@ MAX_TRANSFERS: 2            # [deck 238; october]
 MODE_WORDS: air_block_max2
 T_MAX_MIN: 1440
 INCLUDE_CAR: true           # direct car alternative; not in the deck's path set
+# R0: a link "passes" a city when the runs that call there between its two hubs
+# carry at least this share of the link's dated departures; no link of a path
+# may pass o, d or a city of the path. 1 = every run, 0 = any run [placeholder]
+PASSED_SHARE: 0.5
 MEM_CAND_GB: 1.5
-WORKERS: 6
+WORKERS: 4                  # each worker peaks at 3.4-4 GB (origins 7, 133)
 
 # --- Generalised travel time [deck 229] --------------------------------------
 BETA_ACCESS: 1.87
@@ -99,8 +103,14 @@ K_CAP: 8                    # [october]
 K_EXTRA: 3                  # cap is max(K_CAP, classes present + K_EXTRA)
 RHO_F: 0.5                  # frequency gate [placeholder]
 CROSS_CLASS: false          # strict comparison across mode classes [october switch]
-R1_KEY: sequence            # sequence | class
+R1_KEY: sequence            # sequence | class | pattern
 R2_TIME: clock              # clock | weighted
+# Gate of R2: p may remove q only if freq(p) >= RHO_F x F(q), with F(q) the
+# path frequency of q (path) or the pooled frequency of q's R1 group (pooled,
+# the plan's wording). Under pooled the cap R5 chose most sets of stage B:
+# a group of many variants with distinct first links pools far more departures
+# than any of its paths runs [placeholder; open with Oded and Rajat]
+R2_GATE: path               # path | pooled
 R4_GUARANTEE: true          # no mode class loses its last alternative
 VARIANTS_KEPT: 20
 
@@ -119,3 +129,9 @@ NAMED_PAIRS:                # stage B: every R0 candidate is stored (ps-trace)
 STAGE_C_ORIGINS: [254, 292, 105, 7, 148, 194, 186, 208, 367, 133]
 # Paris, Ruhrgebiet, Frankfurt am Main, Amsterdam, Katowice, Madrid, London,
 # Milano, Wien, Helsinki
+# Stage B report only (pathset-stageb.py): sensitivity values and the deck's
+# number of paths per (hub OD pair, mode sequence) [deck 238]
+STAGE_B_EPS_T_ABS: [10, 20]
+STAGE_B_MU: [0.25, 1.0]
+STAGE_B_RHO_F: [0.33, 1.0]
+DECK_TOP_K: 5

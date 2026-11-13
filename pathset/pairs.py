@@ -30,6 +30,15 @@ also at 3MG's link key with the released node ids"), and a row with a hub that
 has no released id cannot be joined to it. Such rows stay in ps-transfers.
 Every ps-ftrans key (in_src, in_trg, out_src, out_trg, mode_in, mode_out) is
 therefore unique and no id is ''.
+
+Weight of a row in the pooled f_trans (contract, ps-ftrans.ft_mean): freq x
+n_days / days counted, the opportunities per counted day. Days counted are
+the two links' common active dates on basis 'D' (the dates on which
+transfer.pair_stats counts) and the 7 days of the typical week on basis 'T'
+(``days_counted``). A row on basis 'D' counted over 1,000 common dates and
+one on 'T' over one week thus weigh alike when they offer as many
+opportunities a day; with freq x n_days alone the 'D' row weighed up to
+1,000 / 7 times more.
 """
 
 from __future__ import annotations
@@ -40,6 +49,8 @@ import pandas as pd
 from . import schemas as S
 
 SAME_HUB = "hub"             # move kind of a transfer inside one hub
+TYPICAL_DAYS = 7             # days of the typical week (basis 'T')
+ROWS_PER_CHUNK = 1 << 20     # rows of ps-transfers per step of days_counted
 
 _TRANSFER_DTYPES = {"link_in": "int32", "link_out": "int32", "move": "float32",
                     "n_days": "int32", "freq": "float32", "ft_mean": "float32",
@@ -189,6 +200,23 @@ def exists(transfers: pd.DataFrame, min_active: int) -> np.ndarray:
 
 
 # --- ps-ftrans ---------------------------------------------------------------
+def days_counted(transfers: pd.DataFrame, cal: np.ndarray) -> np.ndarray:
+    """Days over which each ps-transfers row was counted (int32): on basis
+    'D' the active dates the two links share, popcount(cal[link_in] &
+    cal[link_out]) with ``cal`` = transfer.link_calendars (the dates of
+    transfer.pair_stats); on basis 'T' TYPICAL_DAYS. Rows are taken
+    ROWS_PER_CHUNK at a time to bound the memory of the calendar rows."""
+    li = transfers["link_in"].to_numpy(np.int64)
+    lo = transfers["link_out"].to_numpy(np.int64)
+    cal = np.ascontiguousarray(cal, dtype=np.uint64)
+    out = np.full(len(transfers), TYPICAL_DAYS, dtype=np.int32)
+    rows = np.flatnonzero(transfers["basis"].to_numpy() == "D")
+    for s in range(0, len(rows), ROWS_PER_CHUNK):
+        r = rows[s:s + ROWS_PER_CHUNK]
+        out[r] = np.bitwise_count(cal[li[r]] & cal[lo[r]]).sum(axis=1, dtype=np.int64)
+    return out
+
+
 def released_codes(hubs: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     """Per hub (indexed by hub 0..H-1): an integer code that is equal for
     hubs with the same released node id and -1 for a hub without one; and the
@@ -250,7 +278,8 @@ def _joined(group: np.ndarray, link: np.ndarray, members: pd.DataFrame,
 
 
 def ftrans_table(transfers: pd.DataFrame, links: pd.DataFrame,
-                 hubs: pd.DataFrame, members: pd.DataFrame) -> pd.DataFrame:
+                 hubs: pd.DataFrame, members: pd.DataFrame,
+                 days: np.ndarray | None = None) -> pd.DataFrame:
     """ps-ftrans (contract): ps-transfers at the key of the released 3MG graph.
 
     Only the rows whose four hubs all have a released node id are used
@@ -258,12 +287,22 @@ def ftrans_table(transfers: pd.DataFrame, links: pd.DataFrame,
     in_trg, out_src, out_trg) = the released node ids of src(link_in),
     trg(link_in), src(link_out), trg(link_out) and the two modes, and pooled
     per that key over riding-time classes and over hubs that share a released
-    node: ft_mean = mean of the rows' ft_mean weighted by n_days x freq,
-    ft_min = least ft_min, n_rows, share_T = share of rows on basis 'T',
-    in_ops / out_ops = sorted distinct agencies (ps-link-members) of the
-    pooled in- and out-links, ';'-joined. The key is unique; sorted by it."""
+    node: ft_mean = mean of the rows' ft_mean weighted by freq x n_days /
+    days counted (``days``, one per row of ``transfers``, from
+    ``days_counted``; module docstring), ft_min = least ft_min, n_rows,
+    share_T = share of rows on basis 'T', in_ops / out_ops = sorted distinct
+    agencies (ps-link-members) of the pooled in- and out-links, ';'-joined.
+    The key is unique; sorted by it.
+
+    Without ``days`` the weight is freq x n_days (the weight before 13 Nov,
+    which tests/test_transfers_review.py checks); pathset-transfers.py always
+    passes the days."""
     if not (links["link"].to_numpy() == np.arange(len(links))).all():
         raise ValueError("links must be ps-links in link order, 0 .. L-1")
+    if days is not None and len(days) != len(transfers):
+        raise ValueError("days must have one entry per row of transfers")
+    if days is not None and (np.asarray(days) <= 0).any():
+        raise ValueError("days counted must be positive")
     code, rid = released_codes(hubs)
     keep = released_rows(transfers, links, hubs)
     src = links["src"].to_numpy(np.int64)
@@ -281,6 +320,8 @@ def ftrans_table(transfers: pd.DataFrame, links: pd.DataFrame,
         return transfers[name].to_numpy(np.float64)[keep]
 
     w = col("n_days") * col("freq")
+    if days is not None:
+        w = w / np.asarray(days, dtype=np.float64)[keep]
     ft = col("ft_mean")
     ft_min = np.full(n, np.inf)
     np.minimum.at(ft_min, g, col("ft_min"))
