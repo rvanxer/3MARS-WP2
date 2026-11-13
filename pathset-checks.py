@@ -1,5 +1,5 @@
 """Checks of the path-set outputs (plan, Verification 2). Network part
-(1-5); connectors and moves (6-9).
+(1-5); connectors and moves (6-9); transfers (10-12).
 
 Prints a short report and exits non-zero when a check fails. Expected values
 are those of the plan; a miss is reported with the numbers that explain it,
@@ -19,6 +19,9 @@ from pathset import connect as CN
 from pathset import dates as D
 from pathset import io
 from pathset import network as N
+from pathset import pairs as PR
+from pathset import schemas as S
+from pathset import transfer as T
 
 P = io.P
 
@@ -410,6 +413,345 @@ def check_fits(c: Conn) -> bool:
     return True
 
 
+#%% 10. Transfers: typical days against date by date (plan step 2, last bullet)
+# Plan step 2: seven rail hubs, one coach hub, one thin-feed hub and 20 random
+# border station hubs; ground link pairs with at least 60 common active
+# dates; pass when existence agrees for >= 98% and the median absolute
+# relative error of freq is <= 10%.
+RAIL_HUBS = ["Frankfurt (Main) Hauptbahnhof", "Köln Hbf", "Zürich HB", "Wien Hbf",
+             "Amsterdam Centraal", "Paris Gare du Nord", "München Hbf"]
+FALLBACK_MIN_COMMON = 60
+THIN_MIN_LINKS = 50          # thin-feed hub: among station hubs with this many links
+N_BORDER = 20
+BORDER_SEED = 20261113
+BAR_AGREE = 0.98
+BAR_FREQ_ERR = 0.10
+# Deck slide 234: mean transfer minutes found on its sample
+DECK_MEANS = {"AA": "about 107", "AP": "170-190", "PA": "170-190", "PP": "about 30"}
+
+
+class Tr:
+    """ps-transfers, ps-ftrans and the admissible pairs, loaded once."""
+
+    def __init__(self, net: Net, conn: Conn):
+        self.net = net
+        self.transfers = io.load_out("ps-transfers")
+        self.ftrans = io.load_out("ps-ftrans")
+        self.city = CN.hub_city(net.hubs, conn.conn)
+        self.pairs, self.dropped = PR.admissible_pairs(
+            net.links, conn.moves, self.city, P["WINDOWS"])
+        l = net.links
+        self.air = l["mode"].to_numpy() == "A"
+        self.src = l["src"].to_numpy()
+        self.trg = l["trg"].to_numpy()
+
+
+def hub_by_name(net: Net, name: str) -> int:
+    """Station hub whose ps-hubs name is exactly ``name``; else the hub of the
+    station that carries the name among its ic-stations names (Net.hub).
+    Raises KeyError when neither finds exactly one hub."""
+    s = net.hubs[(net.hubs["kind"] == "S") & (net.hubs["name"] == name)]
+    if len(s) == 1:
+        return int(s["hub"].iloc[0])
+    if len(s) > 1:
+        raise KeyError(f"{name!r} names {len(s)} hubs in ps-hubs")
+    return net.hub(name)
+
+
+def link_ends(net: Net) -> pd.DataFrame:
+    """Both ends of every link seen from a station hub: hub, other end, mode,
+    active_share of the link."""
+    links, hubs = net.links, net.hubs
+    src, trg = links["src"].to_numpy(), links["trg"].to_numpy()
+    mode = links["mode"].to_numpy(dtype=str)
+    share = links["active_share"].to_numpy()
+    ends = pd.DataFrame({"hub": np.r_[src, trg], "other": np.r_[trg, src],
+                         "mode": np.r_[mode, mode], "share": np.r_[share, share]})
+    return ends[ends["hub"].isin(hubs.loc[hubs["kind"] == "S", "hub"])]
+
+
+def fixed_hubs(net: Net, ends: pd.DataFrame) -> dict[str, int]:
+    """The seven rail hubs (by name; KeyError when one is not found), the
+    coach hub (most bus links) and the thin-feed hub (lowest median
+    active_share of its links among hubs with at least THIN_MIN_LINKS
+    links), label -> hub (plan step 2, last bullet)."""
+    st = net.hubs[net.hubs["kind"] == "S"].set_index("hub")
+    out = {n: hub_by_name(net, n) for n in RAIL_HUBS}
+    bus = ends[ends["mode"] == "B"].groupby("hub").size()
+    h = int(bus.idxmax())
+    out[f"coach: {st.loc[h, 'name']} ({bus.max()} bus links)"] = h
+    per = ends.groupby("hub")["share"].agg(["size", "median"])
+    per = per[per["size"] >= THIN_MIN_LINKS]
+    h = int(per["median"].idxmin())
+    out[f"thin feed: {st.loc[h, 'name']} (median active_share "
+        f"{per.loc[h, 'median']:.2f}, {per.loc[h, 'size']} links)"] = h
+    return out
+
+
+def border_hubs(net: Net, ends: pd.DataFrame) -> np.ndarray:
+    """Station hubs with a link whose other end is in another country."""
+    icc = net.hubs.set_index("hub")["icc"]
+    cross = icc.reindex(ends["hub"]).to_numpy() != icc.reindex(ends["other"]).to_numpy()
+    return np.sort(ends.loc[cross, "hub"].unique())
+
+
+def common_dates(cal: np.ndarray, a: np.ndarray, b: np.ndarray,
+                 chunk: int = 1 << 20) -> np.ndarray:
+    """Active dates the links a[i] and b[i] share (in chunks of pairs)."""
+    return np.concatenate(
+        [np.bitwise_count(cal[a[i:i + chunk]] & cal[b[i:i + chunk]]).sum(axis=1)
+         for i in range(0, len(a), chunk)] + [np.empty(0, dtype=np.int64)])
+
+
+def draw_border(pool: np.ndarray, measured: np.ndarray, n: int,
+                seed: int) -> np.ndarray:
+    """n border hubs drawn (seeded, without replacement) among those of
+    ``pool`` that are in ``measured`` (have a qualifying pair), sorted; all
+    of them when fewer."""
+    ok = np.intersect1d(pool, measured)
+    pick = np.random.default_rng(seed).choice(ok, min(n, len(ok)), replace=False)
+    return np.sort(pick)
+
+
+def comparison(dd: dict, tt: dict, min_active: int) -> dict:
+    """Per pair, date by date (dd) against typical days (tt), both outputs
+    of transfer.transfer_table: existence on each (n_days >= 1), agreement,
+    agreement under the consumer's rule (min_active dates against one
+    weekday), both exist, and |freq error| relative to the date-by-date
+    freq (meaningful where both exist)."""
+    d, t = dd["n_days"] >= 1, tt["n_days"] >= 1
+    both = d & t
+    return {"d": d, "t": t, "agree": d == t,
+            "rule": (dd["n_days"] >= min_active) == t, "both": both,
+            "err": np.abs(tt["freq"] - dd["freq"]) / np.where(both, dd["freq"], 1)}
+
+
+def verdict(sel: np.ndarray, c: dict) -> tuple[str, bool | None]:
+    """Text and verdict of the pairs ``sel`` against the plan's bar
+    (existence agrees for >= BAR_AGREE, median |freq error| <= BAR_FREQ_ERR);
+    verdict None ('n/a') when ``sel`` holds no pair."""
+    n = int(sel.sum())
+    if n == 0:
+        return "no qualifying pairs: n/a", None
+    a = float(c["agree"][sel].mean())
+    b = sel & c["both"]
+    m, q90 = np.percentile(c["err"][b], [50, 90]) if b.any() else (np.nan, np.nan)
+    ok = bool(a >= BAR_AGREE and (m <= BAR_FREQ_ERR or not b.any()))
+    return (f"{n:,} pairs, existence agrees {a:.1%} (consumer's rule "
+            f"{float(c['rule'][sel].mean()):.1%}), |freq error| median "
+            f"{m:.1%}, p90 {q90:.0%} ({int(b.sum()):,} both exist; date by date only "
+            f"{int((sel & c['d'] & ~c['both']).sum()):,}, typical "
+            f"only {int((sel & c['t'] & ~c['both']).sum()):,}) "
+            f"{'pass' if ok else 'MISS'}"), ok
+
+
+def air_ground_meaning(d_exist: np.ndarray, t_exist: np.ndarray,
+                       err_median: float) -> str:
+    """What the measurement implies for air <-> ground pairs, which are
+    always counted on typical days: the share of date-by-date chains that
+    typical days miss, the share of typical-day chains that do not exist
+    date by date, and the frequency error where both exist."""
+    n_d, n_t = int(d_exist.sum()), int(t_exist.sum())
+    miss = int((d_exist & ~t_exist).sum()) / max(n_d, 1)
+    invent = int((t_exist & ~d_exist).sum()) / max(n_t, 1)
+    bound = ("a lower bound" if n_t < n_d else "an upper bound" if n_t > n_d
+             else "unbiased in count")
+    return (f"typical-day counting misses {miss:.1%} of the chains that exist "
+            f"date by date and invents {invent:.1%} of those it finds, so air "
+            f"<-> ground existence is {bound}; where a chain exists in both, "
+            f"its frequency differs by a median {err_median:.1%}. Air and "
+            "ground weeks come from different years, so this is the best case.")
+
+
+def check_typical(tr: Tr) -> bool:
+    """Typical-day counts against date-by-date counts on ground link pairs
+    with at least FALLBACK_MIN_COMMON common active dates, through each hub
+    of the sample (alight or board hub of the transfer): the fixed hubs and
+    N_BORDER border hubs drawn (seeded) among the border hubs with at least
+    one such pair, so that every border hub drawn is measured. Per hub:
+    pairs, share whose existence (n_days >= 1) agrees (and, beside it, the
+    share under the consumer's rule: MIN_ACTIVE_DATES dates against one
+    weekday), median absolute relative error of freq where both exist;
+    verdict on the n_days >= 1 share against the plan's bar, 'n/a' for a hub
+    without pairs (left out of the pass count). A measurement: it never
+    fails the script."""
+    print(f"10. Typical days against date by date (ground pairs with >= "
+          f"{FALLBACK_MIN_COMMON} common dates)")
+    net = tr.net
+    ends = link_ends(net)
+    hubs = fixed_hubs(net, ends)
+    pool = np.setdiff1d(border_hubs(net, ends), list(hubs.values()))
+    cand = np.union1d(pool, list(hubs.values()))
+    p = tr.pairs[tr.pairs["wkey"] == "PP"]
+    li, lo = p["link_in"].to_numpy(), p["link_out"].to_numpy()
+    at = np.isin(tr.trg[li], cand) | np.isin(tr.src[lo], cand)
+    p, li, lo = p[at], li[at], lo[at]
+    l, e = net.links, net.events
+    ev = (e["dep"].to_numpy(), e["ride"].to_numpy(), net.masks,
+          l["ev0"].to_numpy(), l["ev1"].to_numpy(), l["tz_shift"].to_numpy())
+    inst, typ = T.build_instances(*ev), T.build_typical(*ev)
+    cal = T.link_calendars(np.ascontiguousarray(net.masks),
+                           ev[3].astype(np.int32), ev[4].astype(np.int32))
+    keep = common_dates(cal, li, lo) >= FALLBACK_MIN_COMMON
+    p, li, lo = p[keep], li[keep], lo[keep]
+    measured = np.union1d(tr.trg[li], tr.src[lo])
+    pool_ok = np.intersect1d(pool, measured)
+    print(f"   border hubs: {len(pool):,}, of which {len(pool_ok):,} with a "
+          f"qualifying pair; {N_BORDER} drawn (seed {BORDER_SEED})")
+    st = net.hubs.set_index("hub")
+    for h in draw_border(pool, measured, N_BORDER, BORDER_SEED):
+        hubs[f"border: {st.loc[h, 'name']} ({st.loc[h, 'icc']})"] = int(h)
+    sel_hubs = list(hubs.values())
+    at = np.isin(tr.trg[li], sel_hubs) | np.isin(tr.src[lo], sel_hubs)
+    p, li, lo = p[at], li[at], lo[at]
+    args = (inst, typ, cal, e["trip"].to_numpy(), li, lo, p["move"].to_numpy(),
+            p["lo"].to_numpy(), p["hi"].to_numpy())
+    dd = T.transfer_table(*args, np.zeros(len(p), dtype=bool))
+    tt = T.transfer_table(*args, np.ones(len(p), dtype=bool))
+    if (T.basis_labels(dd["basis"]) != "D").any():
+        raise AssertionError("a pair with >= 60 common dates was not counted date by date")
+    c = comparison(dd, tt, P["MIN_ACTIVE_DATES"])
+    alight, board = tr.trg[li], tr.src[lo]
+    results = []
+    for label, h in hubs.items():
+        text, ok = verdict((alight == h) | (board == h), c)
+        results.append(ok)
+        print(f"   {label}: {text}")
+    n_meas = sum(r is not None for r in results)
+    text, _ = verdict(np.ones(len(p), dtype=bool), c)
+    print(f"   overall: {text}; {sum(r is True for r in results)} of {n_meas} "
+          f"measured hubs pass, {len(results) - n_meas} n/a (bar: >= "
+          f"{BAR_AGREE:.0%} agree, median error <= {BAR_FREQ_ERR:.0%})")
+    m = float(np.median(c["err"][c["both"]])) if c["both"].any() else np.nan
+    print("   meaning for air <-> ground: "
+          + air_ground_meaning(c["d"], c["t"], m))
+    return True
+
+
+#%% 11. f_trans by window and basis, beside the deck
+def window_keys(tr: Tr, link_in: np.ndarray, link_out: np.ndarray):
+    return PR.window_bounds(tr.air[link_in], tr.air[link_out], P["WINDOWS"])
+
+
+def check_ftrans(tr: Tr) -> bool:
+    """ft_mean of ps-transfers by window key and basis: rows, mean, median,
+    p10, p90, and the mean weighted by n_days x freq, beside the deck's means
+    (slide 234); air <-> ground pairs with an opportunity. Informative."""
+    print("11. f_trans (ft_mean, minutes) by window and basis; deck slide 234")
+    t = tr.transfers
+    _, _, key = window_keys(tr, t["link_in"].to_numpy(), t["link_out"].to_numpy())
+    t = t.assign(wkey=np.asarray(key), w=t["n_days"] * t["freq"].astype(np.float64))
+    for (k, b), g in t.groupby(["wkey", "basis"], sort=True):
+        q = np.percentile(g["ft_mean"], [10, 50, 90])
+        print(f"   {k} {b}: {len(g):,} rows, mean {g['ft_mean'].mean():.1f}, median "
+              f"{q[1]:.1f}, p10 {q[0]:.1f}, p90 {q[2]:.1f}, weighted "
+              f"{np.average(g['ft_mean'], weights=g['w']):.1f} (deck {DECK_MEANS[k]})")
+    ag = t["wkey"].isin(["AP", "PA"])
+    considered = int(tr.pairs["wkey"].isin(["AP", "PA"]).sum())
+    print(f"   air <-> ground: {int(ag.sum()):,} of {considered:,} admissible pairs "
+          f"have an opportunity (AP {int((t['wkey'] == 'AP').sum()):,}, PA "
+          f"{int((t['wkey'] == 'PA').sum()):,}); the deck found almost none on "
+          "its 2023-25 sample")
+    return True
+
+
+#%% 12. Transfer totals and contract
+TRANSFER_DTYPES = {"link_in": "int32", "link_out": "int32", "move": "float32",
+                   "basis": "str", "n_days": "int32", "freq": "float32",
+                   "ft_mean": "float32", "ft_min": "float32"}
+FTRANS_DTYPES = {"in_src": "str", "in_trg": "str", "out_src": "str", "out_trg": "str",
+                 "mode_in": "str", "mode_out": "str", "ft_mean": "float32",
+                 "ft_min": "float32", "n_rows": "int32", "share_T": "float32",
+                 "in_ops": "str", "out_ops": "str"}
+
+
+def dtypes_ok(df: pd.DataFrame, expect: dict) -> list[str]:
+    """Columns whose dtype differs from the contract."""
+    bad = []
+    for c, d in expect.items():
+        ok = (pd.api.types.is_string_dtype(df[c]) if d == "str"
+              else str(df[c].dtype) == d)
+        if not ok:
+            bad.append(f"{c} {df[c].dtype}")
+    return bad
+
+
+def check_transfer_totals(tr: Tr) -> bool:
+    """Pairs considered, with an opportunity and existing under the
+    consumer's rule, by basis; ps-transfers and ps-ftrans against the
+    contract: columns and dtypes, link ids in range, sorted by (link_in,
+    link_out), no duplicates, every row an admissible pair with its move,
+    n_days >= 1, ft_min <= ft_mean and lo + move <= ft_min <= hi; ps-ftrans
+    pools exactly the rows whose four hubs have a released id, has no ''
+    id, a unique key and is sorted by it."""
+    print("12. Transfer totals and contract")
+    t, f = tr.transfers, tr.ftrans
+    n_links = len(tr.net.links)
+    ok_rule = PR.exists(t, P["MIN_ACTIVE_DATES"])
+    print("   pairs considered: " + "; ".join(f"{k} {v:,}" for k, v in tr.dropped.items())
+          + f"; admissible {len(tr.pairs):,}")
+    print("   with an opportunity: " + ", ".join(
+        f"{k} {v:,}" for k, v in t.groupby("basis").size().items())
+        + f"; existing under the consumer's rule: " + ", ".join(
+        f"{k} {v:,}" for k, v in t[ok_rule].groupby("basis").size().items()))
+    li = t["link_in"].to_numpy(np.int64)
+    lo = t["link_out"].to_numpy(np.int64)
+    key = li * n_links + lo
+    pkey = (tr.pairs["link_in"].to_numpy(np.int64) * n_links
+            + tr.pairs["link_out"].to_numpy(np.int64))
+    pos = np.searchsorted(pkey, key)
+    pos_ok = (pos < len(pkey)) & (pkey[np.minimum(pos, len(pkey) - 1)] == key)
+    in_range = bool(((li >= 0) & (li < n_links) & (lo >= 0) & (lo < n_links)).all())
+    lo_w, hi_w, _ = window_keys(tr, li, lo) if in_range else (None, None, None)
+    gmin = (lo_w + t["move"].to_numpy(np.float64)) if in_range else None
+    released = (PR.released_rows(t, tr.net.links, tr.net.hubs) if in_range
+                else np.zeros(len(t), dtype=bool))
+    tests = {
+        "ps-transfers columns": list(t.columns) == S.TRANSFERS,
+        "ps-transfers dtypes": not dtypes_ok(t, TRANSFER_DTYPES),
+        "link ids in range": in_range,
+        "sorted by (link_in, link_out)": bool((np.diff(key) > 0).all()),
+        "no duplicate pairs": not pd.Series(key).duplicated().any(),
+        "every row an admissible pair": bool(pos_ok.all()),
+        "move as the admissible pair": bool(pos_ok.all()) and bool(
+            (tr.pairs["move"].to_numpy()[pos] == t["move"].to_numpy()).all()),
+        "basis D or T, n_days >= 1": bool(t["basis"].isin(["D", "T"]).all()
+                                          and (t["n_days"] >= 1).all()),
+        "n_days <= 7 on basis T": bool((t.loc[t["basis"] == "T", "n_days"] <= 7).all()),
+        "ft_min <= ft_mean": bool((t["ft_min"] <= t["ft_mean"]).all()),
+        "lo + move <= ft_min <= hi": in_range and bool(
+            ((gmin <= t["ft_min"].to_numpy()) & (t["ft_min"].to_numpy() <= hi_w)).all()),
+        "ps-ftrans columns": list(f.columns) == S.FTRANS,
+        "ps-ftrans dtypes": not dtypes_ok(f, FTRANS_DTYPES),
+        "ps-ftrans pools every ps-transfers row with four released ids":
+            int(f["n_rows"].sum()) == int(released.sum()),
+        "ps-ftrans no '' id": bool((f[S.FTRANS[:4]] != "").all(axis=None)),
+        "ps-ftrans keys unique": not f.duplicated(S.FTRANS[:6]).any(),
+        "ps-ftrans sorted by its key": f[S.FTRANS[:6]].equals(
+            f[S.FTRANS[:6]].sort_values(S.FTRANS[:6]).reset_index(drop=True)),
+        "ps-ftrans ft_min <= ft_mean, 0 <= share_T <= 1": bool(
+            (f["ft_min"] <= f["ft_mean"]).all() and f["share_T"].between(0, 1).all()),
+    }
+    if in_range:
+        bad = (gmin > t["ft_min"].to_numpy()) | (t["ft_min"].to_numpy() > hi_w)
+        for r in t[bad].head(5).itertuples():
+            print(f"      outside the window: {r.link_in} -> {r.link_out}, move "
+                  f"{r.move:g}, ft_min {r.ft_min:g}")
+    print(f"   ps-ftrans: {len(f):,} keys from {int(released.sum()):,} of "
+          f"{len(t):,} ps-transfers rows ({int((~released).sum()):,} left out: "
+          "a hub without a released id)")
+    for name, ok in tests.items():
+        if not ok:
+            print(f"   {name}: FAIL")
+    for name, bad in (("ps-transfers", dtypes_ok(t, TRANSFER_DTYPES)),
+                      ("ps-ftrans", dtypes_ok(f, FTRANS_DTYPES))):
+        if bad:
+            print(f"      {name} dtypes off contract: {', '.join(bad)}")
+    ok = all(tests.values())
+    print(f"   {len(tests)} contract tests: {'ok' if ok else 'FAIL'}")
+    return ok
+
+
 #%% Run
 def main() -> int:
     net = Net()
@@ -426,6 +768,12 @@ def main() -> int:
         "7 moves": check_moves(conn),
         "8 airports": check_airports(conn),
         "9 fits": check_fits(conn),
+    }
+    tr = Tr(net, conn)
+    results |= {
+        "10 typical": check_typical(tr),
+        "11 f_trans": check_ftrans(tr),
+        "12 transfers": check_transfer_totals(tr),
     }
     failed = [k for k, ok in results.items() if not ok]
     print("FAILED: " + ", ".join(failed) if failed else "all checks passed")
