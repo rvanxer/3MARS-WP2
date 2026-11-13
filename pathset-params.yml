@@ -1,0 +1,121 @@
+# Parameters of the path-set module. Read as UTF-8 by pathset/io.py.
+# Sources: [settled] with the supervisors; [deck] = RA/Nov/path enumeration/
+# 3MARS Meetings - RV.pptx (slide numbers of the 13 Nov 2026 copy); [october] =
+# GTC/path-set-rules-2026-10-16.md; [placeholder] = to be replaced.
+
+# --- Folders, relative to the repository root --------------------------------
+HUBS_DIR: ../data-upstream-hubs   # ic-* tables (rail, bus) and air2rail
+DATA_DIR: ../data-upstream        # flights, car links, FUAs, airports, gtfs/db-*
+RELEASE_DIR: ../flood             # nodes.csv and links.csv of the 21 Oct release
+PATHSET_DIR: ../data-pathset      # every output of this module, nothing else
+
+# --- Timeline (same window as SERVICE_START / SERVICE_END in params.yml) ------
+SERVICE_START: 2023-01-01
+SERVICE_END: 2026-12-31
+# Period of the deck's fixed-denominator frequency [deck 237]; stored for
+# comparison only
+FIXED_FREQ_START: 2023-01-01
+FIXED_FREQ_END: 2025-12-31
+
+# --- Network -----------------------------------------------------------------
+# Feeds left out: mdb-686 (NMBS/SNCB) carries more than 20,000 journeys that a
+# column-slice bug in gtfs-db.py switches on every Wed/Thu/Sat/Sun; mdb-1859
+# holds the same trains
+FEED_EXCLUDE: [mdb-686]
+# Stations of one FUA linked within this distance (m) form one hub
+HUB_RADIUS_M: 400
+# Two departures of one hub pair are the same run when departure and riding
+# time both differ by at most this many minutes and their dates overlap
+NEAR_DUP_MIN: 2
+# Riding-time class: anchored at the fastest unassigned time, takes everything
+# within max(ABS, REL x anchor) [Cats 2011 pp. 74, 80; placeholder width]
+RIDE_CLASS_ABS_MIN: 5
+RIDE_CLASS_REL: 0.05
+AIR_ONE_CLASS: true
+# Hygiene
+MAX_RIDE_MIN: 1440
+V_MAX_KMH: {R: 350, B: 130}
+CAR_V_MAX_KMH: 110          # check only: no car pair faster on the straight line
+# A link (and a chain) must be active on at least this many dates [placeholder]
+MIN_ACTIVE_DATES: 5
+
+# --- Connectors and moves ----------------------------------------------------
+XWALK_M: 400                # DH station to released station hub
+ACCESS_MAX_AIR_MIN: 120     # airports serve catchment FUAs within this drive
+MOVE_MAX_MIN: 30            # between two hubs of one city
+AIR_ROAD_MOVE_MAX_MIN: 45   # airport to a station that is not co-located
+AIR2RAIL_COLOCATED_TIERS: [airport, terminal]
+
+# --- Transfers ---------------------------------------------------------------
+# Minutes from arrival to departure [deck 234]. A = air, P = bus or rail
+WINDOWS:
+  AA: [45, 180]
+  AP: [60, 300]
+  PA: [90, 300]
+  PP: [5, 60]
+# Opportunities are counted date by date when the links of a chain share at
+# least this many active dates; otherwise on typical days
+MIN_COMMON_DATES: 14
+# Typical day: departures that run on at least this share of the link's active
+# dates of that weekday
+TYPICAL_SHARE: 0.5
+
+# --- Generation --------------------------------------------------------------
+MAX_TRANSFERS: 2            # [deck 238; october]
+# Allowed mode sequences of one to three service links:
+#   air_block_max2  one air block, at most two flights (36 words)
+#   deck35          the 35 of the path set [deck 238]: air_block_max2 without RAR
+#   oct21           the list of the 21 Oct draft [deck 222]; its text says 29,
+#                   it lists 28: air_block_max2 without ABB, ABR, ARB, ARR,
+#                   BBA, BRA, RBA, RRA
+MODE_WORDS: air_block_max2
+T_MAX_MIN: 1440
+INCLUDE_CAR: true           # direct car alternative; not in the deck's path set
+MEM_CAND_GB: 1.5
+WORKERS: 6
+
+# --- Generalised travel time [deck 229] --------------------------------------
+BETA_ACCESS: 1.87
+BETA_EGRESS: 1.87
+BETA_IVT: {A: 1.56, R: 0.96, B: 0.88, C: 1.0}   # C (car): placeholder
+BETA_TRANS: 1.76
+TAU_TP: 10
+TAU_DEP: {A: 90, R: 15, B: 15}
+TAU_ARR: {A: 45, R: 5, B: 5}
+# Hidden waiting time = BETA_HWT / (2 x departures per day), capped [deck 228
+# gives the form, no value; placeholder]
+BETA_HWT: 600
+HWT_MAX: 240
+
+# --- Rules -------------------------------------------------------------------
+# Names starting with EPS_ are reserved for the bands of R1/R2: rules.py refuses
+# any EPS_* other than these three (a band on the transfer count or on a third
+# attribute breaks the stable set)
+EPS_T_ABS: 15               # [october]
+EPS_T_REL: 0.05             # [october]
+EPS_M: null                 # money band; off until fares exist
+MU: 0.5                     # [october]
+K_CAP: 8                    # [october]
+K_EXTRA: 3                  # cap is max(K_CAP, classes present + K_EXTRA)
+RHO_F: 0.5                  # frequency gate [placeholder]
+CROSS_CLASS: false          # strict comparison across mode classes [october switch]
+R1_KEY: sequence            # sequence | class
+R2_TIME: clock              # clock | weighted
+R4_GUARANTEE: true          # no mode class loses its last alternative
+VARIANTS_KEPT: 20
+
+# --- Stages B and C (plan, step 6); FUA ids of data-upstream fuas ------------
+NAMED_PAIRS:                # stage B: every R0 candidate is stored (ps-trace)
+  - [378, 254]              # s' Gravenhage -> Paris (the deck's example)
+  - [7, 28]                 # Amsterdam -> Berlin
+  - [7, 218]                # Amsterdam -> Muenchen
+  - [7, 254]                # Amsterdam -> Paris
+  - [186, 55]               # London -> Bruxelles / Brussel
+  - [194, 19]               # Madrid -> Barcelona
+  - [314, 162]              # Stockholm -> Koebenhavn
+  - [147, 37]               # Kassel -> Bologna
+  - [133, 325]              # Helsinki -> Tallinn
+  - [252, 218]              # Palma de Mallorca -> Muenchen
+STAGE_C_ORIGINS: [254, 292, 105, 7, 148, 194, 186, 208, 367, 133]
+# Paris, Ruhrgebiet, Frankfurt am Main, Amsterdam, Katowice, Madrid, London,
+# Milano, Wien, Helsinki
