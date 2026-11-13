@@ -9,7 +9,8 @@ For every pair of NAMED_PAIRS (pathset-params.yml):
     TRACE of pathset/schemas.py);
   - the variants of pathset.view.variants on the same candidates: default;
     October order; R2 on weighted time; R1 keyed on the mode class; R1 keyed on
-    the route pattern (corridor merge off); path frequency replaced by the
+    the route pattern (corridor merge off); the other two forms of the R2 gate
+    (gate_path, gate_pooled); path frequency replaced by the
     least freq_fixed / least freq_span of the links or the first link's freq;
     the deck's top 5 per (hub OD pair, mode sequence); the sensitivity values
     of EPS_T_ABS, MU and RHO_F (STAGE_B_* keys, else view.SENSITIVITY).
@@ -178,8 +179,9 @@ def pair_section(res: dict, table: pd.DataFrame, fuas, names, params: dict) -> s
         lines += [f"Removed after R1 ({len(rem)}: {V.rule_counts(rem)}{shown}). "
                   "detail: the numbers of the test (R2: transfers n, time, and freq "
                   "of the remover >= RHO_F x the frequency of the removed "
-                  "alternative, its path frequency under R2_GATE path, the pooled "
-                  "frequency of its group under R2_GATE pooled; "
+                  "alternative: the largest member frequency of its group under "
+                  "R2_GATE top, its representative's path frequency under path, "
+                  "the pooled frequency of its group under pooled; "
                   "R5: rank in gtc among the alternatives left after R2, and the cap "
                   "max(K_CAP, classes present + K_EXTRA); a lower rank can be dropped "
                   "while a higher one stays when the higher one is the last of its "
@@ -243,19 +245,22 @@ GENERAL_NOTES = [
     "R2 and the order of the cap; T and gtt stay as they are.",
     "The gate of R2 (R2_GATE, printed above). Under 'pooled', the plan's wording, "
     "it compares the remover's freq with RHO_F x the POOLED frequency of the "
-    "removed group (distinct first links over all its variants). A group with "
-    "many variants then has a pooled frequency far above the frequency of each of "
-    "its paths (median 2 times, p90 7 times on origins 7 and 133) and survives "
-    "beside a faster path of the same class that runs less often than RHO_F x "
-    "that pooled value; R2 removes little and the cap R5 chooses the set. "
-    "Example: Helsinki -> Tallinn keeps RAB 'Pasila > Turku ~ TKU > RIX ~ Riga > "
-    "Tallinn' (T 967) beside BRA (T 632) of the same class, because the faster "
-    "paths run once a day and the RAB group has a pooled frequency of 3 (1 < 0.5 "
-    "x 3). Under 'path' the gate compares the path frequencies of the two "
-    "representatives, so a rare fast path still cannot remove a frequent slow one "
-    "but a group's variants no longer shield it. The variant gate_pooled shows "
-    "the plan's form. Which one to keep is an open question for Oded and Rajat "
-    "(plan, 'Open with Oded and Rajat': the gate).",
+    "removed group (distinct first links over all its variants). Among the "
+    "alternatives that enter R2 on these ten pairs the pooled frequency is a "
+    "median 4 times (p90 20 times) the representative's own: the groups collect "
+    "feeders from many origin stations that converge on a few trunk trains. R2 "
+    "then removes about half of them (1,065 of 2,116) and the cap R5 drops 948 of "
+    "the rest. Example: Helsinki -> Tallinn keeps RAB 'Pasila > Turku ~ TKU > RIX "
+    "~ Riga > Tallinn' (T 967) beside BRA (T 632) of the same class, because the "
+    "faster paths run once a day and the RAB group has a pooled frequency of 3 (1 "
+    "< 0.5 x 3). Under 'top' (default) the gate compares with the largest path "
+    "frequency among the members of the removed group, so no path is removed by "
+    "one that runs less than RHO_F times as often, while a group's feeders no "
+    "longer add up. Under 'path' it compares with the representative's frequency, "
+    "which can be RHO_F times the group's largest, so a remover may run 1/RHO_F^2 "
+    "times less often than a member it removes. The variants gate_path and "
+    "gate_pooled show the other two forms. Which one to keep is an open question "
+    "for Oded and Rajat (plan, 'Open with Oded and Rajat': the gate).",
     "The counts depend on PASSED_SHARE, the R0 clause that removes a path whose "
     "link passes through the origin, the destination or a city of the path on at "
     "least that share of its runs. It is printed above; with it equal to the "

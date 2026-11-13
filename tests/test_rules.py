@@ -15,7 +15,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pathset import io, rules  # noqa: E402
 
 # The rule parameters are fixed here so that the tests do not move with the
-# parameter file
+# parameter file. R2_GATE is pinned to the plan's wording ("pooled"), against
+# which the fixtures below were written; the default of the parameter file
+# ("top") and "path" have their own tests and settings of the property tests
 BASE = {**io.P, "EPS_T_ABS": 15, "EPS_T_REL": 0.05, "EPS_M": None, "MU": 0.5,
         "K_CAP": 8, "K_EXTRA": 3, "RHO_F": 0.5, "CROSS_CLASS": False,
         "R1_KEY": "sequence", "R2_TIME": "clock", "R2_GATE": "pooled"}
@@ -198,6 +200,8 @@ def test_params_accepted_and_refused():
     rules.check_params(BASE)
     rules.check_params(io.P)
     rules.check_params({**BASE, "EPS_N": 0, "EPS_M": 5})
+    for gate in rules.R2_GATES:
+        rules.check_params({**BASE, "R2_GATE": gate})
     for bad in ({"R1_KEY": "chain"}, {"R2_TIME": "gtc"}, {"RHO_F": 2},
                 {"EPS_T_ABS": -1}, {"R2_GATE": "group"}):
         with pytest.raises(ValueError):
@@ -274,6 +278,32 @@ def test_gate_on_path_frequency_ignores_the_pool():
     assert set(alts["alt"]) == {1, 4}
     # the pooled value is still reported, whichever gate decides
     assert alts.set_index("alt").loc[1, "freq_pooled"] == 8
+
+
+def test_gate_top_protects_every_member_of_the_removed_group():
+    """R2_GATE = top compares with the most frequent member of the removed
+    group. Group: representative 2 a day at T 320 (the fastest member with
+    freq >= 0.5 x 4), member 4 a day at T 330, both on one first link. A
+    direct path at T 300 running once a day removes the group under "path"
+    (1 >= 0.5 x 2) although alone the 4-a-day member would stay (1 < 0.5 x 4);
+    "top" keeps it, and so does "pooled" (pool 4). At 2 a day the direct path
+    removes the group under every gate."""
+    rows = [{"cand": 1, "seq": "R", "T": 300, "freq": 1},
+            {"cand": 2, "seq": "RR", "T": 320, "freq": 2, "first_link": 10},
+            {"cand": 3, "seq": "RR", "T": 330, "freq": 4, "first_link": 10}]
+    assert set(run(rows, R2_GATE="path")[0]["alt"]) == {1}
+    for gate in ("top", "pooled"):
+        alts, trace = run(rows, R2_GATE=gate)
+        assert set(alts["alt"]) == {1, 2}
+        assert status(trace)[3] == "variant_of:2"
+    rows[0]["freq"] = 2
+    for gate in ("top", "path", "pooled"):
+        alts, trace = run(rows, R2_GATE=gate)
+        assert set(alts["alt"]) == {1}
+        row = trace.set_index("cand").loc[2]
+        assert row["status"] == "removed_by:1"
+        want = {"top": 4, "path": 2, "pooled": 4}[gate]
+        assert row["detail"].endswith(f"freq 2 >= 0.5 x {want}")
 
 
 # --- 6. R3 on both quantities -------------------------------------------------
@@ -386,7 +416,8 @@ def removes(p, q, eps_T, eps_M, rho, x, gate="pooled"):
         if p["M"] > q["M"] + eps_M:
             return False
         better = better or p["M"] < q["M"] - eps_M
-    other = q["pooled"] if gate == "pooled" else q["freq"]
+    other = {"pooled": q.get("pooled"), "path": q.get("freq"),
+             "top": q.get("top")}[gate]
     return better and (rho == 0 or p["freq"] >= rho * other)
 
 
@@ -430,7 +461,7 @@ def slow_r3_r1(cands, params):
         for m in g:
             per_link[m["first_link"]] = max(per_link.get(m["first_link"], 0.0),
                                             m["freq"])
-        alts[rep["cand"]] = {**rep, "pooled": sum(per_link.values()),
+        alts[rep["cand"]] = {**rep, "pooled": sum(per_link.values()), "top": top,
                              "members": [m["cand"] for m in g]}
     return cut, alts, eps
 
@@ -445,6 +476,8 @@ SETTINGS = [
     dict(RHO_F=0.0, EPS_M=5),
     dict(R2_GATE="path"),
     dict(R2_GATE="path", RHO_F=1.0, EPS_M=5),
+    dict(R2_GATE="top"),
+    dict(R2_GATE="top", RHO_F=0.33, R1_KEY="class", EPS_M=5),
 ]
 
 

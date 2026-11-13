@@ -10,12 +10,18 @@ R1  identity: candidates of one mode sequence whose clock time T lies within
     the band of a leader are one alternative; the rest are its variants.
 R2  keep: banded dominance on (transfers, time[, money]) within a mode class,
     with a frequency gate; the kept set is the stable set. The gate compares
-    the remover's path frequency with RHO_F x the removed alternative's path
-    frequency (R2_GATE = "path") or with RHO_F x the pooled frequency of the
-    removed group (R2_GATE = "pooled", the plan's wording). On the named pairs
-    of stage B the pooled form blocked nearly every removal, because a group
-    of many variants with distinct first links pools far more departures than
-    any of its paths runs, so the cap R5 chose the set.
+    the remover's path frequency with RHO_F x a frequency of the removed
+    alternative (R2_GATE): "top", the largest path frequency among the
+    members of its R1 group, so that no member runs more than 1/RHO_F times
+    as often as its remover (the plan's "a rare fast train cannot delete a
+    frequent alternative"); "path", the frequency of its representative,
+    which may itself run only RHO_F times as often as the group's most
+    frequent member; "pooled", the plan's wording, the pooled frequency of
+    the group (rules.pooled_freq). On the named pairs of stage B, 2,116
+    alternatives enter R2; under "pooled" R2 removes 1,065 and the cap R5
+    drops 948 of the rest, because a group pools the departures of feeders
+    from many origin stations that converge on a few trunk trains; under
+    "path" R2 removes 1,999 and the cap drops 19.
 R4  no mode class loses its last alternative to the comparison across classes
     (guarantee) or to the cap.
 R5  cap on the number of alternatives, by gtc.
@@ -54,7 +60,7 @@ TRACE = ["cand", "seq", "cls", "alt", "status", "rule", "by", "detail"]
 BANDS = ("EPS_T_ABS", "EPS_T_REL", "EPS_M")       # the only bands allowed
 R1_KEYS = ("sequence", "class", "pattern")
 R2_TIMES = {"clock": "T", "weighted": "gtt"}      # compared time of R2
-R2_GATES = ("path", "pooled")                     # frequency of q in the gate
+R2_GATES = ("top", "path", "pooled")              # frequency of q in the gate
 ORDERS = ("r3_first", "october")
 KEPT = ("kept", "kept_guarantee")
 
@@ -258,8 +264,9 @@ def dominance(n, X, M, freq, freq_q, eps_T: float, eps_M,
     p is noticeably better on at least one attribute (n_p < n_q, or
     X_p < X_q - eps_T, or M_p < M_q - eps_M) and freq_p >= RHO_F x
     freq_q[q]. ``freq_q`` is what the gate compares on the removed side: the
-    path frequency (R2_GATE "path") or the pooled frequency of the group
-    (R2_GATE "pooled"). The gate only deletes arcs, so the relation stays
+    largest member frequency of the group (R2_GATE "top"), the path
+    frequency of its representative ("path") or the pooled frequency of the
+    group ("pooled"). The gate only deletes arcs, so the relation stays
     acyclic either way. The band sits on the dominated side (Delling et al.
     2013 slack; 16 Oct note, section 3.3 kind (ii)); the transfer count has
     no band.
@@ -465,7 +472,8 @@ def apply_rules(cands: pd.DataFrame, params: dict | None = None,
     a = {k: c[k][reps] for k in ("n", "T", "gtt", "gtc", "M", "freq", "code")}
     a["pooled"] = pooled_freq(alt[rows], c["first_link"][rows], freq[rows],
                               size)[reps]
-    a["gate_q"] = a["freq"] if params["R2_GATE"] == "path" else a["pooled"]
+    a["gate_q"] = {"top": top[reps], "path": a["freq"],
+                   "pooled": a["pooled"]}[params["R2_GATE"]]
     state = np.full(len(reps), "kept", dtype=object)
     why = np.full(len(reps), "", dtype=object)
     numbers = np.full(len(reps), "", dtype=object)

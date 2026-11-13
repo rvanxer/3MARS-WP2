@@ -4,6 +4,7 @@ FUA pair (plan step 5).
     python -X utf8 pathset-view.py "Amsterdam" "Berlin"
     python -X utf8 pathset-view.py 7 28 --order october --r2-time weighted
     python -X utf8 pathset-view.py Amsterdam Berlin --r1-key pattern --eps 20
+    python -X utf8 pathset-view.py Amsterdam Muenchen --r2-gate pooled
 
 Origin and destination: a FUA id or name (case and accent insensitive; an
 ambiguous name is refused with the candidates listed). The pair is enumerated
@@ -39,6 +40,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     ap.add_argument("--r2-time", choices=["clock", "weighted"], default=io.P["R2_TIME"])
     ap.add_argument("--r1-key", choices=["sequence", "class", "pattern"],
                     default=io.P["R1_KEY"])
+    ap.add_argument("--r2-gate", choices=["top", "path", "pooled"],
+                    default=io.P["R2_GATE"],
+                    help="frequency of the removed alternative in the gate of R2")
     ap.add_argument("--freq", choices=["path", "fixed", "span", "first"], default="path",
                     help="frequency in place of the path frequency (stage B variant 6)")
     ap.add_argument("--mu", type=float, default=float(io.P["MU"]))
@@ -58,7 +62,8 @@ def run(args: argparse.Namespace) -> dict:
     o, d = V.resolve_fua(args.origin, fuas), V.resolve_fua(args.destination, fuas)
     share, source = V.choose_passed_share(args.passed_share, io.P, V.manifest_records())
     params = {**io.P, "R2_TIME": args.r2_time, "R1_KEY": args.r1_key, "MU": args.mu,
-              "RHO_F": args.rho, "EPS_T_ABS": args.eps, "PASSED_SHARE": share}
+              "RHO_F": args.rho, "EPS_T_ABS": args.eps, "PASSED_SHARE": share,
+              "R2_GATE": args.r2_gate}
     spec = {"order": args.order, "freq": args.freq}
     started = time.perf_counter()
     net = search.load_network(params)
@@ -70,7 +75,8 @@ def run(args: argparse.Namespace) -> dict:
     shown = V.with_frequency(cands, params, args.freq)
 
     print(f"{V.fua_name(fuas, o)} ({o}) -> {V.fua_name(fuas, d)} ({d}); order "
-          f"{args.order}, R1_KEY {args.r1_key}, R2_TIME {args.r2_time}, freq "
+          f"{args.order}, R1_KEY {args.r1_key}, R2_TIME {args.r2_time}, R2_GATE "
+          f"{args.r2_gate}, freq "
           f"{args.freq}, MU {args.mu:g}, RHO_F {args.rho:g}, EPS_T_ABS {args.eps:g}, "
           f"PASSED_SHARE {share:g} ({source}); network and enumeration {t_enum:.1f} s")
     steps = V.funnel(trace, alts, args.order)

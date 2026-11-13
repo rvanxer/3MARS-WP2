@@ -31,7 +31,8 @@ def removes(p, q, eps_T, eps_M, rho, x, gate="pooled"):
         if p["M"] > q["M"] + eps_M:
             return False
         better = better or p["M"] < q["M"] - eps_M
-    other = q["pooled"] if gate == "pooled" else q["freq"]
+    other = {"pooled": q.get("pooled"), "path": q.get("freq"),
+             "top": q.get("top")}[gate]
     return better and (rho == 0 or p["freq"] >= rho * other)
 
 
@@ -92,7 +93,7 @@ def brute(cands, P, order, guarantee):
         for m in g:
             fl = rows[m]["first_link"]
             per_link[fl] = max(per_link.get(fl, 0.0), rows[m]["freq"])
-        alts[rep] = {**rows[rep], "pooled": sum(per_link.values())}
+        alts[rep] = {**rows[rep], "pooled": sum(per_link.values()), "top": top}
         st.update({m: f"variant_of:{rep}" for m in g if m != rep})
     x = rules.R2_TIMES[P["R2_TIME"]]
     gate = P["R2_GATE"]
@@ -146,6 +147,8 @@ SETTINGS = [
     dict(CROSS_CLASS=True, MU=0.1),
     dict(CROSS_CLASS=True, K_CAP=4, K_EXTRA=1, EPS_M=5, R2_GATE="path"),
     dict(CROSS_CLASS=False, R2_GATE="path", RHO_F=1.0),
+    dict(CROSS_CLASS=True, K_CAP=4, K_EXTRA=1, EPS_M=5, R2_GATE="top"),
+    dict(CROSS_CLASS=False, R2_GATE="top", RHO_F=0.33, R1_KEY="class"),
 ]
 
 

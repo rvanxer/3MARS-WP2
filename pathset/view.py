@@ -45,6 +45,7 @@ RULE_VARIANTS = {
     "r2_weighted": {"params": {"R2_TIME": "weighted"}},
     "r1_class": {"params": {"R1_KEY": "class"}},
     "r1_pattern": {"params": {"R1_KEY": "pattern"}},
+    "gate_path": {"params": {"R2_GATE": "path"}},
     "gate_pooled": {"params": {"R2_GATE": "pooled"}},
     "freq_fixed": {"freq": "fixed"},
     "freq_span": {"freq": "span"},
@@ -55,8 +56,8 @@ RULE_VARIANTS = {
 # Sensitivity of stage B: parameter -> (key in pathset-params.yml, short
 # name, values used when that key is absent). The fallback values are those
 # of the plan ("Parameters": RHO_F 1 and 0.33 in sensitivity) and of the
-# stage B task (EPS_T_ABS 10 and 20, MU 0.25 and 1.0); pathset-params.yml has
-# no STAGE_B_* keys yet.
+# stage B task (EPS_T_ABS 10 and 20, MU 0.25 and 1.0), equal to the STAGE_B_*
+# keys of pathset-params.yml.
 SENSITIVITY = {
     "EPS_T_ABS": ("STAGE_B_EPS_T_ABS", "eps", (10, 20)),
     "MU": ("STAGE_B_MU", "mu", (0.25, 1.0)),
@@ -311,9 +312,10 @@ def variant_notes(params: dict | None = None) -> dict:
             f"fastest member with freq >= RHO_F ({p['RHO_F']}) x the group's largest. "
             f"R2 on (transfers, {p['R2_TIME']} time) inside a mode class: p removes q "
             f"only if freq(p) >= RHO_F x "
-            + ("freq(q), the path frequencies of the two representatives "
-               if p["R2_GATE"] == "path" else
-               "the pooled frequency of q's group (distinct first links) ")
+            + {"top": "the largest path frequency among the members of q's group ",
+               "path": "freq(q), the path frequency of q's representative ",
+               "pooled": "the pooled frequency of q's group (distinct first links) "
+               }[p["R2_GATE"]]
             + f"(R2_GATE {p['R2_GATE']}). R4 keeps the last alternative of a class; "
             f"R5 caps at "
             f"max(K_CAP {p['K_CAP']}, classes present + K_EXTRA {p['K_EXTRA']}) by "
@@ -331,12 +333,17 @@ def variant_notes(params: dict | None = None) -> dict:
         "r1_pattern": ("R1 keyed on the mode sequence and the route pattern (city "
                        "sequence): near-ties through different transfer cities stay "
                        "apart, as in the thesis example (corridor merge off)."),
+        "gate_path": ("R2_GATE = path: p removes q only if freq(p) >= RHO_F x the "
+                      "path frequency of q's representative. The representative "
+                      "may itself run only RHO_F times as often as the most "
+                      "frequent member of its group, so a remover can run 1/RHO_F^2 "
+                      "times less often than a member it removes."),
         "gate_pooled": ("R2_GATE = pooled, the plan's wording: p removes q only if "
                         "freq(p) >= RHO_F x the pooled frequency of q's R1 group "
                         "(sum over its distinct first links of the largest member "
-                        "frequency). A group of many variants pools far more "
-                        "departures than any of its paths runs, so few removals pass "
-                        "the gate and the cap R5 chooses the set."),
+                        "frequency). Groups pool feeders from many stations that "
+                        "converge on a few trunk trains, so R2 removes about half "
+                        "the alternatives and the cap R5 chooses most of the set."),
         "freq_fixed": ("Path frequency replaced by the least freq_fixed of its links "
                        f"(departures from {p['FIXED_FREQ_START']} to "
                        f"{p['FIXED_FREQ_END']} / days of that period; the deck's fixed "

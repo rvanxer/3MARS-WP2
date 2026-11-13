@@ -105,12 +105,17 @@ RHO_F: 0.5                  # frequency gate [placeholder]
 CROSS_CLASS: false          # strict comparison across mode classes [october switch]
 R1_KEY: sequence            # sequence | class | pattern
 R2_TIME: clock              # clock | weighted
-# Gate of R2: p may remove q only if freq(p) >= RHO_F x F(q), with F(q) the
-# path frequency of q (path) or the pooled frequency of q's R1 group (pooled,
-# the plan's wording). Under pooled the cap R5 chose most sets of stage B:
-# a group of many variants with distinct first links pools far more departures
-# than any of its paths runs [placeholder; open with Oded and Rajat]
-R2_GATE: path               # path | pooled
+# Gate of R2: p may remove q only if freq(p) >= RHO_F x F(q), with F(q):
+#   top     the largest path frequency among the members of q's R1 group, so
+#           no member runs more than 1/RHO_F times as often as its remover
+#   path    the path frequency of q's representative (which may run only
+#           RHO_F times as often as the group's most frequent member)
+#   pooled  the plan's wording: pooled frequency of q's group (distinct first
+#           links). On the named pairs of stage B, R2 then removed about half
+#           of the alternatives and the cap R5 dropped 948 of the rest: groups
+#           pool feeders from many stations that converge on a few trunks
+# [placeholder; open with Oded and Rajat]
+R2_GATE: top                # top | path | pooled
 R4_GUARANTEE: true          # no mode class loses its last alternative
 VARIANTS_KEPT: 20
 
