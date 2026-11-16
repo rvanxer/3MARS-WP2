@@ -38,8 +38,8 @@ def read(name: str, root: Path, columns: list[str] | None = None) -> pd.DataFram
 
 #%% a. Hubs
 def step_hubs() -> tuple[pd.DataFrame, pd.Series, dict]:
-    """Station hubs and airports; the country offsets set beside
-    air-times.py:COUNTRY_TZ."""
+    """Station hubs and airports; the country offsets set beside the time
+    zones of the pipeline scripts."""
     st = read("ic-stations", io.HUBS, ["stn", "name", "fua", "geometry"])
     st["lon"], st["lat"] = N.wkb_lonlat(st.pop("geometry"))
     calls = read("ic-timetable", io.HUBS, ["stn"])["stn"].value_counts()
@@ -52,10 +52,10 @@ def step_hubs() -> tuple[pd.DataFrame, pd.Series, dict]:
     hubs, stn2hub = N.build_hubs(st, ap, fuas, nodes, P["HUB_RADIUS_M"],
                                  P["XWALK_M"])
 
-    upstream = N.upstream_country_tz(io.ROOT / "air-times.py")
-    tz_diff = {c: [N.TZ_STD.get(c), upstream.get(c)]
-               for c in sorted(set(N.TZ_STD) | set(upstream))
-               if N.TZ_STD.get(c) != upstream.get(c)}
+    pipeline = N.pipeline_country_tz(io.ROOT)
+    tz_diff = {c: [N.TZ_STD.get(c), pipeline.get(c)]
+               for c in sorted(set(N.TZ_STD) | set(pipeline))
+               if N.TZ_STD.get(c) != pipeline.get(c)}
     is_s = hubs["kind"] == "S"
     io.log(f"a. hubs: {int(is_s.sum()):,} station hubs from {len(st):,} "
            f"stations ({int((hubs['stns'].str.len() > 1).sum())} with more "
@@ -63,8 +63,8 @@ def step_hubs() -> tuple[pd.DataFrame, pd.Series, dict]:
            f"for {int((hubs.loc[is_s, 'released_id'] != '').sum())} station "
            f"hubs and {int((hubs.loc[~is_s, 'released_id'] != '').sum())} "
            "airports")
-    io.log("a. country offsets against air-times.py COUNTRY_TZ: "
-           + (f"DIFFERENT {tz_diff}" if tz_diff else "identical"))
+    io.log("a. country offsets against the time zones of the pipeline "
+           "scripts: " + (f"DIFFERENT {tz_diff}" if tz_diff else "identical"))
     return hubs, stn2hub, tz_diff
 
 

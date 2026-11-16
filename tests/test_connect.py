@@ -97,6 +97,23 @@ def test_duplicates_give_minimum():
     assert ih[("STN_A", "STN_B")] == 11.0
 
 
+def test_only_the_car_links_of_the_graph_are_read():
+    """Since 29 October 2026 the kind Interhub of the 3M graph also holds
+    links by local public transport; their riding times are not car minutes."""
+    rows = [("STN_A", "STN_B", "Interhub", "Car", 12.0),
+            ("STN_A", "STN_B", "Interhub", "PT", 7.0),
+            ("STN_B", "STN_C", "Interhub", "PT", 9.0),
+            ("FUA_000", "STN_A", "Access", "Car", 6.0)]
+    links = pd.DataFrame(rows, columns=["src", "trg", "kind", "mode", "time"])
+    rel = C.released_tables(NODES, links)
+    assert rel.interhub.values.tolist() == [["STN_A", "STN_B", 12.0]]
+    assert rel.access["minutes"].tolist() == [6.0]
+    # without the column every row is read: the files before that date hold
+    # car links only
+    old = C.least_minutes(links.drop(columns="mode"), "Interhub")
+    assert old["minutes"].tolist() == [7.0, 9.0]
+
+
 def test_released_beats_fitted():
     c = C.station_connectors(HUBS, REL, CENTRES, FITS).set_index("hub")
     # hub 0: released 6 / 8 although the fit gives about 10.7

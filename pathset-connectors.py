@@ -23,7 +23,7 @@ def read_inputs() -> dict:
     nodes = pd.read_csv(io.RELEASE / "nodes.csv",
                         usecols=["node_id", "lon", "lat"])
     links = pd.read_csv(io.RELEASE / "links.csv",
-                        usecols=["src", "trg", "kind", "time"])
+                        usecols=["src", "trg", "kind", "mode", "time"])
     return {
         "hubs": io.load_out("ps-hubs"),
         "rel": C.released_tables(nodes, links),

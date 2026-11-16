@@ -47,10 +47,15 @@ class Released(NamedTuple):
 
 
 def least_minutes(links: pd.DataFrame, kind: str) -> pd.DataFrame:
-    """(src, trg, minutes) of the released links of one kind; duplicate rows
-    of one (src, trg) give their minimum (the release lists an Interhub link
-    once per FUA it serves, and some Access links twice)."""
+    """(src, trg, minutes) of the released car links of one kind; duplicate
+    rows of one (src, trg) give their minimum (the release lists an Interhub
+    link once per FUA it serves, and some Access links twice). Since the
+    graph of 29 October 2026 the kind Interhub also holds links by local
+    public transport (mode PT); when ``links`` has a ``mode`` column only its
+    car rows are read."""
     l = links[links["kind"] == kind]
+    if "mode" in l.columns:
+        l = l[l["mode"] == "Car"]
     return (l.groupby(["src", "trg"], as_index=False, sort=True)["time"].min()
             .rename(columns={"time": "minutes"}))
 
@@ -63,7 +68,8 @@ def fua_of_node(node_id: pd.Series) -> np.ndarray:
 def released_tables(nodes: pd.DataFrame, links: pd.DataFrame) -> Released:
     """The released Access, Egress and Interhub links and node positions.
 
-    nodes: node_id, lon, lat; links: src, trg, kind, time (minutes)."""
+    nodes: node_id, lon, lat; links: src, trg, kind, time (minutes) and,
+    where the file has it, mode."""
     acc = least_minutes(links, "Access")
     egr = least_minutes(links, "Egress")
     return Released(

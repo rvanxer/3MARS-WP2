@@ -37,8 +37,8 @@ EARTH_R_KM = 6371.0088
 
 # Standard-time UTC offset of each study country, hours. One zone per country
 # is exact here: every FUA and airport lies on the European mainland or the
-# British Isles (air-times.py, "Airport time zones"). Checked against
-# air-times.py:COUNTRY_TZ by ``upstream_country_tz``.
+# British Isles. Checked against the time zones of the 3M graph pipeline by
+# ``pipeline_country_tz``.
 TZ_STD = {
     "UK": 0, "IE": 0, "PT": 0,
     "AT": 1, "BE": 1, "CH": 1, "CZ": 1, "DE": 1, "DK": 1, "ES": 1, "FR": 1,
@@ -141,20 +141,44 @@ def single_linkage(group, lon, lat, radius_m: float) -> np.ndarray:
     return label
 
 
-def upstream_country_tz(air_times_py: Path) -> dict:
-    """Winter UTC offset (hours) per country from ``COUNTRY_TZ`` in the
-    repository's air-times.py, read from the source text without running it
-    (the script runs the pipeline on import). Offsets are taken on 15 January
-    2025, as air-times.py:_offset does."""
-    tree = ast.parse(Path(air_times_py).read_text(encoding="utf-8"))
-    for node in tree.body:
+def _assigned(script: Path, name: str):
+    """The expression assigned to ``name`` at the top level of a pipeline
+    script, or None. The script is parsed, not run (the pipeline scripts run
+    on import)."""
+    if not script.exists():
+        return None
+    for node in ast.parse(script.read_text(encoding="utf-8")).body:
         if (isinstance(node, ast.Assign)
-                and getattr(node.targets[0], "id", "") == "COUNTRY_TZ"):
-            zones = ast.literal_eval(node.value)
-            jan = dt.datetime(2025, 1, 15, 12)
-            return {c: int(jan.replace(tzinfo=ZoneInfo(z)).utcoffset()
-                           .total_seconds() // 3600) for c, z in zones.items()}
-    raise ValueError(f"COUNTRY_TZ not found in {air_times_py}")
+                and getattr(node.targets[0], "id", "") == name):
+            return node.value
+    return None
+
+
+def pipeline_country_tz(root: Path) -> dict:
+    """Winter UTC offset (hours) per country as the 3M graph pipeline in
+    ``root`` defines it, read from the source text of its scripts.
+
+    Since October 2026 countries.py lists (country code, name, largest city)
+    in ``imp_countries`` and the zone of a country is "Europe/" + that city.
+    The amended air-times.py of September 2026 holds a ``COUNTRY_TZ`` table
+    instead; it is read when countries.py names no cities. Offsets are taken
+    on 15 January 2025."""
+    root = Path(root)
+    zones = None
+    value = _assigned(root / "countries.py", "imp_countries")
+    if isinstance(value, (ast.List, ast.Tuple)):
+        rows = ast.literal_eval(value)
+        if rows and all(isinstance(r, tuple) and len(r) >= 3 for r in rows):
+            zones = {r[0]: "Europe/" + r[2] for r in rows}
+    if zones is None:
+        value = _assigned(root / "air-times.py", "COUNTRY_TZ")
+        if value is not None:
+            zones = ast.literal_eval(value)
+    if zones is None:
+        raise ValueError(f"no country time zones in the scripts of {root}")
+    jan = dt.datetime(2025, 1, 15, 12)
+    return {c: int(jan.replace(tzinfo=ZoneInfo(z)).utcoffset()
+                   .total_seconds() // 3600) for c, z in zones.items()}
 
 
 def tz_std_of(icc) -> np.ndarray:

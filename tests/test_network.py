@@ -126,15 +126,38 @@ def test_single_linkage_radius_is_inclusive_of_chains_only():
     assert lab.tolist() == [0, 0, 1]
 
 
-def test_country_offsets_match_air_times():
-    upstream = N.upstream_country_tz(
-        Path(__file__).resolve().parent.parent / "air-times.py")
-    assert upstream == N.TZ_STD
+def test_country_offsets_match_the_pipeline():
+    pipeline = N.pipeline_country_tz(Path(__file__).resolve().parent.parent)
+    assert pipeline == N.TZ_STD
     assert {c for c, h in N.TZ_STD.items() if h == 0} == {"UK", "IE", "PT"}
     assert {c for c, h in N.TZ_STD.items() if h == 2} == {
         "FI", "EE", "LV", "LT", "RO", "BG", "EL"}
     with pytest.raises(KeyError):
         N.tz_std_of(["NL", "XX"])
+
+
+def test_country_zones_are_read_in_both_forms_of_the_pipeline(tmp_path):
+    """countries.py with cities (October 2026), else COUNTRY_TZ of the amended
+    air-times.py (September 2026); neither is an error."""
+    new, old, none = tmp_path / "new", tmp_path / "old", tmp_path / "none"
+    for folder in (new, old, none):
+        folder.mkdir()
+    (new / "countries.py").write_text(
+        'imp_countries = [\n    ("NL", "Netherlands", "Amsterdam"),\n'
+        '    ("FI", "Finland", "Helsinki"),\n'
+        '    ("UK", "United Kingdom", "London"),\n]\n', encoding="utf-8")
+    (new / "air-times.py").write_text(
+        'COUNTRY_TZ = {"NL": "Europe/Athens"}\n', encoding="utf-8")
+    assert N.pipeline_country_tz(new) == {"NL": 1, "FI": 2, "UK": 0}
+    (old / "countries.py").write_text(
+        'imp_countries = dict(NL="Netherlands", EL="Greece")\n', encoding="utf-8")
+    (old / "air-times.py").write_text(
+        'import os\nCOUNTRY_TZ = {"NL": "Europe/Amsterdam", "EL": "Europe/Athens"}\n',
+        encoding="utf-8")
+    assert N.pipeline_country_tz(old) == {"NL": 1, "EL": 2}
+    (none / "countries.py").write_text("x = 1\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        N.pipeline_country_tz(none)
 
 
 # --- b. Trips ----------------------------------------------------------------

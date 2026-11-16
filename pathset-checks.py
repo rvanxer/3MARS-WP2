@@ -286,7 +286,7 @@ class Conn:
         nodes = pd.read_csv(io.RELEASE / "nodes.csv",
                             usecols=["node_id", "lon", "lat"])
         links = pd.read_csv(io.RELEASE / "links.csv",
-                            usecols=["src", "trg", "kind", "time"])
+                            usecols=["src", "trg", "kind", "mode", "time"])
         self.rel = CN.released_tables(nodes, links)
         self.kind = self.hubs.set_index("hub")["kind"]
         self.name = self.hubs.set_index("hub")["name"]
